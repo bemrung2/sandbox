@@ -1,0 +1,434 @@
+<title>행운 가챠</title>
+<meta name="description" content="레버를 당겨 오늘의 미니 행운 캡슐을 뽑아보세요.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Noto+Sans+KR:wght@400;600;800&display=swap">
+<style>
+  :root{
+    --machine-red: #e8483a;
+    --machine-red-dark: #c73527;
+    --machine-cream: #fff3d6;
+    --glass: #cdeaf0;
+    --glass-dark: #9fd2dc;
+    --ink: #2b1c14;
+    --ink-soft: #6b5142;
+    --paper: #faf1de;
+    --shadow: rgba(60, 30, 10, 0.25);
+    --gold: #ffc94a;
+    --mint: #6fd6b4;
+    --grape: #b18cf2;
+    --sky: #7fc4f0;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(120% 90% at 50% -10%, #fff8e8 0%, var(--paper) 55%, #f2e2bf 100%);
+    color: var(--ink);
+    font-family: "Noto Sans KR", "Pretendard", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 64px;
+    overflow-x: hidden;
+  }
+
+  .stage{
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .eyebrow{
+    font-family: "Baloo 2", "Noto Sans KR", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    color: var(--machine-red-dark);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  h1{
+    font-family: "Baloo 2", "Noto Sans KR", sans-serif;
+    font-weight: 800;
+    font-size: clamp(30px, 7vw, 40px);
+    margin: 0 0 30px;
+    text-wrap: balance;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  /* ---- machine ---- */
+  .machine{
+    position: relative;
+    width: 300px;
+    filter: drop-shadow(0 22px 26px var(--shadow));
+  }
+
+  .dome{
+    position: relative;
+    height: 190px;
+    border-radius: 150px 150px 18px 18px;
+    background:
+      radial-gradient(120px 140px at 32% 22%, rgba(255,255,255,0.85), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, var(--glass) 0%, var(--glass-dark) 100%);
+    border: 6px solid var(--machine-red-dark);
+    border-bottom: none;
+    overflow: hidden;
+  }
+
+  .capsule-pile{
+    position: absolute;
+    inset: auto 14px 10px 14px;
+    height: 120px;
+  }
+
+  .pile-capsule{
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    box-shadow: inset -4px -6px 0 rgba(0,0,0,0.12), inset 4px 5px 0 rgba(255,255,255,0.35);
+  }
+
+  .body-block{
+    background: linear-gradient(180deg, var(--machine-red) 0%, var(--machine-red-dark) 100%);
+    border: 6px solid var(--machine-red-dark);
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    padding: 18px 18px 22px;
+  }
+
+  .plate{
+    background: var(--machine-cream);
+    border: 3px solid var(--machine-red-dark);
+    border-radius: 10px;
+    padding: 6px 10px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .plate span{
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    color: var(--machine-red-dark);
+  }
+
+  .control-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .coin-slot{
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--machine-cream);
+    border: 3px solid var(--machine-red-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .coin-slot::after{
+    content: "";
+    width: 22px;
+    height: 5px;
+    background: var(--machine-red-dark);
+    border-radius: 3px;
+  }
+
+  .lever-btn{
+    flex: 1;
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: var(--machine-red-dark);
+    background: linear-gradient(180deg, var(--gold) 0%, #f3ab1c 100%);
+    border: 3px solid var(--machine-red-dark);
+    border-radius: 14px;
+    padding: 13px 10px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #b97c0f;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .lever-btn:active{
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #b97c0f;
+  }
+  .lever-btn:focus-visible{
+    outline: 3px solid var(--sky);
+    outline-offset: 2px;
+  }
+  .lever-btn:disabled{
+    cursor: default;
+    opacity: 0.65;
+  }
+
+  .chute{
+    margin-top: 12px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--machine-red-dark);
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.35);
+  }
+
+  /* ---- falling capsule ---- */
+  .drop-layer{
+    position: absolute;
+    left: 50%;
+    top: 190px;
+    width: 34px;
+    height: 34px;
+    margin-left: -17px;
+    pointer-events: none;
+  }
+
+  .falling-capsule{
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    box-shadow: inset -4px -5px 0 rgba(0,0,0,0.15), inset 3px 4px 0 rgba(255,255,255,0.4);
+    animation: drop 0.62s cubic-bezier(.4,0,.2,1) forwards;
+  }
+
+  @keyframes drop{
+    0%   { transform: translateY(0) scale(1); }
+    70%  { transform: translateY(150px) scale(1); }
+    85%  { transform: translateY(140px) scale(1.06,0.9); }
+    100% { transform: translateY(150px) scale(1); opacity: 0; }
+  }
+
+  /* ---- result card ---- */
+  .result{
+    width: 100%;
+    max-width: 340px;
+    margin-top: 30px;
+    background: #fffdf7;
+    border: 3px solid var(--ink);
+    border-radius: 20px;
+    padding: 26px 24px 22px;
+    text-align: center;
+    box-shadow: 0 10px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .result.show{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .rarity{
+    display: inline-block;
+    font-family: "Baloo 2", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .rarity.common{ background: #e7ecd8; color: #5c6b3a; }
+  .rarity.rare{ background: #dcecfb; color: #295a92; }
+  .rarity.legend{ background: #fbe6ff; color: #8a2ea8; }
+
+  .result-icon{ font-size: 40px; line-height: 1; margin-bottom: 10px; }
+
+  .result-text{
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+
+  .result-sub{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .hint{
+    margin-top: 22px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .confetti-layer{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .confetti-piece{
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: -10px;
+    border-radius: 2px;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(110vh) rotate(540deg); opacity: 0.9; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .falling-capsule{ animation: none; opacity: 0; }
+    .result{ transition: none; }
+    .confetti-piece{ display: none; }
+  }
+</style>
+
+<div class="stage">
+  <p class="eyebrow">Lucky Capsule Machine</p>
+  <h1>행운 가챠</h1>
+
+  <div class="machine">
+    <div class="dome" id="dome">
+      <div class="capsule-pile" id="pile"></div>
+      <div class="drop-layer" id="dropLayer"></div>
+    </div>
+    <div class="body-block">
+      <div class="plate"><span>PUSH FOR LUCK</span></div>
+      <div class="control-row">
+        <div class="coin-slot" aria-hidden="true"></div>
+        <button class="lever-btn" id="pullBtn" type="button">레버 당기기</button>
+      </div>
+      <div class="chute"></div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <span class="rarity common" id="rarityTag">COMMON</span>
+    <div class="result-icon" id="resultIcon">🍀</div>
+    <p class="result-text" id="resultText">레버를 당기면 오늘의 캡슐이 나와요.</p>
+    <p class="result-sub" id="resultSub">하루에 몇 번이든 다시 뽑을 수 있어요.</p>
+  </div>
+
+  <p class="hint">캡슐 색은 매번 무작위로 섞여요 — 같은 캡슐은 하나도 없어요.</p>
+</div>
+
+<script>
+  (function(){
+    var CAPSULE_COLORS = [
+      ["#ff8c7a", "#e8483a"],
+      ["#ffd166", "#f3ab1c"],
+      ["#6fd6b4", "#2f9e7c"],
+      ["#7fc4f0", "#2f7dbf"],
+      ["#b18cf2", "#7a4fd1"],
+      ["#ff9fd1", "#e05aa8"]
+    ];
+
+    var FORTUNES = [
+      { icon: "🍦", text: "오늘은 좋아하는 아이스크림을 하나 사 먹어도 좋은 날.", sub: "작은 사치, 오늘의 허락", rarity: "common" },
+      { icon: "🎧", text: "아껴뒀던 플레이리스트를 지금 크게 틀어보세요.", sub: "볼륨은 눈치 보지 말고", rarity: "common" },
+      { icon: "📱", text: "오래 연락 못한 사람에게 안부 한 줄 보내보기.", sub: "짧아도 괜찮아요", rarity: "common" },
+      { icon: "🌤️", text: "5분만 창밖 하늘을 멍하니 바라보세요.", sub: "생각보다 오래 걸리지 않아요", rarity: "common" },
+      { icon: "📖", text: "읽다 만 책을 딱 한 챕터만 더 읽어보기.", sub: "표지를 다시 넘겨볼 타이밍", rarity: "common" },
+      { icon: "🚶", text: "평소보다 한 정거장 먼저 내려서 걸어보세요.", sub: "새로운 골목을 발견할지도", rarity: "rare" },
+      { icon: "✉️", text: "오늘 받을 좋은 소식이 하나 있어요. 메일함을 확인해보세요.", sub: "스팸함 말고 진짜로", rarity: "rare" },
+      { icon: "🍀", text: "지금 이 페이지를 본 것 자체가 오늘의 작은 행운.", sub: "가챠는 원래 그런 거예요", rarity: "rare" },
+      { icon: "🎨", text: "머릿속에 떠오른 아이디어, 오늘 딱 한 줄만 적어두세요.", sub: "미래의 내가 고마워할 거예요", rarity: "rare" },
+      { icon: "🌟", text: "오늘 하루, 계획에 없던 즐거운 일이 하나 생깁니다.", sub: "전설급 확률로 찾아온 신호", rarity: "legend" },
+      { icon: "🎉", text: "만들고 있는 것, 생각보다 훨씬 잘 되고 있어요.", sub: "의심하지 말고 계속 밀어붙이기", rarity: "legend" },
+      { icon: "🌈", text: "오늘은 '일단 해보기'가 정답인 날.", sub: "완벽한 타이밍은 없어요", rarity: "legend" }
+    ];
+
+    var RARITY_LABEL = { common: "COMMON", rare: "RARE", legend: "LEGENDARY" };
+    var RARITY_WEIGHT = { common: 60, rare: 32, legend: 8 };
+
+    var pullBtn = document.getElementById("pullBtn");
+    var dropLayer = document.getElementById("dropLayer");
+    var pile = document.getElementById("pile");
+    var result = document.getElementById("result");
+    var rarityTag = document.getElementById("rarityTag");
+    var resultIcon = document.getElementById("resultIcon");
+    var resultText = document.getElementById("resultText");
+    var resultSub = document.getElementById("resultSub");
+
+    function seedPile(){
+      pile.innerHTML = "";
+      var count = 9;
+      for (var i = 0; i < count; i++){
+        var el = document.createElement("div");
+        el.className = "pile-capsule";
+        var colors = CAPSULE_COLORS[i % CAPSULE_COLORS.length];
+        el.style.background = "linear-gradient(160deg," + colors[0] + "," + colors[1] + ")";
+        el.style.left = (6 + (i * 27) % 220) + "px";
+        el.style.bottom = (Math.floor(i / 4) * 24) + "px";
+        el.style.transform = "rotate(" + ((i * 47) % 40 - 20) + "deg)";
+        pile.appendChild(el);
+      }
+    }
+
+    function pickWeightedFortune(){
+      var roll = Math.random() * 100;
+      var pool;
+      if (roll < RARITY_WEIGHT.legend) pool = FORTUNES.filter(function(f){ return f.rarity === "legend"; });
+      else if (roll < RARITY_WEIGHT.legend + RARITY_WEIGHT.rare) pool = FORTUNES.filter(function(f){ return f.rarity === "rare"; });
+      else pool = FORTUNES.filter(function(f){ return f.rarity === "common"; });
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function spawnConfetti(){
+      var layer = document.createElement("div");
+      layer.className = "confetti-layer";
+      document.body.appendChild(layer);
+      var colors = ["#ffc94a", "#e8483a", "#7fc4f0", "#b18cf2", "#6fd6b4"];
+      for (var i = 0; i < 26; i++){
+        var p = document.createElement("div");
+        p.className = "confetti-piece";
+        p.style.left = (Math.random() * 100) + "vw";
+        p.style.background = colors[i % colors.length];
+        p.style.animationDuration = (1.6 + Math.random() * 1.2) + "s";
+        p.style.animationDelay = (Math.random() * 0.3) + "s";
+        layer.appendChild(p);
+      }
+      setTimeout(function(){ layer.remove(); }, 3200);
+    }
+
+    function pull(){
+      pullBtn.disabled = true;
+
+      var colors = CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)];
+      var capsule = document.createElement("div");
+      capsule.className = "falling-capsule";
+      capsule.style.background = "linear-gradient(160deg," + colors[0] + "," + colors[1] + ")";
+      dropLayer.innerHTML = "";
+      dropLayer.appendChild(capsule);
+
+      var fortune = pickWeightedFortune();
+
+      setTimeout(function(){
+        rarityTag.className = "rarity " + fortune.rarity;
+        rarityTag.textContent = RARITY_LABEL[fortune.rarity];
+        resultIcon.textContent = fortune.icon;
+        resultText.textContent = fortune.text;
+        resultSub.textContent = fortune.sub;
+        result.classList.remove("show");
+        void result.offsetWidth;
+        result.classList.add("show");
+
+        if (fortune.rarity === "legend") spawnConfetti();
+
+        pullBtn.disabled = false;
+        pullBtn.textContent = "다시 당기기";
+      }, 620);
+    }
+
+    pullBtn.addEventListener("click", pull);
+    seedPile();
+  })();
+</script>
