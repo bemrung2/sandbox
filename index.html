@@ -270,6 +270,15 @@
     background: transparent;
     border-style: dashed;
   }
+  .build-stamp{
+    margin: 28px 0 0;
+    text-align: center;
+    font-family: "Roboto Mono", monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.65;
+  }
+
   .lab-card.placeholder:hover{ box-shadow: none; transform: none; }
   .lab-card.placeholder .lab-icon{ background: var(--surface-alt-2); color: var(--text-muted); }
 
@@ -770,6 +779,10 @@
     return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
   }
   function uid(){ return "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  /* Shown on the home screen so it's obvious at a glance whether the browser
+     is serving a fresh copy or a cached one. */
+  var BUILD = "2026.09.06 · b5";
   var ESCAPE_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return ESCAPE_MAP[c]; });
@@ -982,6 +995,7 @@
         '<p class="home-sub">재미로 만들어보는 이것저것. 실험을 하나씩 골라 들어가보세요.</p>' +
       '</div>' +
       '<div class="lab-grid" id="lab-grid"></div>' +
+      '<p class="build-stamp">build ' + BUILD + '</p>' +
     '</div>');
     setContent(wrap);
 
