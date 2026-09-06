@@ -1,434 +1,1509 @@
-<title>행운 가챠</title>
-<meta name="description" content="레버를 당겨 오늘의 미니 행운 캡슐을 뽑아보세요.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Noto+Sans+KR:wght@400;600;800&display=swap">
+<title>나의 실험실</title>
+<meta name="description" content="이것저것 잡다한 실험을 모아두는 개인 실험실 허브. 첫 실험은 비밀번호로 잠긴 기프티콘 저장소.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
 <style>
   :root{
-    --machine-red: #e8483a;
-    --machine-red-dark: #c73527;
-    --machine-cream: #fff3d6;
-    --glass: #cdeaf0;
-    --glass-dark: #9fd2dc;
-    --ink: #2b1c14;
-    --ink-soft: #6b5142;
-    --paper: #faf1de;
-    --shadow: rgba(60, 30, 10, 0.25);
-    --gold: #ffc94a;
-    --mint: #6fd6b4;
-    --grape: #b18cf2;
-    --sky: #7fc4f0;
+    --bg: #FBF8FF;
+    --surface: #FFFFFF;
+    --surface-alt: #F2EDFB;
+    --surface-alt-2: #E7E0F8;
+    --outline: #CBC4D9;
+    --outline-soft: #E2DCEE;
+    --text: #1C1A22;
+    --text-muted: #615C6C;
+    --shadow: rgba(35, 20, 70, 0.14);
+
+    --primary: #4B3FE0;
+    --on-primary: #FFFFFF;
+    --primary-container: #E3DFFF;
+    --on-primary-container: #150A6B;
+
+    --accent: #E9740A;
+    --accent-container: #FFE3C2;
+    --on-accent-container: #5B3300;
+
+    --success: #1E8E4F;
+    --success-container: #D6F5DF;
+    --on-success-container: #0A3A1F;
+
+    --danger: #BA1A1A;
+    --danger-container: #FFDAD6;
+    --on-danger-container: #410002;
+
+    --scrim: rgba(20, 12, 40, 0.45);
   }
 
-  *{ box-sizing: border-box; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #14121B;
+      --surface: #1D1B25;
+      --surface-alt: #26232F;
+      --surface-alt-2: #322E3E;
+      --outline: #524C60;
+      --outline-soft: #39354344;
+      --text: #EBE6F5;
+      --text-muted: #B2ABC2;
+      --shadow: rgba(0, 0, 0, 0.5);
+
+      --primary: #C7BFFF;
+      --on-primary: #241A72;
+      --primary-container: #392F8C;
+      --on-primary-container: #E3DFFF;
+
+      --accent: #FFB877;
+      --accent-container: #6A4200;
+      --on-accent-container: #FFE3C2;
+
+      --success: #86DBA3;
+      --success-container: #0F4A28;
+      --on-success-container: #C6F5D5;
+
+      --danger: #FFB4AB;
+      --danger-container: #93000A;
+      --on-danger-container: #FFDAD6;
+
+      --scrim: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"]{
+    --bg: #14121B;
+    --surface: #1D1B25;
+    --surface-alt: #26232F;
+    --surface-alt-2: #322E3E;
+    --outline: #524C60;
+    --outline-soft: #39354344;
+    --text: #EBE6F5;
+    --text-muted: #B2ABC2;
+    --shadow: rgba(0, 0, 0, 0.5);
+
+    --primary: #C7BFFF;
+    --on-primary: #241A72;
+    --primary-container: #392F8C;
+    --on-primary-container: #E3DFFF;
+
+    --accent: #FFB877;
+    --accent-container: #6A4200;
+    --on-accent-container: #FFE3C2;
+
+    --success: #86DBA3;
+    --success-container: #0F4A28;
+    --on-success-container: #C6F5D5;
+
+    --danger: #FFB4AB;
+    --danger-container: #93000A;
+    --on-danger-container: #FFDAD6;
+
+    --scrim: rgba(0, 0, 0, 0.6);
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body{ height: 100%; }
 
   body{
     margin: 0;
-    min-height: 100%;
-    background:
-      radial-gradient(120% 90% at 50% -10%, #fff8e8 0%, var(--paper) 55%, #f2e2bf 100%);
-    color: var(--ink);
+    background: var(--bg);
+    color: var(--text);
     font-family: "Noto Sans KR", "Pretendard", sans-serif;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 48px 20px 64px;
-    overflow-x: hidden;
+    justify-content: center;
   }
 
-  .stage{
+  .app{
     width: 100%;
-    max-width: 460px;
+    max-width: 480px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-  }
-
-  .eyebrow{
-    font-family: "Baloo 2", "Noto Sans KR", sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.28em;
-    color: var(--machine-red-dark);
-    text-transform: uppercase;
-    margin: 0 0 6px;
-  }
-
-  h1{
-    font-family: "Baloo 2", "Noto Sans KR", sans-serif;
-    font-weight: 800;
-    font-size: clamp(30px, 7vw, 40px);
-    margin: 0 0 30px;
-    text-wrap: balance;
-    text-align: center;
-    color: var(--ink);
-  }
-
-  /* ---- machine ---- */
-  .machine{
     position: relative;
-    width: 300px;
-    filter: drop-shadow(0 22px 26px var(--shadow));
+    background: var(--bg);
   }
 
-  .dome{
-    position: relative;
-    height: 190px;
-    border-radius: 150px 150px 18px 18px;
-    background:
-      radial-gradient(120px 140px at 32% 22%, rgba(255,255,255,0.85), rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, var(--glass) 0%, var(--glass-dark) 100%);
-    border: 6px solid var(--machine-red-dark);
-    border-bottom: none;
-    overflow: hidden;
+  button{ font-family: inherit; }
+
+  .msr{
+    font-family: "Material Symbols Rounded";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    display: inline-block;
+    user-select: none;
   }
 
-  .capsule-pile{
-    position: absolute;
-    inset: auto 14px 10px 14px;
-    height: 120px;
-  }
-
-  .pile-capsule{
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    box-shadow: inset -4px -6px 0 rgba(0,0,0,0.12), inset 4px 5px 0 rgba(255,255,255,0.35);
-  }
-
-  .body-block{
-    background: linear-gradient(180deg, var(--machine-red) 0%, var(--machine-red-dark) 100%);
-    border: 6px solid var(--machine-red-dark);
-    border-top: none;
-    border-radius: 0 0 20px 20px;
-    padding: 18px 18px 22px;
-  }
-
-  .plate{
-    background: var(--machine-cream);
-    border: 3px solid var(--machine-red-dark);
-    border-radius: 10px;
-    padding: 6px 10px;
-    text-align: center;
-    margin-bottom: 14px;
-  }
-
-  .plate span{
-    font-family: "Baloo 2", sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: 0.08em;
-    color: var(--machine-red-dark);
-  }
-
-  .control-row{
+  /* ---------- app bar ---------- */
+  #appbar{
+    position: sticky;
+    top: 0;
+    z-index: 10;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+    gap: 4px;
+    height: 64px;
+    padding: 0 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .icon-btn{
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+  }
+  .icon-btn:hover{ background: var(--surface-alt); }
+  .icon-btn:active{ background: var(--surface-alt-2); }
+  .icon-btn:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+  .icon-btn.danger-ink{ color: var(--danger); }
+
+  .appbar-title{
+    flex: 1;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .appbar-actions{ display: flex; align-items: center; gap: 2px; }
+
+  /* ---------- content ---------- */
+  #content{
+    flex: 1;
+    padding: 20px 20px 100px;
+    animation: viewIn 0.22s ease;
+  }
+  @keyframes viewIn{
+    from{ opacity: 0; transform: translateY(6px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #content{ animation: none; }
   }
 
-  .coin-slot{
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: var(--machine-cream);
-    border: 3px solid var(--machine-red-dark);
+  /* ---------- home ---------- */
+  .home-hero{ margin-bottom: 22px; }
+  .home-eyebrow{
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin: 0 0 8px;
+  }
+  .home-title{
+    font-size: 27px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+  .home-sub{
+    font-size: 14.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .lab-grid{ display: flex; flex-direction: column; gap: 14px; }
+
+  .lab-card{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    background: var(--surface-alt);
+    border: 1px solid var(--outline-soft);
+    border-radius: 24px;
+    padding: 18px;
+    cursor: pointer;
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .lab-card:hover{ box-shadow: 0 6px 18px var(--shadow); transform: translateY(-1px); }
+  .lab-card:active{ transform: translateY(0); }
+  .lab-card:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  .lab-icon{
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: var(--accent-container);
+    color: var(--on-accent-container);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
-  .coin-slot::after{
-    content: "";
-    width: 22px;
-    height: 5px;
-    background: var(--machine-red-dark);
-    border-radius: 3px;
-  }
-
-  .lever-btn{
-    flex: 1;
-    font-family: "Baloo 2", sans-serif;
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: 0.06em;
-    color: var(--machine-red-dark);
-    background: linear-gradient(180deg, var(--gold) 0%, #f3ab1c 100%);
-    border: 3px solid var(--machine-red-dark);
-    border-radius: 14px;
-    padding: 13px 10px;
-    cursor: pointer;
-    box-shadow: 0 5px 0 #b97c0f;
-    transition: transform 0.08s ease, box-shadow 0.08s ease;
-  }
-  .lever-btn:active{
-    transform: translateY(4px);
-    box-shadow: 0 1px 0 #b97c0f;
-  }
-  .lever-btn:focus-visible{
-    outline: 3px solid var(--sky);
-    outline-offset: 2px;
-  }
-  .lever-btn:disabled{
-    cursor: default;
-    opacity: 0.65;
-  }
-
-  .chute{
-    margin-top: 12px;
-    height: 30px;
-    border-radius: 8px;
-    background: var(--machine-red-dark);
-    box-shadow: inset 0 4px 6px rgba(0,0,0,0.35);
-  }
-
-  /* ---- falling capsule ---- */
-  .drop-layer{
-    position: absolute;
-    left: 50%;
-    top: 190px;
-    width: 34px;
-    height: 34px;
-    margin-left: -17px;
-    pointer-events: none;
-  }
-
-  .falling-capsule{
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    box-shadow: inset -4px -5px 0 rgba(0,0,0,0.15), inset 3px 4px 0 rgba(255,255,255,0.4);
-    animation: drop 0.62s cubic-bezier(.4,0,.2,1) forwards;
-  }
-
-  @keyframes drop{
-    0%   { transform: translateY(0) scale(1); }
-    70%  { transform: translateY(150px) scale(1); }
-    85%  { transform: translateY(140px) scale(1.06,0.9); }
-    100% { transform: translateY(150px) scale(1); opacity: 0; }
-  }
-
-  /* ---- result card ---- */
-  .result{
-    width: 100%;
-    max-width: 340px;
-    margin-top: 30px;
-    background: #fffdf7;
-    border: 3px solid var(--ink);
-    border-radius: 20px;
-    padding: 26px 24px 22px;
-    text-align: center;
-    box-shadow: 0 10px 0 var(--ink);
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-    transition: opacity 0.35s ease, transform 0.35s ease;
-  }
-  .result.show{
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .rarity{
-    display: inline-block;
-    font-family: "Baloo 2", sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    padding: 4px 12px;
-    border-radius: 999px;
-    margin-bottom: 12px;
-  }
-  .rarity.common{ background: #e7ecd8; color: #5c6b3a; }
-  .rarity.rare{ background: #dcecfb; color: #295a92; }
-  .rarity.legend{ background: #fbe6ff; color: #8a2ea8; }
-
-  .result-icon{ font-size: 40px; line-height: 1; margin-bottom: 10px; }
-
-  .result-text{
-    font-size: 18px;
+  .lab-body{ flex: 1; min-width: 0; }
+  .lab-name{ font-size: 16.5px; font-weight: 700; margin: 0 0 3px; }
+  .lab-desc{ font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+  .lab-meta{ display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .chip{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
     font-weight: 600;
-    line-height: 1.55;
-    color: var(--ink);
-    margin: 0 0 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--surface-alt-2);
+    color: var(--text-muted);
+  }
+  .chip .msr{ font-size: 14px; }
+  .lab-chevron{ color: var(--text-muted); flex-shrink: 0; }
+
+  .lab-card.placeholder{
+    opacity: 0.6;
+    cursor: default;
+    background: transparent;
+    border-style: dashed;
+  }
+  .lab-card.placeholder:hover{ box-shadow: none; transform: none; }
+  .lab-card.placeholder .lab-icon{ background: var(--surface-alt-2); color: var(--text-muted); }
+
+  /* ---------- lock screen ---------- */
+  .lock-wrap{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+  }
+  .lock-icon{
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .lock-icon .msr{ font-size: 32px; }
+  .lock-title{ font-size: 19px; font-weight: 700; margin: 0 0 4px; }
+  .lock-sub{ font-size: 13px; color: var(--text-muted); margin: 0 0 26px; text-align: center; }
+
+  .pin-dots{ display: flex; gap: 14px; margin-bottom: 30px; }
+  .pin-dot{
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--outline);
+    background: transparent;
+    transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+  }
+  .pin-dot.filled{ background: var(--primary); border-color: var(--primary); transform: scale(1.05); }
+  .pin-dots.shake{ animation: shake 0.4s ease; }
+  @keyframes shake{
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
   }
 
-  .result-sub{
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin: 0;
-  }
-
-  .hint{
-    margin-top: 22px;
+  .pin-error{
     font-size: 12.5px;
-    color: var(--ink-soft);
+    color: var(--danger);
+    font-weight: 600;
+    min-height: 18px;
+    margin-bottom: 14px;
+  }
+
+  .keypad{
+    display: grid;
+    grid-template-columns: repeat(3, 72px);
+    gap: 14px;
+    justify-content: center;
+  }
+  .key{
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface-alt);
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 600;
+    font-family: "Roboto Mono", monospace;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.1s ease, transform 0.08s ease;
+  }
+  .key:hover{ background: var(--surface-alt-2); }
+  .key:active{ transform: scale(0.94); }
+  .key:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+  .key.ghost{ background: transparent; cursor: default; }
+  .key.ghost:hover{ background: transparent; }
+
+  /* ---------- filter chips ---------- */
+  .filter-row{ display: flex; gap: 8px; margin-bottom: 18px; }
+  .filter-chip{
+    border: 1px solid var(--outline);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .filter-chip.active{
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border-color: transparent;
+  }
+  .filter-chip:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* ---------- voucher list ---------- */
+  .voucher-list{ display: flex; flex-direction: column; gap: 12px; }
+
+  .voucher-row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    background: var(--surface-alt);
+    border: 1px solid var(--outline-soft);
+    border-radius: 20px;
+    padding: 14px 16px;
+    cursor: pointer;
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .voucher-row:hover{ box-shadow: 0 4px 14px var(--shadow); transform: translateY(-1px); }
+  .voucher-row:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+  .voucher-row.is-used{ opacity: 0.6; }
+
+  .voucher-avatar{
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: var(--accent-container);
+    color: var(--on-accent-container);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .voucher-info{ flex: 1; min-width: 0; }
+  .voucher-brand{ font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin: 0 0 2px; }
+  .voucher-name{
+    font-size: 15px; font-weight: 700; margin: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .dday{
+    font-family: "Roboto Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .dday.ok{ background: var(--success-container); color: var(--on-success-container); }
+  .dday.soon{ background: var(--accent-container); color: var(--on-accent-container); }
+  .dday.late{ background: var(--danger-container); color: var(--on-danger-container); }
+  .dday.none{ background: var(--surface-alt-2); color: var(--text-muted); }
+  .dday.used{ background: var(--surface-alt-2); color: var(--text-muted); }
+
+  .empty-state{
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    padding: 56px 16px 24px;
+    color: var(--text-muted);
+  }
+  .empty-state .msr{ font-size: 40px; margin-bottom: 12px; opacity: 0.6; }
+  .empty-state p{ margin: 0 0 20px; font-size: 14px; line-height: 1.6; }
+
+  /* ---------- buttons ---------- */
+  .btn-filled{
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+    border-radius: 16px;
+    padding: 15px;
+    font-size: 15.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.08s ease;
+  }
+  .btn-filled:hover{ filter: brightness(1.06); }
+  .btn-filled:active{ transform: scale(0.99); }
+  .btn-filled:disabled{ opacity: 0.4; cursor: not-allowed; }
+  .btn-filled:focus-visible{ outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .btn-filled.success{ background: var(--success); color: var(--on-success-container); }
+  .btn-filled.danger{ background: var(--danger); color: var(--on-danger-container); }
+
+  .btn-tonal{
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface-alt-2);
+    color: var(--text);
+    border: none;
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-tonal:hover{ filter: brightness(0.97); }
+  .btn-text{
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 8px 4px;
+  }
+  .btn-text.muted{ color: var(--text-muted); }
+
+  .fab{
+    position: fixed;
+    bottom: 28px;
+    right: max(20px, calc(50vw - 240px + 20px));
+    width: 60px; height: 60px;
+    border-radius: 20px;
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px var(--shadow);
+    cursor: pointer;
+    z-index: 8;
+    transition: transform 0.1s ease;
+  }
+  .fab:hover{ transform: translateY(-2px); }
+  .fab:active{ transform: translateY(0) scale(0.96); }
+  .fab .msr{ font-size: 28px; }
+
+  /* ---------- form ---------- */
+  .photo-drop{
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%;
+    aspect-ratio: 16/10;
+    border: 1.5px dashed var(--outline);
+    border-radius: 20px;
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-bottom: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-drop img{ width: 100%; height: 100%; object-fit: cover; }
+  .photo-drop .msr{ font-size: 30px; }
+  .photo-drop span{ font-size: 13px; font-weight: 600; }
+  .photo-drop input[type=file]{ display: none; }
+
+  .ai-fill-row{
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .btn-ai{
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-container);
+    color: var(--on-accent-container);
+    border: none;
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-ai:disabled{ opacity: 0.5; cursor: default; }
+  .btn-ai .msr{ font-size: 17px; }
+  .spin{ animation: spin 0.9s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .spin{ animation: none; } }
+
+  .field{ margin-bottom: 16px; }
+  .field label{
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 700; color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .field label .msr{ font-size: 15px; }
+  .field input, .field textarea{
+    width: 100%;
+    background: var(--surface-alt);
+    border: 1.5px solid var(--outline-soft);
+    border-radius: 14px;
+    padding: 13px 14px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .field input:focus, .field textarea:focus{
+    outline: none;
+    border-color: var(--primary);
+  }
+  .field textarea{ resize: vertical; min-height: 64px; }
+  .field .req{ color: var(--danger); }
+  .field-hint{ font-size: 11.5px; color: var(--text-muted); margin-top: 5px; }
+
+  /* ---------- detail ticket ---------- */
+  .ticket{
+    background: var(--surface-alt);
+    border-radius: 24px;
+    padding: 26px 22px 22px;
+    position: relative;
+    margin-bottom: 20px;
+    border: 1px solid var(--outline-soft);
+  }
+  .ticket-brand{ font-size: 12.5px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; margin: 0 0 4px; }
+  .ticket-name{ font-size: 20px; font-weight: 800; margin: 0 0 18px; text-wrap: balance; }
+
+  .ticket-divider{
+    height: 0;
+    border-top: 2px dashed var(--outline);
+    margin: 0 -22px 20px;
+    position: relative;
+  }
+  .ticket-divider::before, .ticket-divider::after{
+    content: "";
+    position: absolute;
+    top: -12px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .ticket-divider::before{ left: -12px; }
+  .ticket-divider::after{ right: -12px; }
+
+  .barcode-box{
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 14px 10px 10px;
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 18px;
+  }
+  .barcode-box svg{ width: 100%; height: auto; max-width: 280px; }
+  .barcode-num{
+    font-family: "Roboto Mono", monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #1C1A22;
+    margin-top: 6px;
+    word-break: break-all;
     text-align: center;
   }
+  .barcode-fallback{ font-size: 12.5px; color: var(--text-muted); padding: 10px 0; }
 
-  .confetti-layer{
+  .ticket-meta{ display: flex; flex-direction: column; gap: 12px; }
+  .meta-row{ display: flex; align-items: center; gap: 10px; }
+  .meta-row .msr{ font-size: 19px; color: var(--text-muted); }
+  .meta-row-text{ flex: 1; }
+  .meta-label{ font-size: 11px; color: var(--text-muted); font-weight: 600; margin: 0; }
+  .meta-value{ font-size: 14px; font-weight: 600; margin: 2px 0 0; }
+
+  .used-banner{
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface-alt-2);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .used-banner .msr{ font-size: 26px; color: var(--success); }
+  .used-banner-text p{ margin: 0; }
+  .used-banner-title{ font-weight: 700; font-size: 14.5px; }
+  .used-banner-date{ font-size: 12.5px; color: var(--text-muted); margin-top: 2px !important; }
+
+  .photo-link{
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--outline);
+    color: var(--text-muted);
+    border-radius: 14px;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 22px;
+  }
+  .photo-link .msr{ font-size: 17px; }
+
+  /* ---------- dialog ---------- */
+  .dialog-scrim{
+    position: fixed; inset: 0;
+    background: var(--scrim);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    z-index: 40;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn{ from{ opacity: 0; } to{ opacity: 1; } }
+  .dialog{
+    background: var(--surface);
+    border-radius: 26px;
+    padding: 24px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 20px 50px var(--shadow);
+  }
+  .dialog h3{ margin: 0 0 10px; font-size: 18px; font-weight: 800; }
+  .dialog p{ margin: 0 0 22px; font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+  .dialog-actions{ display: flex; justify-content: flex-end; gap: 6px; }
+  .dialog-photo{ width: 100%; border-radius: 16px; margin-bottom: 16px; display: block; }
+
+  .pw-inputs{ display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  .pw-inputs input{
+    width: 100%;
+    background: var(--surface-alt);
+    border: 1.5px solid var(--outline-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: "Roboto Mono", monospace;
+    letter-spacing: 0.15em;
+    color: var(--text);
+  }
+  .pw-inputs input:focus{ outline: none; border-color: var(--primary); }
+  .pw-error{ font-size: 12.5px; color: var(--danger); font-weight: 600; margin: -8px 0 14px; }
+
+  /* ---------- toast ---------- */
+  .toast{
     position: fixed;
-    inset: 0;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: var(--text);
+    color: var(--bg);
+    padding: 13px 20px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: 0 10px 24px var(--shadow);
+    z-index: 60;
+    opacity: 0;
     pointer-events: none;
-    z-index: 5;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    max-width: 90%;
+    text-align: center;
   }
-  .confetti-piece{
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    top: -10px;
-    border-radius: 2px;
-    animation: fall linear forwards;
-  }
-  @keyframes fall{
-    to{ transform: translateY(110vh) rotate(540deg); opacity: 0.9; }
-  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
-  @media (prefers-reduced-motion: reduce){
-    .falling-capsule{ animation: none; opacity: 0; }
-    .result{ transition: none; }
-    .confetti-piece{ display: none; }
+  .storage-banner{
+    display: flex; align-items: center; gap: 8px;
+    background: var(--accent-container);
+    color: var(--on-accent-container);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 18px;
   }
+  .storage-banner .msr{ font-size: 17px; }
+
+  [hidden]{ display: none !important; }
 </style>
 
-<div class="stage">
-  <p class="eyebrow">Lucky Capsule Machine</p>
-  <h1>행운 가챠</h1>
-
-  <div class="machine">
-    <div class="dome" id="dome">
-      <div class="capsule-pile" id="pile"></div>
-      <div class="drop-layer" id="dropLayer"></div>
-    </div>
-    <div class="body-block">
-      <div class="plate"><span>PUSH FOR LUCK</span></div>
-      <div class="control-row">
-        <div class="coin-slot" aria-hidden="true"></div>
-        <button class="lever-btn" id="pullBtn" type="button">레버 당기기</button>
-      </div>
-      <div class="chute"></div>
-    </div>
-  </div>
-
-  <div class="result" id="result">
-    <span class="rarity common" id="rarityTag">COMMON</span>
-    <div class="result-icon" id="resultIcon">🍀</div>
-    <p class="result-text" id="resultText">레버를 당기면 오늘의 캡슐이 나와요.</p>
-    <p class="result-sub" id="resultSub">하루에 몇 번이든 다시 뽑을 수 있어요.</p>
-  </div>
-
-  <p class="hint">캡슐 색은 매번 무작위로 섞여요 — 같은 캡슐은 하나도 없어요.</p>
+<div class="app">
+  <div id="appbar"></div>
+  <div id="content"></div>
 </div>
+<div id="overlay-root"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-  (function(){
-    var CAPSULE_COLORS = [
-      ["#ff8c7a", "#e8483a"],
-      ["#ffd166", "#f3ab1c"],
-      ["#6fd6b4", "#2f9e7c"],
-      ["#7fc4f0", "#2f7dbf"],
-      ["#b18cf2", "#7a4fd1"],
-      ["#ff9fd1", "#e05aa8"]
-    ];
+(function(){
+  "use strict";
 
-    var FORTUNES = [
-      { icon: "🍦", text: "오늘은 좋아하는 아이스크림을 하나 사 먹어도 좋은 날.", sub: "작은 사치, 오늘의 허락", rarity: "common" },
-      { icon: "🎧", text: "아껴뒀던 플레이리스트를 지금 크게 틀어보세요.", sub: "볼륨은 눈치 보지 말고", rarity: "common" },
-      { icon: "📱", text: "오래 연락 못한 사람에게 안부 한 줄 보내보기.", sub: "짧아도 괜찮아요", rarity: "common" },
-      { icon: "🌤️", text: "5분만 창밖 하늘을 멍하니 바라보세요.", sub: "생각보다 오래 걸리지 않아요", rarity: "common" },
-      { icon: "📖", text: "읽다 만 책을 딱 한 챕터만 더 읽어보기.", sub: "표지를 다시 넘겨볼 타이밍", rarity: "common" },
-      { icon: "🚶", text: "평소보다 한 정거장 먼저 내려서 걸어보세요.", sub: "새로운 골목을 발견할지도", rarity: "rare" },
-      { icon: "✉️", text: "오늘 받을 좋은 소식이 하나 있어요. 메일함을 확인해보세요.", sub: "스팸함 말고 진짜로", rarity: "rare" },
-      { icon: "🍀", text: "지금 이 페이지를 본 것 자체가 오늘의 작은 행운.", sub: "가챠는 원래 그런 거예요", rarity: "rare" },
-      { icon: "🎨", text: "머릿속에 떠오른 아이디어, 오늘 딱 한 줄만 적어두세요.", sub: "미래의 내가 고마워할 거예요", rarity: "rare" },
-      { icon: "🌟", text: "오늘 하루, 계획에 없던 즐거운 일이 하나 생깁니다.", sub: "전설급 확률로 찾아온 신호", rarity: "legend" },
-      { icon: "🎉", text: "만들고 있는 것, 생각보다 훨씬 잘 되고 있어요.", sub: "의심하지 말고 계속 밀어붙이기", rarity: "legend" },
-      { icon: "🌈", text: "오늘은 '일단 해보기'가 정답인 날.", sub: "완벽한 타이밍은 없어요", rarity: "legend" }
-    ];
+  /* ================= utils ================= */
+  function el(html){
+    var t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  }
+  function nowIso(){ return new Date().toISOString(); }
+  function fmtDate(iso){
+    if (!iso) return "";
+    var d = new Date(iso);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "." + m + "." + day;
+  }
+  function daysUntil(dateStr){
+    var target = new Date(dateStr + "T00:00:00");
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    return Math.round((target - today) / 86400000);
+  }
+  async function sha256Hex(str){
+    var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
+  }
+  function uid(){ return "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  var ESCAPE_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return ESCAPE_MAP[c]; });
+  }
 
-    var RARITY_LABEL = { common: "COMMON", rare: "RARE", legend: "LEGENDARY" };
-    var RARITY_WEIGHT = { common: 60, rare: 32, legend: 8 };
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2400);
+  }
 
-    var pullBtn = document.getElementById("pullBtn");
-    var dropLayer = document.getElementById("dropLayer");
-    var pile = document.getElementById("pile");
-    var result = document.getElementById("result");
-    var rarityTag = document.getElementById("rarityTag");
-    var resultIcon = document.getElementById("resultIcon");
-    var resultText = document.getElementById("resultText");
-    var resultSub = document.getElementById("resultSub");
+  function closeOverlay(){ document.getElementById("overlay-root").innerHTML = ""; }
+  function openDialog(node){
+    var root = document.getElementById("overlay-root");
+    var scrim = el('<div class="dialog-scrim"></div>');
+    scrim.appendChild(node);
+    scrim.addEventListener("click", function(e){ if (e.target === scrim) closeOverlay(); });
+    root.innerHTML = "";
+    root.appendChild(scrim);
+  }
 
-    function seedPile(){
-      pile.innerHTML = "";
-      var count = 9;
-      for (var i = 0; i < count; i++){
-        var el = document.createElement("div");
-        el.className = "pile-capsule";
-        var colors = CAPSULE_COLORS[i % CAPSULE_COLORS.length];
-        el.style.background = "linear-gradient(160deg," + colors[0] + "," + colors[1] + ")";
-        el.style.left = (6 + (i * 27) % 220) + "px";
-        el.style.bottom = (Math.floor(i / 4) * 24) + "px";
-        el.style.transform = "rotate(" + ((i * 47) % 40 - 20) + "deg)";
-        pile.appendChild(el);
+  function confirmDialog(opts){
+    return new Promise(function(resolve){
+      var d = el(
+        '<div class="dialog" role="alertdialog">' +
+          '<h3>' + opts.title + '</h3>' +
+          '<p>' + opts.body + '</p>' +
+          '<div class="dialog-actions">' +
+            '<button class="btn-text muted" data-act="cancel">' + (opts.cancelLabel || "취소") + '</button>' +
+            '<button class="btn-text" data-act="ok" style="' + (opts.danger ? "color:var(--danger)" : "") + '">' + (opts.okLabel || "확인") + '</button>' +
+          '</div>' +
+        '</div>'
+      );
+      d.querySelector('[data-act="cancel"]').addEventListener("click", function(){ closeOverlay(); resolve(false); });
+      d.querySelector('[data-act="ok"]').addEventListener("click", function(){ closeOverlay(); resolve(true); });
+      openDialog(d);
+    });
+  }
+
+  function compressImage(file, maxW, quality){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      var reader = new FileReader();
+      reader.onload = function(){ img.src = reader.result; };
+      reader.onerror = reject;
+      img.onload = function(){
+        var scale = Math.min(1, maxW / img.width);
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ================= storage backend ================= */
+  var Store = {
+    backend: null, // "db" | "local"
+    db: null,
+
+    async init(){
+      try{
+        if (window.claude && typeof window.claude.use === "function"){
+          var db = await window.claude.use("db");
+          if (db){ this.db = db; this.backend = "db"; return; }
+        }
+      }catch(e){ /* fall through to local */ }
+      this.backend = "local";
+    },
+
+    _localAll(){
+      try{ return JSON.parse(localStorage.getItem("mylab.gifticon.v1") || "{}"); }
+      catch(e){ return {}; }
+    },
+    _localSave(data){ localStorage.setItem("mylab.gifticon.v1", JSON.stringify(data)); },
+
+    async getSettings(){
+      if (this.backend === "db"){
+        var snap = await this.db.doc("settings/gifticon").get();
+        return snap.exists ? snap.data() : null;
+      }
+      var all = this._localAll();
+      return all.settings || null;
+    },
+    async setSettings(data){
+      if (this.backend === "db"){
+        await this.db.doc("settings/gifticon").set(data);
+        return;
+      }
+      var all = this._localAll();
+      all.settings = data;
+      this._localSave(all);
+    },
+
+    async listVouchers(){
+      if (this.backend === "db"){
+        var snap = await this.db.collection("gifticons").get();
+        return snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+      }
+      var all = this._localAll();
+      return all.vouchers || [];
+    },
+    async addVoucher(data){
+      var id = uid();
+      var doc = Object.assign({ id: id }, data);
+      if (this.backend === "db"){
+        await this.db.collection("gifticons").doc(id).set(data);
+        return doc;
+      }
+      var all = this._localAll();
+      all.vouchers = all.vouchers || [];
+      all.vouchers.push(doc);
+      this._localSave(all);
+      return doc;
+    },
+    async updateVoucher(id, patch){
+      if (this.backend === "db"){
+        await this.db.collection("gifticons").doc(id).update(patch);
+        return;
+      }
+      var all = this._localAll();
+      all.vouchers = (all.vouchers || []).map(function(v){
+        return v.id === id ? Object.assign({}, v, patch) : v;
+      });
+      this._localSave(all);
+    },
+    async deleteVoucher(id){
+      if (this.backend === "db"){
+        await this.db.collection("gifticons").doc(id).delete();
+        return;
+      }
+      var all = this._localAll();
+      all.vouchers = (all.vouchers || []).filter(function(v){ return v.id !== id; });
+      this._localSave(all);
+    }
+  };
+
+  /* ================= app state ================= */
+  var state = {
+    view: "home",
+    unlocked: false,
+    pin: "",
+    vouchers: [],
+    filter: "active",
+    editingId: null,
+    detailId: null,
+    sample: null,
+    sampleImages: false
+  };
+
+  var appbar = document.getElementById("appbar");
+  var content = document.getElementById("content");
+
+  function setAppbar(html){ appbar.innerHTML = html; }
+  function setContent(node){ content.innerHTML = ""; content.appendChild(node); }
+
+  function goHome(){ state.view = "home"; render(); }
+  function goList(){ state.view = "list"; render(); }
+
+  /* ================= HOME ================= */
+  function renderHome(){
+    setAppbar(
+      '<span class="appbar-title" style="padding-left:12px;">나의 실험실</span>'
+    );
+    var wrap = el('<div>' +
+      '<div class="home-hero">' +
+        '<p class="home-eyebrow">Personal R&D</p>' +
+        '<h1 class="home-title">잡다한 실험들</h1>' +
+        '<p class="home-sub">재미로 만들어보는 이것저것. 실험을 하나씩 골라 들어가보세요.</p>' +
+      '</div>' +
+      '<div class="lab-grid" id="lab-grid"></div>' +
+    '</div>');
+    setContent(wrap);
+
+    var grid = wrap.querySelector("#lab-grid");
+    var giftCard = el(
+      '<button class="lab-card" type="button">' +
+        '<div class="lab-icon"><span class="msr">confirmation_number</span></div>' +
+        '<div class="lab-body">' +
+          '<p class="lab-name">기프티콘 저장</p>' +
+          '<p class="lab-desc">사진 한 장으로 기프티콘을 등록하고, 쓸 때 바로 꺼내보는 보관함.</p>' +
+          '<div class="lab-meta">' +
+            '<span class="chip"><span class="msr">' + (state.unlocked ? "lock_open" : "lock") + '</span>' + (state.unlocked ? "잠금 해제됨" : "잠김") + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<span class="msr lab-chevron">chevron_right</span>' +
+      '</button>'
+    );
+    giftCard.addEventListener("click", function(){
+      state.view = state.unlocked ? "list" : "lock";
+      render();
+    });
+    grid.appendChild(giftCard);
+
+    var placeholder = el(
+      '<div class="lab-card placeholder">' +
+        '<div class="lab-icon"><span class="msr">add</span></div>' +
+        '<div class="lab-body">' +
+          '<p class="lab-name">다음 실험 준비 중</p>' +
+          '<p class="lab-desc">생각날 때마다 하나씩 채워질 예정.</p>' +
+        '</div>' +
+      '</div>'
+    );
+    grid.appendChild(placeholder);
+  }
+
+  /* ================= LOCK ================= */
+  function renderLock(){
+    setAppbar(
+      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<span class="appbar-title">기프티콘 저장</span>'
+    );
+    appbar.querySelector("#btn-back").addEventListener("click", goHome);
+
+    state.pin = "";
+    var wrap = el(
+      '<div class="lock-wrap">' +
+        '<div class="lock-icon"><span class="msr">confirmation_number</span></div>' +
+        '<h2 class="lock-title">잠금 해제</h2>' +
+        '<p class="lock-sub">8자리 비밀번호를 입력하세요</p>' +
+        '<div class="pin-dots" id="pin-dots"></div>' +
+        '<p class="pin-error" id="pin-error"></p>' +
+        '<div class="keypad" id="keypad"></div>' +
+      '</div>'
+    );
+    setContent(wrap);
+
+    var dotsBox = wrap.querySelector("#pin-dots");
+    var errorBox = wrap.querySelector("#pin-error");
+    for (var i = 0; i < 8; i++) dotsBox.appendChild(el('<div class="pin-dot"></div>'));
+
+    function renderDots(){
+      var dots = dotsBox.querySelectorAll(".pin-dot");
+      dots.forEach(function(dot, idx){ dot.classList.toggle("filled", idx < state.pin.length); });
+    }
+
+    async function checkPin(){
+      var settings = await ensureSettings();
+      var hash = await sha256Hex(state.pin);
+      if (hash === settings.passwordHash){
+        state.unlocked = true;
+        state.view = "list";
+        render();
+      } else {
+        errorBox.textContent = "비밀번호가 올바르지 않습니다.";
+        dotsBox.classList.add("shake");
+        setTimeout(function(){ dotsBox.classList.remove("shake"); }, 400);
+        state.pin = "";
+        renderDots();
       }
     }
 
-    function pickWeightedFortune(){
-      var roll = Math.random() * 100;
-      var pool;
-      if (roll < RARITY_WEIGHT.legend) pool = FORTUNES.filter(function(f){ return f.rarity === "legend"; });
-      else if (roll < RARITY_WEIGHT.legend + RARITY_WEIGHT.rare) pool = FORTUNES.filter(function(f){ return f.rarity === "rare"; });
-      else pool = FORTUNES.filter(function(f){ return f.rarity === "common"; });
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
+    var keypad = wrap.querySelector("#keypad");
+    var keys = ["1","2","3","4","5","6","7","8","9","","0","back"];
+    keys.forEach(function(k){
+      if (k === ""){ keypad.appendChild(el('<div class="key ghost"></div>')); return; }
+      var label = k === "back" ? '<span class="msr">backspace</span>' : k;
+      var btn = el('<button type="button" class="key">' + label + '</button>');
+      btn.addEventListener("click", function(){
+        errorBox.textContent = "";
+        if (k === "back"){ state.pin = state.pin.slice(0, -1); }
+        else if (state.pin.length < 8){ state.pin += k; }
+        renderDots();
+        if (state.pin.length === 8) checkPin();
+      });
+      keypad.appendChild(btn);
+    });
+  }
 
-    function spawnConfetti(){
-      var layer = document.createElement("div");
-      layer.className = "confetti-layer";
-      document.body.appendChild(layer);
-      var colors = ["#ffc94a", "#e8483a", "#7fc4f0", "#b18cf2", "#6fd6b4"];
-      for (var i = 0; i < 26; i++){
-        var p = document.createElement("div");
-        p.className = "confetti-piece";
-        p.style.left = (Math.random() * 100) + "vw";
-        p.style.background = colors[i % colors.length];
-        p.style.animationDuration = (1.6 + Math.random() * 1.2) + "s";
-        p.style.animationDelay = (Math.random() * 0.3) + "s";
-        layer.appendChild(p);
+  async function ensureSettings(){
+    var s = await Store.getSettings();
+    if (!s){
+      var hash = await sha256Hex("00000000");
+      s = { passwordHash: hash, updatedAt: nowIso() };
+      await Store.setSettings(s);
+    }
+    return s;
+  }
+
+  /* ================= LIST ================= */
+  function ddayInfo(v){
+    if (v.status === "used") return { text: "사용완료", cls: "used" };
+    if (!v.expiryDate) return { text: "기한없음", cls: "none" };
+    var d = daysUntil(v.expiryDate);
+    if (d < 0) return { text: "기한만료", cls: "late" };
+    if (d === 0) return { text: "오늘까지", cls: "late" };
+    if (d <= 7) return { text: "D-" + d, cls: "soon" };
+    return { text: "D-" + d, cls: "ok" };
+  }
+
+  async function renderList(){
+    setAppbar(
+      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<span class="appbar-title">기프티콘 저장</span>' +
+      '<div class="appbar-actions">' +
+        '<button class="icon-btn" id="btn-menu"><span class="msr">more_vert</span></button>' +
+      '</div>'
+    );
+    appbar.querySelector("#btn-back").addEventListener("click", function(){
+      state.unlocked = false;
+      goHome();
+    });
+    appbar.querySelector("#btn-menu").addEventListener("click", openLabMenu);
+
+    var wrap = el(
+      '<div>' +
+        (Store.backend === "local" ? '<div class="storage-banner"><span class="msr">info</span>이 브라우저에만 저장돼요. 다른 기기에서는 보이지 않아요.</div>' : "") +
+        '<div class="filter-row" id="filter-row"></div>' +
+        '<div class="voucher-list" id="voucher-list"></div>' +
+      '</div>'
+    );
+    setContent(wrap);
+
+    var filterRow = wrap.querySelector("#filter-row");
+    [["active","사용가능"],["used","사용완료"],["all","전체"]].forEach(function(pair){
+      var btn = el('<button class="filter-chip' + (state.filter === pair[0] ? " active" : "") + '" type="button">' + pair[1] + '</button>');
+      btn.addEventListener("click", function(){ state.filter = pair[0]; renderList(); });
+      filterRow.appendChild(btn);
+    });
+
+    state.vouchers = await Store.listVouchers();
+    var list = state.vouchers.filter(function(v){
+      if (state.filter === "all") return true;
+      return v.status === state.filter;
+    });
+    list.sort(function(a, b){
+      if (state.filter !== "used"){
+        if (!a.expiryDate && !b.expiryDate) return 0;
+        if (!a.expiryDate) return 1;
+        if (!b.expiryDate) return -1;
+        return a.expiryDate.localeCompare(b.expiryDate);
       }
-      setTimeout(function(){ layer.remove(); }, 3200);
+      return (b.usedAt || "").localeCompare(a.usedAt || "");
+    });
+
+    var listBox = wrap.querySelector("#voucher-list");
+    if (list.length === 0){
+      listBox.appendChild(el(
+        '<div class="empty-state">' +
+          '<span class="msr">confirmation_number</span>' +
+          '<p>' + (state.filter === "used" ? "아직 사용한 기프티콘이 없어요." : "아직 등록된 기프티콘이 없어요.<br>사진 한 장으로 등록해보세요.") + '</p>' +
+        '</div>'
+      ));
+    } else {
+      list.forEach(function(v){
+        var dd = ddayInfo(v);
+        var initial = (v.brand || v.productName || "?").trim().charAt(0);
+        var row = el(
+          '<button class="voucher-row' + (v.status === "used" ? " is-used" : "") + '" type="button">' +
+            '<div class="voucher-avatar">' + initial + '</div>' +
+            '<div class="voucher-info">' +
+              '<p class="voucher-brand">' + escapeHtml(v.brand || "기프티콘") + '</p>' +
+              '<p class="voucher-name">' + escapeHtml(v.productName) + '</p>' +
+            '</div>' +
+            '<span class="dday ' + dd.cls + '">' + dd.text + '</span>' +
+          '</button>'
+        );
+        row.addEventListener("click", function(){
+          state.detailId = v.id;
+          state.view = "detail";
+          render();
+        });
+        listBox.appendChild(row);
+      });
     }
 
-    function pull(){
-      pullBtn.disabled = true;
+    var fab = el('<button class="fab" id="fab-add" aria-label="기프티콘 추가"><span class="msr">add</span></button>');
+    fab.addEventListener("click", function(){
+      state.editingId = null;
+      state.view = "form";
+      render();
+    });
+    content.appendChild(fab);
+  }
 
-      var colors = CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)];
-      var capsule = document.createElement("div");
-      capsule.className = "falling-capsule";
-      capsule.style.background = "linear-gradient(160deg," + colors[0] + "," + colors[1] + ")";
-      dropLayer.innerHTML = "";
-      dropLayer.appendChild(capsule);
+  function openLabMenu(){
+    var d = el(
+      '<div class="dialog">' +
+        '<h3>기프티콘 저장</h3>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">' +
+          '<button class="btn-tonal" id="menu-pw" style="justify-content:flex-start;">' +
+            '<span class="msr" style="font-size:18px;">password</span> 비밀번호 변경' +
+          '</button>' +
+        '</div>' +
+        '<div class="dialog-actions"><button class="btn-text muted" id="menu-close">닫기</button></div>' +
+      '</div>'
+    );
+    d.querySelector("#menu-close").addEventListener("click", closeOverlay);
+    d.querySelector("#menu-pw").addEventListener("click", function(){
+      closeOverlay();
+      openChangePassword();
+    });
+    openDialog(d);
+  }
 
-      var fortune = pickWeightedFortune();
+  function openChangePassword(){
+    var d = el(
+      '<div class="dialog">' +
+        '<h3>비밀번호 변경</h3>' +
+        '<p>현재 비밀번호와 새 비밀번호(8자리 숫자)를 입력하세요.</p>' +
+        '<div class="pw-inputs">' +
+          '<input type="password" inputmode="numeric" maxlength="8" placeholder="현재 비밀번호" id="pw-cur">' +
+          '<input type="password" inputmode="numeric" maxlength="8" placeholder="새 비밀번호 (숫자 8자리)" id="pw-new">' +
+          '<input type="password" inputmode="numeric" maxlength="8" placeholder="새 비밀번호 확인" id="pw-new2">' +
+        '</div>' +
+        '<p class="pw-error" id="pw-err" style="display:none;"></p>' +
+        '<div class="dialog-actions">' +
+          '<button class="btn-text muted" id="pw-cancel">취소</button>' +
+          '<button class="btn-text" id="pw-save">변경하기</button>' +
+        '</div>' +
+      '</div>'
+    );
+    d.querySelector("#pw-cancel").addEventListener("click", closeOverlay);
+    d.querySelector("#pw-save").addEventListener("click", async function(){
+      var cur = d.querySelector("#pw-cur").value;
+      var n1 = d.querySelector("#pw-new").value;
+      var n2 = d.querySelector("#pw-new2").value;
+      var errBox = d.querySelector("#pw-err");
+      var settings = await ensureSettings();
+      var curHash = await sha256Hex(cur);
+      if (curHash !== settings.passwordHash){
+        errBox.textContent = "현재 비밀번호가 올바르지 않습니다.";
+        errBox.style.display = "block";
+        return;
+      }
+      if (!/^[0-9]{8}$/.test(n1)){
+        errBox.textContent = "새 비밀번호는 숫자 8자리여야 합니다.";
+        errBox.style.display = "block";
+        return;
+      }
+      if (n1 !== n2){
+        errBox.textContent = "새 비밀번호가 서로 일치하지 않습니다.";
+        errBox.style.display = "block";
+        return;
+      }
+      var newHash = await sha256Hex(n1);
+      await Store.setSettings({ passwordHash: newHash, updatedAt: nowIso() });
+      closeOverlay();
+      toast("비밀번호를 변경했어요.");
+    });
+    openDialog(d);
+  }
 
-      setTimeout(function(){
-        rarityTag.className = "rarity " + fortune.rarity;
-        rarityTag.textContent = RARITY_LABEL[fortune.rarity];
-        resultIcon.textContent = fortune.icon;
-        resultText.textContent = fortune.text;
-        resultSub.textContent = fortune.sub;
-        result.classList.remove("show");
-        void result.offsetWidth;
-        result.classList.add("show");
+  /* ================= FORM (add / edit) ================= */
+  function renderForm(){
+    var editing = state.editingId ? state.vouchers.find(function(v){ return v.id === state.editingId; }) : null;
 
-        if (fortune.rarity === "legend") spawnConfetti();
+    setAppbar(
+      '<button class="icon-btn" id="btn-close"><span class="msr">close</span></button>' +
+      '<span class="appbar-title">' + (editing ? "기프티콘 수정" : "기프티콘 추가") + '</span>'
+    );
+    appbar.querySelector("#btn-close").addEventListener("click", function(){
+      state.view = editing ? "detail" : "list";
+      render();
+    });
 
-        pullBtn.disabled = false;
-        pullBtn.textContent = "다시 당기기";
-      }, 620);
+    var wrap = el(
+      '<div>' +
+        '<label class="photo-drop" id="photo-drop">' +
+          (editing && editing.photoThumb
+            ? '<img src="' + editing.photoThumb + '" alt="">'
+            : '<span class="msr">photo_camera</span><span>기프티콘 사진 추가 (선택)</span>') +
+          '<input type="file" accept="image/*" id="photo-input">' +
+        '</label>' +
+        '<div class="ai-fill-row" id="ai-fill-row"></div>' +
+        '<div class="field">' +
+          '<label><span class="msr">storefront</span>브랜드 / 매장</label>' +
+          '<input type="text" id="f-brand" placeholder="예: 스타벅스" value="' + escapeHtml(editing ? (editing.brand || "") : "") + '">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label><span class="msr">local_mall</span>상품명 <span class="req">*</span></label>' +
+          '<input type="text" id="f-name" placeholder="예: 아이스 아메리카노 Tall" value="' + escapeHtml(editing ? editing.productName : "") + '">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label><span class="msr">sell</span>바코드 번호 <span class="req">*</span></label>' +
+          '<input type="text" inputmode="numeric" id="f-barcode" placeholder="숫자를 입력하세요" value="' + escapeHtml(editing ? editing.barcodeNumber : "") + '">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label><span class="msr">event</span>유효기간</label>' +
+          '<input type="date" id="f-expiry" value="' + (editing && editing.expiryDate ? editing.expiryDate : "") + '">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label><span class="msr">notes</span>메모</label>' +
+          '<textarea id="f-memo" placeholder="선택 사항">' + escapeHtml(editing ? (editing.memo || "") : "") + '</textarea>' +
+        '</div>' +
+        '<button class="btn-filled" id="f-save" disabled>저장하기</button>' +
+      '</div>'
+    );
+    setContent(wrap);
+
+    var photoThumb = editing ? (editing.photoThumb || null) : null;
+    var photoDrop = wrap.querySelector("#photo-drop");
+    var photoInput = wrap.querySelector("#photo-input");
+    var nameInput = wrap.querySelector("#f-name");
+    var barcodeInput = wrap.querySelector("#f-barcode");
+    var saveBtn = wrap.querySelector("#f-save");
+
+    function validate(){
+      saveBtn.disabled = !(nameInput.value.trim() && barcodeInput.value.trim());
+    }
+    nameInput.addEventListener("input", validate);
+    barcodeInput.addEventListener("input", function(){
+      barcodeInput.value = barcodeInput.value.replace(/[^A-Za-z0-9\-]/g, "");
+      validate();
+    });
+    validate();
+
+    var pendingFile = null;
+    async function onPhotoChange(){
+      var input = wrap.querySelector("#photo-input");
+      var file = input.files[0];
+      if (!file) return;
+      pendingFile = file;
+      var dataUrl = await compressImage(file, 480, 0.55);
+      photoThumb = dataUrl;
+      photoDrop.innerHTML = '<img src="' + dataUrl + '" alt="">' +
+        '<input type="file" accept="image/*" id="photo-input">';
+      wrap.querySelector("#photo-input").addEventListener("change", onPhotoChange);
+      renderAiButton();
+    }
+    photoInput.addEventListener("change", onPhotoChange);
+
+    function renderAiButton(){
+      var row = wrap.querySelector("#ai-fill-row");
+      row.innerHTML = "";
+      if (!pendingFile || !state.sampleImages) return;
+      var btn = el('<button type="button" class="btn-ai"><span class="msr">auto_awesome</span>사진에서 정보 자동으로 읽기</button>');
+      btn.addEventListener("click", async function(){
+        btn.disabled = true;
+        btn.innerHTML = '<span class="msr spin">progress_activity</span>읽는 중...';
+        try{
+          var prompt = "이 이미지는 모바일 기프티콘(모바일 교환권) 화면 캡처입니다. " +
+            "바코드 번호(숫자/문자, 하이픈 제외), 브랜드 또는 매장명, 상품명, 유효기간을 읽어줘. " +
+            "유효기간은 YYYY-MM-DD 형식으로, 알 수 없으면 null로 표시해. " +
+            "다른 설명 없이 다음 JSON 형식으로만 답해: " +
+            '{"brand": string|null, "productName": string|null, "barcodeNumber": string|null, "expiryDate": string|null}';
+          var result = await state.sample.json(prompt, { images: pendingFile, modelTier: "quick" });
+          if (result && typeof result === "object"){
+            var brandEl = wrap.querySelector("#f-brand");
+            var expiryEl = wrap.querySelector("#f-expiry");
+            if (result.brand && !brandEl.value.trim()) brandEl.value = result.brand;
+            if (result.productName && !nameInput.value.trim()) nameInput.value = result.productName;
+            if (result.barcodeNumber && !barcodeInput.value.trim()) barcodeInput.value = String(result.barcodeNumber).replace(/[^A-Za-z0-9\-]/g, "");
+            if (result.expiryDate && /^\d{4}-\d{2}-\d{2}$/.test(result.expiryDate) && !expiryEl.value) expiryEl.value = result.expiryDate;
+            validate();
+            toast("사진에서 정보를 읽어왔어요. 확인 후 저장하세요.");
+          }
+        }catch(e){
+          toast(e && e.code === "not_granted" ? "자동 읽기를 사용하려면 허용이 필요해요." : "자동으로 읽지 못했어요. 직접 입력해주세요.");
+        }
+        row.innerHTML = "";
+        renderAiButton();
+      });
+      row.appendChild(btn);
+    }
+    renderAiButton();
+
+    saveBtn.addEventListener("click", async function(){
+      var data = {
+        brand: wrap.querySelector("#f-brand").value.trim(),
+        productName: nameInput.value.trim(),
+        barcodeNumber: barcodeInput.value.trim(),
+        expiryDate: wrap.querySelector("#f-expiry").value || null,
+        memo: wrap.querySelector("#f-memo").value.trim(),
+        photoThumb: photoThumb || null
+      };
+      saveBtn.disabled = true;
+      saveBtn.textContent = "저장 중...";
+      try{
+        if (editing){
+          await Store.updateVoucher(editing.id, data);
+          toast("수정했어요.");
+          state.detailId = editing.id;
+          state.view = "detail";
+        } else {
+          data.status = "active";
+          data.usedAt = null;
+          data.createdAt = nowIso();
+          var created = await Store.addVoucher(data);
+          toast("기프티콘을 등록했어요.");
+          state.detailId = created.id;
+          state.view = "detail";
+        }
+        render();
+      }catch(e){
+        toast("저장하지 못했어요. 다시 시도해주세요.");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "저장하기";
+      }
+    });
+  }
+
+  /* ================= DETAIL ================= */
+  function drawBarcode(svg, value){
+    try{
+      JsBarcode(svg, value, {
+        format: "CODE128",
+        displayValue: false,
+        background: "transparent",
+        lineColor: "#1C1A22",
+        width: 2.1,
+        height: 64,
+        margin: 0
+      });
+      return true;
+    }catch(e){ return false; }
+  }
+
+  async function renderDetail(){
+    var v = state.vouchers.find(function(x){ return x.id === state.detailId; });
+    if (!v){ state.view = "list"; render(); return; }
+
+    setAppbar(
+      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<span class="appbar-title">' + escapeHtml(v.brand || "기프티콘") + '</span>' +
+      '<div class="appbar-actions">' +
+        '<button class="icon-btn" id="btn-edit"><span class="msr">edit</span></button>' +
+        '<button class="icon-btn danger-ink" id="btn-delete"><span class="msr">delete</span></button>' +
+      '</div>'
+    );
+    appbar.querySelector("#btn-back").addEventListener("click", goList);
+    appbar.querySelector("#btn-edit").addEventListener("click", function(){
+      state.editingId = v.id;
+      state.view = "form";
+      render();
+    });
+    appbar.querySelector("#btn-delete").addEventListener("click", async function(){
+      var ok = await confirmDialog({
+        title: "삭제할까요?",
+        body: "이 기프티콘 정보를 삭제하면 되돌릴 수 없어요.",
+        okLabel: "삭제", danger: true
+      });
+      if (!ok) return;
+      await Store.deleteVoucher(v.id);
+      toast("삭제했어요.");
+      goList();
+    });
+
+    var wrap = el('<div></div>');
+
+    if (v.status === "used"){
+      wrap.appendChild(el(
+        '<div class="used-banner">' +
+          '<span class="msr">check_circle</span>' +
+          '<div class="used-banner-text">' +
+            '<p class="used-banner-title">사용 완료</p>' +
+            '<p class="used-banner-date">' + fmtDate(v.usedAt) + '에 사용함</p>' +
+          '</div>' +
+        '</div>'
+      ));
     }
 
-    pullBtn.addEventListener("click", pull);
-    seedPile();
+    var ticket = el(
+      '<div class="ticket">' +
+        '<p class="ticket-brand">' + escapeHtml(v.brand || "기프티콘") + '</p>' +
+        '<h2 class="ticket-name">' + escapeHtml(v.productName) + '</h2>' +
+        '<div class="ticket-divider"></div>' +
+        '<div class="barcode-box" id="barcode-box">' +
+          '<svg id="barcode-svg"></svg>' +
+        '</div>' +
+        '<div class="ticket-meta">' +
+          (v.expiryDate ? (
+            '<div class="meta-row"><span class="msr">event</span><div class="meta-row-text"><p class="meta-label">유효기간</p><p class="meta-value">' + fmtDate(v.expiryDate) + '까지</p></div></div>'
+          ) : "") +
+          (v.memo ? (
+            '<div class="meta-row"><span class="msr">notes</span><div class="meta-row-text"><p class="meta-label">메모</p><p class="meta-value">' + escapeHtml(v.memo) + '</p></div></div>'
+          ) : "") +
+          '<div class="meta-row"><span class="msr">schedule</span><div class="meta-row-text"><p class="meta-label">등록일</p><p class="meta-value">' + fmtDate(v.createdAt) + '</p></div></div>' +
+        '</div>' +
+      '</div>'
+    );
+    wrap.appendChild(ticket);
+
+    setContent(wrap);
+
+    var svg = ticket.querySelector("#barcode-svg");
+    var ok = typeof JsBarcode !== "undefined" && drawBarcode(svg, v.barcodeNumber);
+    var box = ticket.querySelector("#barcode-box");
+    if (!ok){
+      box.innerHTML = '<p class="barcode-fallback">바코드를 표시할 수 없어요</p>';
+    }
+    box.appendChild(el('<p class="barcode-num">' + escapeHtml(v.barcodeNumber) + '</p>'));
+
+    if (v.photoThumb){
+      var photoBtn = el('<button type="button" class="photo-link"><span class="msr">image</span>원본 사진 보기</button>');
+      photoBtn.addEventListener("click", function(){
+        var d = el('<div class="dialog" style="max-width:380px;">' +
+          '<img class="dialog-photo" src="' + v.photoThumb + '" alt="기프티콘 원본 사진">' +
+          '<div class="dialog-actions"><button class="btn-text" id="photo-close">닫기</button></div>' +
+        '</div>');
+        d.querySelector("#photo-close").addEventListener("click", closeOverlay);
+        openDialog(d);
+      });
+      content.appendChild(photoBtn);
+    }
+
+    if (v.status === "active"){
+      var useBtn = el('<button class="btn-filled success" id="btn-use"><span class="msr">check_circle</span>사용 완료로 표시</button>');
+      useBtn.addEventListener("click", async function(){
+        var ok2 = await confirmDialog({
+          title: "사용 완료로 표시할까요?",
+          body: "오늘 날짜로 사용 기록이 저장돼요."
+        });
+        if (!ok2) return;
+        await Store.updateVoucher(v.id, { status: "used", usedAt: nowIso() });
+        toast("사용 완료로 표시했어요.");
+        render();
+      });
+      content.appendChild(useBtn);
+    } else {
+      var undoBtn = el('<button class="btn-text muted" style="display:block;margin:0 auto;">사용 취소하고 되돌리기</button>');
+      undoBtn.addEventListener("click", async function(){
+        var ok3 = await confirmDialog({ title: "사용 취소할까요?", body: "다시 사용 가능한 상태로 되돌립니다." });
+        if (!ok3) return;
+        await Store.updateVoucher(v.id, { status: "active", usedAt: null });
+        toast("사용 가능 상태로 되돌렸어요.");
+        render();
+      });
+      content.appendChild(undoBtn);
+    }
+  }
+
+  /* ================= router ================= */
+  async function render(){
+    closeOverlay();
+    if (state.view === "home") renderHome();
+    else if (state.view === "lock") renderLock();
+    else if (state.view === "list") await renderList();
+    else if (state.view === "form") renderForm();
+    else if (state.view === "detail") await renderDetail();
+    window.scrollTo(0, 0);
+  }
+
+  /* ================= boot ================= */
+  (async function boot(){
+    await Store.init();
+    try{
+      if (window.claude && typeof window.claude.use === "function"){
+        var sample = await window.claude.use("sample");
+        if (sample){
+          state.sample = sample;
+          var limits = await sample.limits().catch(function(){ return null; });
+          state.sampleImages = !!(limits && limits.images);
+        }
+      }
+    }catch(e){ /* sample unavailable */ }
+    render();
   })();
+})();
 </script>
