@@ -1,6 +1,6 @@
 <title>나의 실험실</title>
 <meta name="description" content="이것저것 잡다한 실험을 모아두는 개인 실험실 허브. 첫 실험은 비밀번호로 잠긴 기프티콘 저장소.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
 <style>
   :root{
@@ -123,14 +123,11 @@
 
   button{ font-family: inherit; }
 
-  .msr{
-    font-family: "Material Symbols Rounded";
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    display: inline-block;
-    user-select: none;
+  .icon{
+    width: 24px;
+    height: 24px;
+    display: block;
+    flex-shrink: 0;
   }
 
   /* ---------- app bar ---------- */
@@ -259,7 +256,7 @@
     background: var(--surface-alt-2);
     color: var(--text-muted);
   }
-  .chip .msr{ font-size: 14px; }
+  .chip .icon{ width: 14px; height: 14px; }
   .lab-chevron{ color: var(--text-muted); flex-shrink: 0; }
 
   .lab-card.placeholder{
@@ -289,7 +286,7 @@
     justify-content: center;
     margin-bottom: 18px;
   }
-  .lock-icon .msr{ font-size: 32px; }
+  .lock-icon .icon{ width: 32px; height: 32px; }
   .lock-title{ font-size: 19px; font-weight: 700; margin: 0 0 4px; }
   .lock-sub{ font-size: 13px; color: var(--text-muted); margin: 0 0 26px; text-align: center; }
 
@@ -422,7 +419,7 @@
     padding: 56px 16px 24px;
     color: var(--text-muted);
   }
-  .empty-state .msr{ font-size: 40px; margin-bottom: 12px; opacity: 0.6; }
+  .empty-state .icon{ width: 40px; height: 40px; margin-bottom: 12px; opacity: 0.6; }
   .empty-state p{ margin: 0 0 20px; font-size: 14px; line-height: 1.6; }
 
   /* ---------- buttons ---------- */
@@ -487,7 +484,7 @@
   }
   .fab:hover{ transform: translateY(-2px); }
   .fab:active{ transform: translateY(0) scale(0.96); }
-  .fab .msr{ font-size: 28px; }
+  .fab .icon{ width: 28px; height: 28px; }
 
   /* ---------- form ---------- */
   .photo-drop{
@@ -505,30 +502,39 @@
     position: relative;
   }
   .photo-drop img{ width: 100%; height: 100%; object-fit: cover; }
-  .photo-drop .msr{ font-size: 30px; }
+  .photo-drop .icon{ width: 30px; height: 30px; }
   .photo-drop span{ font-size: 13px; font-weight: 600; }
   .photo-drop input[type=file]{ display: none; }
 
-  .ai-fill-row{
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 20px;
+  .photo-ocr{ margin-bottom: 20px; }
+  .photo-ocr-caption{
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-muted); font-weight: 600;
+    margin: 0 0 8px;
   }
-  .btn-ai{
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--accent-container);
-    color: var(--on-accent-container);
-    border: none;
-    border-radius: 999px;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
+  .photo-ocr-caption .icon{ width: 15px; height: 15px; }
+
+  .ocr-row{
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--text-muted);
+    margin-top: 10px;
   }
-  .btn-ai:disabled{ opacity: 0.5; cursor: default; }
-  .btn-ai .msr{ font-size: 17px; }
-  .spin{ animation: spin 0.9s linear infinite; }
+  .ocr-row .icon{ width: 18px; height: 18px; }
+  .ocr-row.ok{ color: var(--success); }
+  .ocr-row.err{ color: var(--danger); }
+  .ocr-row .btn-text{ margin-left: auto; padding: 0; flex-shrink: 0; }
+
+  .spinner{
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    display: inline-block;
+    flex-shrink: 0;
+    animation: spin 0.7s linear infinite;
+  }
   @keyframes spin{ to{ transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce){ .spin{ animation: none; } }
+  @media (prefers-reduced-motion: reduce){ .spinner{ animation: none; } }
 
   .field{ margin-bottom: 16px; }
   .field label{
@@ -536,7 +542,7 @@
     font-size: 12.5px; font-weight: 700; color: var(--text-muted);
     margin-bottom: 6px;
   }
-  .field label .msr{ font-size: 15px; }
+  .field label .icon{ width: 15px; height: 15px; }
   .field input, .field textarea{
     width: 100%;
     background: var(--surface-alt);
@@ -606,7 +612,7 @@
 
   .ticket-meta{ display: flex; flex-direction: column; gap: 12px; }
   .meta-row{ display: flex; align-items: center; gap: 10px; }
-  .meta-row .msr{ font-size: 19px; color: var(--text-muted); }
+  .meta-row .icon{ width: 19px; height: 19px; color: var(--text-muted); }
   .meta-row-text{ flex: 1; }
   .meta-label{ font-size: 11px; color: var(--text-muted); font-weight: 600; margin: 0; }
   .meta-value{ font-size: 14px; font-weight: 600; margin: 2px 0 0; }
@@ -618,25 +624,10 @@
     padding: 14px 16px;
     margin-bottom: 14px;
   }
-  .used-banner .msr{ font-size: 26px; color: var(--success); }
+  .used-banner .icon{ width: 26px; height: 26px; color: var(--success); }
   .used-banner-text p{ margin: 0; }
   .used-banner-title{ font-weight: 700; font-size: 14.5px; }
   .used-banner-date{ font-size: 12.5px; color: var(--text-muted); margin-top: 2px !important; }
-
-  .photo-link{
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    width: 100%;
-    background: transparent;
-    border: 1px solid var(--outline);
-    color: var(--text-muted);
-    border-radius: 14px;
-    padding: 11px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 22px;
-  }
-  .photo-link .msr{ font-size: 17px; }
 
   /* ---------- dialog ---------- */
   .dialog-scrim{
@@ -659,7 +650,6 @@
   .dialog h3{ margin: 0 0 10px; font-size: 18px; font-weight: 800; }
   .dialog p{ margin: 0 0 22px; font-size: 14px; color: var(--text-muted); line-height: 1.6; }
   .dialog-actions{ display: flex; justify-content: flex-end; gap: 6px; }
-  .dialog-photo{ width: 100%; border-radius: 16px; margin-bottom: 16px; display: block; }
 
   .pw-inputs{ display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
   .pw-inputs input{
@@ -708,7 +698,7 @@
     font-weight: 600;
     margin-bottom: 18px;
   }
-  .storage-banner .msr{ font-size: 17px; }
+  .storage-banner .icon{ width: 17px; height: 17px; }
 
   [hidden]{ display: none !important; }
 </style>
@@ -755,6 +745,38 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return ESCAPE_MAP[c]; });
   }
 
+  /* Inline SVG icons — no web-font dependency, so nothing breaks or overlaps
+     on a slow/blocked connection (unlike ligature icon fonts). */
+  var ICONS = {
+    arrow_back: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 5 4 12 11 19"/>',
+    close: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+    add: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    edit: '<path d="M14.5 5.5l4 4L7 21H3v-4L14.5 5.5z"/><line x1="13" y1="7" x2="17" y2="11"/>',
+    delete: '<polyline points="4 7 20 7"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
+    more_vert: '<circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/>',
+    backspace: '<path d="M9 6h11v12H9l-6-6 6-6z"/><line x1="12.5" y1="9.5" x2="17.5" y2="14.5"/><line x1="17.5" y1="9.5" x2="12.5" y2="14.5"/>',
+    check_circle: '<circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/>',
+    confirmation_number: '<rect x="3" y="7" width="18" height="10" rx="2"/><line x1="9" y1="7.5" x2="9" y2="16.5" stroke-dasharray="2.2 2.2"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    lock_open: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.4-2.4"/>',
+    chevron_right: '<polyline points="9 5 16 12 9 19"/>',
+    photo_camera: '<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/>',
+    storefront: '<path d="M4 9l1-4h14l1 4"/><path d="M4 9v10h16V9"/><path d="M9 19v-5h6v5"/>',
+    local_mall: '<path d="M7 8h10l1 12H6L7 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    barcode: '<rect x="4" y="5" width="2" height="14" fill="currentColor" stroke="none"/><rect x="8" y="5" width="1" height="14" fill="currentColor" stroke="none"/><rect x="11" y="5" width="3" height="14" fill="currentColor" stroke="none"/><rect x="16" y="5" width="1" height="14" fill="currentColor" stroke="none"/><rect x="19" y="5" width="2" height="14" fill="currentColor" stroke="none"/>',
+    event: '<rect x="4" y="6" width="16" height="14" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="4" x2="8" y2="8"/><line x1="16" y1="4" x2="16" y2="8"/>',
+    notes: '<line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="13" y2="17"/>',
+    schedule: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>',
+    info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/>',
+    error: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.4" r="1" fill="currentColor" stroke="none"/>',
+    visibility: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    password: '<circle cx="8" cy="12" r="3.5"/><line x1="11.3" y1="12" x2="20" y2="12"/><line x1="16" y1="12" x2="16" y2="16"/><line x1="19" y1="12" x2="19" y2="15"/>'
+  };
+  function icon(name, cls){
+    return '<svg class="icon' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      (ICONS[name] || "") + "</svg>";
+  }
+
   var toastTimer = null;
   function toast(msg){
     var t = document.getElementById("toast");
@@ -789,26 +811,6 @@
       d.querySelector('[data-act="cancel"]').addEventListener("click", function(){ closeOverlay(); resolve(false); });
       d.querySelector('[data-act="ok"]').addEventListener("click", function(){ closeOverlay(); resolve(true); });
       openDialog(d);
-    });
-  }
-
-  function compressImage(file, maxW, quality){
-    return new Promise(function(resolve, reject){
-      var img = new Image();
-      var reader = new FileReader();
-      reader.onload = function(){ img.src = reader.result; };
-      reader.onerror = reject;
-      img.onload = function(){
-        var scale = Math.min(1, maxW / img.width);
-        var w = Math.round(img.width * scale);
-        var h = Math.round(img.height * scale);
-        var canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.onerror = reject;
-      reader.readAsDataURL(file);
     });
   }
 
@@ -934,15 +936,15 @@
     var grid = wrap.querySelector("#lab-grid");
     var giftCard = el(
       '<button class="lab-card" type="button">' +
-        '<div class="lab-icon"><span class="msr">confirmation_number</span></div>' +
+        '<div class="lab-icon">' + icon("confirmation_number") + '</div>' +
         '<div class="lab-body">' +
           '<p class="lab-name">기프티콘 저장</p>' +
           '<p class="lab-desc">사진 한 장으로 기프티콘을 등록하고, 쓸 때 바로 꺼내보는 보관함.</p>' +
           '<div class="lab-meta">' +
-            '<span class="chip"><span class="msr">' + (state.unlocked ? "lock_open" : "lock") + '</span>' + (state.unlocked ? "잠금 해제됨" : "잠김") + '</span>' +
+            '<span class="chip">' + icon(state.unlocked ? "lock_open" : "lock") + (state.unlocked ? "잠금 해제됨" : "잠김") + '</span>' +
           '</div>' +
         '</div>' +
-        '<span class="msr lab-chevron">chevron_right</span>' +
+        icon("chevron_right", "lab-chevron") +
       '</button>'
     );
     giftCard.addEventListener("click", function(){
@@ -953,7 +955,7 @@
 
     var placeholder = el(
       '<div class="lab-card placeholder">' +
-        '<div class="lab-icon"><span class="msr">add</span></div>' +
+        '<div class="lab-icon">' + icon("add") + '</div>' +
         '<div class="lab-body">' +
           '<p class="lab-name">다음 실험 준비 중</p>' +
           '<p class="lab-desc">생각날 때마다 하나씩 채워질 예정.</p>' +
@@ -966,7 +968,7 @@
   /* ================= LOCK ================= */
   function renderLock(){
     setAppbar(
-      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<button class="icon-btn" id="btn-back">' + icon("arrow_back") + '</button>' +
       '<span class="appbar-title">기프티콘 저장</span>'
     );
     appbar.querySelector("#btn-back").addEventListener("click", goHome);
@@ -974,7 +976,7 @@
     state.pin = "";
     var wrap = el(
       '<div class="lock-wrap">' +
-        '<div class="lock-icon"><span class="msr">confirmation_number</span></div>' +
+        '<div class="lock-icon">' + icon("confirmation_number") + '</div>' +
         '<h2 class="lock-title">잠금 해제</h2>' +
         '<p class="lock-sub">8자리 비밀번호를 입력하세요</p>' +
         '<div class="pin-dots" id="pin-dots"></div>' +
@@ -1013,7 +1015,7 @@
     var keys = ["1","2","3","4","5","6","7","8","9","","0","back"];
     keys.forEach(function(k){
       if (k === ""){ keypad.appendChild(el('<div class="key ghost"></div>')); return; }
-      var label = k === "back" ? '<span class="msr">backspace</span>' : k;
+      var label = k === "back" ? icon("backspace") : k;
       var btn = el('<button type="button" class="key">' + label + '</button>');
       btn.addEventListener("click", function(){
         errorBox.textContent = "";
@@ -1049,10 +1051,10 @@
 
   async function renderList(){
     setAppbar(
-      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<button class="icon-btn" id="btn-back">' + icon("arrow_back") + '</button>' +
       '<span class="appbar-title">기프티콘 저장</span>' +
       '<div class="appbar-actions">' +
-        '<button class="icon-btn" id="btn-menu"><span class="msr">more_vert</span></button>' +
+        '<button class="icon-btn" id="btn-menu">' + icon("more_vert") + '</button>' +
       '</div>'
     );
     appbar.querySelector("#btn-back").addEventListener("click", function(){
@@ -1063,7 +1065,7 @@
 
     var wrap = el(
       '<div>' +
-        (Store.backend === "local" ? '<div class="storage-banner"><span class="msr">info</span>이 브라우저에만 저장돼요. 다른 기기에서는 보이지 않아요.</div>' : "") +
+        (Store.backend === "local" ? '<div class="storage-banner">' + icon("info") + '이 브라우저에만 저장돼요. 다른 기기에서는 보이지 않아요.</div>' : "") +
         '<div class="filter-row" id="filter-row"></div>' +
         '<div class="voucher-list" id="voucher-list"></div>' +
       '</div>'
@@ -1096,7 +1098,7 @@
     if (list.length === 0){
       listBox.appendChild(el(
         '<div class="empty-state">' +
-          '<span class="msr">confirmation_number</span>' +
+          icon("confirmation_number") +
           '<p>' + (state.filter === "used" ? "아직 사용한 기프티콘이 없어요." : "아직 등록된 기프티콘이 없어요.<br>사진 한 장으로 등록해보세요.") + '</p>' +
         '</div>'
       ));
@@ -1123,7 +1125,7 @@
       });
     }
 
-    var fab = el('<button class="fab" id="fab-add" aria-label="기프티콘 추가"><span class="msr">add</span></button>');
+    var fab = el('<button class="fab" id="fab-add" aria-label="기프티콘 추가">' + icon("add") + '</button>');
     fab.addEventListener("click", function(){
       state.editingId = null;
       state.view = "form";
@@ -1138,7 +1140,7 @@
         '<h3>기프티콘 저장</h3>' +
         '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">' +
           '<button class="btn-tonal" id="menu-pw" style="justify-content:flex-start;">' +
-            '<span class="msr" style="font-size:18px;">password</span> 비밀번호 변경' +
+            icon("password") + ' 비밀번호 변경' +
           '</button>' +
         '</div>' +
         '<div class="dialog-actions"><button class="btn-text muted" id="menu-close">닫기</button></div>' +
@@ -1205,7 +1207,7 @@
     var editing = state.editingId ? state.vouchers.find(function(v){ return v.id === state.editingId; }) : null;
 
     setAppbar(
-      '<button class="icon-btn" id="btn-close"><span class="msr">close</span></button>' +
+      '<button class="icon-btn" id="btn-close">' + icon("close") + '</button>' +
       '<span class="appbar-title">' + (editing ? "기프티콘 수정" : "기프티콘 추가") + '</span>'
     );
     appbar.querySelector("#btn-close").addEventListener("click", function(){
@@ -1215,31 +1217,36 @@
 
     var wrap = el(
       '<div>' +
-        '<label class="photo-drop" id="photo-drop">' +
-          (editing && editing.photoThumb
-            ? '<img src="' + editing.photoThumb + '" alt="">'
-            : '<span class="msr">photo_camera</span><span>기프티콘 사진 추가 (선택)</span>') +
-          '<input type="file" accept="image/*" id="photo-input">' +
-        '</label>' +
-        '<div class="ai-fill-row" id="ai-fill-row"></div>' +
+        (state.sampleImages ? (
+          '<div class="photo-ocr">' +
+            '<p class="photo-ocr-caption">' + icon("visibility") + '사진은 저장하지 않고, 정보를 읽는 데만 사용해요</p>' +
+            '<label class="photo-drop" id="photo-drop">' +
+              '<div id="photo-drop-content">' + icon("photo_camera") + '<span>기프티콘 사진으로 자동 입력</span></div>' +
+              '<input type="file" accept="image/*" capture="environment" id="photo-input">' +
+            '</label>' +
+            '<div id="ocr-status"></div>' +
+          '</div>'
+        ) : (
+          '<p class="field-hint" style="margin-bottom:18px;">이 환경에서는 사진 자동 인식을 사용할 수 없어요. 아래 정보를 직접 입력해주세요.</p>'
+        )) +
         '<div class="field">' +
-          '<label><span class="msr">storefront</span>브랜드 / 매장</label>' +
+          '<label>' + icon("storefront") + '브랜드 / 매장</label>' +
           '<input type="text" id="f-brand" placeholder="예: 스타벅스" value="' + escapeHtml(editing ? (editing.brand || "") : "") + '">' +
         '</div>' +
         '<div class="field">' +
-          '<label><span class="msr">local_mall</span>상품명 <span class="req">*</span></label>' +
+          '<label>' + icon("local_mall") + '상품명 <span class="req">*</span></label>' +
           '<input type="text" id="f-name" placeholder="예: 아이스 아메리카노 Tall" value="' + escapeHtml(editing ? editing.productName : "") + '">' +
         '</div>' +
         '<div class="field">' +
-          '<label><span class="msr">sell</span>바코드 번호 <span class="req">*</span></label>' +
+          '<label>' + icon("barcode") + '바코드 번호 <span class="req">*</span></label>' +
           '<input type="text" inputmode="numeric" id="f-barcode" placeholder="숫자를 입력하세요" value="' + escapeHtml(editing ? editing.barcodeNumber : "") + '">' +
         '</div>' +
         '<div class="field">' +
-          '<label><span class="msr">event</span>유효기간</label>' +
+          '<label>' + icon("event") + '유효기간</label>' +
           '<input type="date" id="f-expiry" value="' + (editing && editing.expiryDate ? editing.expiryDate : "") + '">' +
         '</div>' +
         '<div class="field">' +
-          '<label><span class="msr">notes</span>메모</label>' +
+          '<label>' + icon("notes") + '메모</label>' +
           '<textarea id="f-memo" placeholder="선택 사항">' + escapeHtml(editing ? (editing.memo || "") : "") + '</textarea>' +
         '</div>' +
         '<button class="btn-filled" id="f-save" disabled>저장하기</button>' +
@@ -1247,12 +1254,12 @@
     );
     setContent(wrap);
 
-    var photoThumb = editing ? (editing.photoThumb || null) : null;
-    var photoDrop = wrap.querySelector("#photo-drop");
     var photoInput = wrap.querySelector("#photo-input");
+    var ocrStatus = wrap.querySelector("#ocr-status");
     var nameInput = wrap.querySelector("#f-name");
     var barcodeInput = wrap.querySelector("#f-barcode");
     var saveBtn = wrap.querySelector("#f-save");
+    var previewUrl = null;
 
     function validate(){
       saveBtn.disabled = !(nameInput.value.trim() && barcodeInput.value.trim());
@@ -1264,55 +1271,50 @@
     });
     validate();
 
-    var pendingFile = null;
-    async function onPhotoChange(){
-      var input = wrap.querySelector("#photo-input");
-      var file = input.files[0];
-      if (!file) return;
-      pendingFile = file;
-      var dataUrl = await compressImage(file, 480, 0.55);
-      photoThumb = dataUrl;
-      photoDrop.innerHTML = '<img src="' + dataUrl + '" alt="">' +
-        '<input type="file" accept="image/*" id="photo-input">';
-      wrap.querySelector("#photo-input").addEventListener("change", onPhotoChange);
-      renderAiButton();
-    }
-    photoInput.addEventListener("change", onPhotoChange);
-
-    function renderAiButton(){
-      var row = wrap.querySelector("#ai-fill-row");
-      row.innerHTML = "";
-      if (!pendingFile || !state.sampleImages) return;
-      var btn = el('<button type="button" class="btn-ai"><span class="msr">auto_awesome</span>사진에서 정보 자동으로 읽기</button>');
-      btn.addEventListener("click", async function(){
-        btn.disabled = true;
-        btn.innerHTML = '<span class="msr spin">progress_activity</span>읽는 중...';
-        try{
-          var prompt = "이 이미지는 모바일 기프티콘(모바일 교환권) 화면 캡처입니다. " +
-            "바코드 번호(숫자/문자, 하이픈 제외), 브랜드 또는 매장명, 상품명, 유효기간을 읽어줘. " +
-            "유효기간은 YYYY-MM-DD 형식으로, 알 수 없으면 null로 표시해. " +
-            "다른 설명 없이 다음 JSON 형식으로만 답해: " +
-            '{"brand": string|null, "productName": string|null, "barcodeNumber": string|null, "expiryDate": string|null}';
-          var result = await state.sample.json(prompt, { images: pendingFile, modelTier: "quick" });
-          if (result && typeof result === "object"){
-            var brandEl = wrap.querySelector("#f-brand");
-            var expiryEl = wrap.querySelector("#f-expiry");
-            if (result.brand && !brandEl.value.trim()) brandEl.value = result.brand;
-            if (result.productName && !nameInput.value.trim()) nameInput.value = result.productName;
-            if (result.barcodeNumber && !barcodeInput.value.trim()) barcodeInput.value = String(result.barcodeNumber).replace(/[^A-Za-z0-9\-]/g, "");
-            if (result.expiryDate && /^\d{4}-\d{2}-\d{2}$/.test(result.expiryDate) && !expiryEl.value) expiryEl.value = result.expiryDate;
-            validate();
-            toast("사진에서 정보를 읽어왔어요. 확인 후 저장하세요.");
-          }
-        }catch(e){
-          toast(e && e.code === "not_granted" ? "자동 읽기를 사용하려면 허용이 필요해요." : "자동으로 읽지 못했어요. 직접 입력해주세요.");
-        }
-        row.innerHTML = "";
-        renderAiButton();
+    if (photoInput){
+      photoInput.addEventListener("change", function(){
+        var file = photoInput.files[0];
+        if (!file) return;
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(file);
+        wrap.querySelector("#photo-drop-content").innerHTML = '<img src="' + previewUrl + '" alt="">';
+        runOcr(file);
       });
-      row.appendChild(btn);
     }
-    renderAiButton();
+
+    async function runOcr(file){
+      ocrStatus.innerHTML =
+        '<div class="ocr-row"><span class="spinner"></span>사진에서 정보를 읽는 중...</div>';
+      try{
+        var prompt = "이 이미지는 모바일 기프티콘(모바일 교환권) 화면 캡처입니다. " +
+          "바코드 번호(숫자/문자, 하이픈 제외), 브랜드 또는 매장명, 상품명, 유효기간을 읽어줘. " +
+          "유효기간은 YYYY-MM-DD 형식으로, 알 수 없으면 null로 표시해. " +
+          "다른 설명 없이 다음 JSON 형식으로만 답해: " +
+          '{"brand": string|null, "productName": string|null, "barcodeNumber": string|null, "expiryDate": string|null}';
+        var result = await state.sample.json(prompt, { images: file, modelTier: "quick" });
+        var brandEl = wrap.querySelector("#f-brand");
+        var expiryEl = wrap.querySelector("#f-expiry");
+        var filled = false;
+        if (result && typeof result === "object"){
+          if (result.brand && !brandEl.value.trim()){ brandEl.value = result.brand; filled = true; }
+          if (result.productName && !nameInput.value.trim()){ nameInput.value = result.productName; filled = true; }
+          if (result.barcodeNumber && !barcodeInput.value.trim()){ barcodeInput.value = String(result.barcodeNumber).replace(/[^A-Za-z0-9\-]/g, ""); filled = true; }
+          if (result.expiryDate && /^\d{4}-\d{2}-\d{2}$/.test(result.expiryDate) && !expiryEl.value){ expiryEl.value = result.expiryDate; filled = true; }
+        }
+        validate();
+        ocrStatus.innerHTML =
+          '<div class="ocr-row' + (filled ? " ok" : "") + '">' + icon(filled ? "check_circle" : "info") +
+          (filled ? "정보를 읽었어요. 확인하고 저장하세요." : "사진에서 읽을 정보를 찾지 못했어요.") +
+          '<button type="button" class="btn-text" id="ocr-retry">다시 읽기</button></div>';
+        wrap.querySelector("#ocr-retry").addEventListener("click", function(){ runOcr(file); });
+      }catch(e){
+        ocrStatus.innerHTML =
+          '<div class="ocr-row err">' + icon("error") +
+          (e && e.code === "not_granted" ? "사진 인식을 사용하려면 허용이 필요해요." : "사진에서 정보를 읽지 못했어요. 직접 입력해주세요.") +
+          '<button type="button" class="btn-text" id="ocr-retry">다시 시도</button></div>';
+        wrap.querySelector("#ocr-retry").addEventListener("click", function(){ runOcr(file); });
+      }
+    }
 
     saveBtn.addEventListener("click", async function(){
       var data = {
@@ -1320,8 +1322,7 @@
         productName: nameInput.value.trim(),
         barcodeNumber: barcodeInput.value.trim(),
         expiryDate: wrap.querySelector("#f-expiry").value || null,
-        memo: wrap.querySelector("#f-memo").value.trim(),
-        photoThumb: photoThumb || null
+        memo: wrap.querySelector("#f-memo").value.trim()
       };
       saveBtn.disabled = true;
       saveBtn.textContent = "저장 중...";
@@ -1330,7 +1331,6 @@
           await Store.updateVoucher(editing.id, data);
           toast("수정했어요.");
           state.detailId = editing.id;
-          state.view = "detail";
         } else {
           data.status = "active";
           data.usedAt = null;
@@ -1338,8 +1338,9 @@
           var created = await Store.addVoucher(data);
           toast("기프티콘을 등록했어요.");
           state.detailId = created.id;
-          state.view = "detail";
         }
+        state.vouchers = await Store.listVouchers();
+        state.view = "detail";
         render();
       }catch(e){
         toast("저장하지 못했어요. 다시 시도해주세요.");
@@ -1370,11 +1371,11 @@
     if (!v){ state.view = "list"; render(); return; }
 
     setAppbar(
-      '<button class="icon-btn" id="btn-back"><span class="msr">arrow_back</span></button>' +
+      '<button class="icon-btn" id="btn-back">' + icon("arrow_back") + '</button>' +
       '<span class="appbar-title">' + escapeHtml(v.brand || "기프티콘") + '</span>' +
       '<div class="appbar-actions">' +
-        '<button class="icon-btn" id="btn-edit"><span class="msr">edit</span></button>' +
-        '<button class="icon-btn danger-ink" id="btn-delete"><span class="msr">delete</span></button>' +
+        '<button class="icon-btn" id="btn-edit">' + icon("edit") + '</button>' +
+        '<button class="icon-btn danger-ink" id="btn-delete">' + icon("delete") + '</button>' +
       '</div>'
     );
     appbar.querySelector("#btn-back").addEventListener("click", goList);
@@ -1400,7 +1401,7 @@
     if (v.status === "used"){
       wrap.appendChild(el(
         '<div class="used-banner">' +
-          '<span class="msr">check_circle</span>' +
+          icon("check_circle") +
           '<div class="used-banner-text">' +
             '<p class="used-banner-title">사용 완료</p>' +
             '<p class="used-banner-date">' + fmtDate(v.usedAt) + '에 사용함</p>' +
@@ -1419,12 +1420,12 @@
         '</div>' +
         '<div class="ticket-meta">' +
           (v.expiryDate ? (
-            '<div class="meta-row"><span class="msr">event</span><div class="meta-row-text"><p class="meta-label">유효기간</p><p class="meta-value">' + fmtDate(v.expiryDate) + '까지</p></div></div>'
+            '<div class="meta-row">' + icon("event") + '<div class="meta-row-text"><p class="meta-label">유효기간</p><p class="meta-value">' + fmtDate(v.expiryDate) + '까지</p></div></div>'
           ) : "") +
           (v.memo ? (
-            '<div class="meta-row"><span class="msr">notes</span><div class="meta-row-text"><p class="meta-label">메모</p><p class="meta-value">' + escapeHtml(v.memo) + '</p></div></div>'
+            '<div class="meta-row">' + icon("notes") + '<div class="meta-row-text"><p class="meta-label">메모</p><p class="meta-value">' + escapeHtml(v.memo) + '</p></div></div>'
           ) : "") +
-          '<div class="meta-row"><span class="msr">schedule</span><div class="meta-row-text"><p class="meta-label">등록일</p><p class="meta-value">' + fmtDate(v.createdAt) + '</p></div></div>' +
+          '<div class="meta-row">' + icon("schedule") + '<div class="meta-row-text"><p class="meta-label">등록일</p><p class="meta-value">' + fmtDate(v.createdAt) + '</p></div></div>' +
         '</div>' +
       '</div>'
     );
@@ -1440,21 +1441,8 @@
     }
     box.appendChild(el('<p class="barcode-num">' + escapeHtml(v.barcodeNumber) + '</p>'));
 
-    if (v.photoThumb){
-      var photoBtn = el('<button type="button" class="photo-link"><span class="msr">image</span>원본 사진 보기</button>');
-      photoBtn.addEventListener("click", function(){
-        var d = el('<div class="dialog" style="max-width:380px;">' +
-          '<img class="dialog-photo" src="' + v.photoThumb + '" alt="기프티콘 원본 사진">' +
-          '<div class="dialog-actions"><button class="btn-text" id="photo-close">닫기</button></div>' +
-        '</div>');
-        d.querySelector("#photo-close").addEventListener("click", closeOverlay);
-        openDialog(d);
-      });
-      content.appendChild(photoBtn);
-    }
-
     if (v.status === "active"){
-      var useBtn = el('<button class="btn-filled success" id="btn-use"><span class="msr">check_circle</span>사용 완료로 표시</button>');
+      var useBtn = el('<button class="btn-filled success" id="btn-use">' + icon("check_circle") + '사용 완료로 표시</button>');
       useBtn.addEventListener("click", async function(){
         var ok2 = await confirmDialog({
           title: "사용 완료로 표시할까요?",
@@ -1463,6 +1451,7 @@
         if (!ok2) return;
         await Store.updateVoucher(v.id, { status: "used", usedAt: nowIso() });
         toast("사용 완료로 표시했어요.");
+        state.vouchers = await Store.listVouchers();
         render();
       });
       content.appendChild(useBtn);
@@ -1473,6 +1462,7 @@
         if (!ok3) return;
         await Store.updateVoucher(v.id, { status: "active", usedAt: null });
         toast("사용 가능 상태로 되돌렸어요.");
+        state.vouchers = await Store.listVouchers();
         render();
       });
       content.appendChild(undoBtn);
