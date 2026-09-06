@@ -100,6 +100,11 @@
 
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  /* Skip the browser's wait-for-double-tap-zoom pause on every control. */
+  button, label, .lab-card, .voucher-row, .filter-chip{
+    touch-action: manipulation;
+  }
+
   html, body{ height: 100%; }
 
   body{
@@ -333,10 +338,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.1s ease, transform 0.08s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.06s linear, transform 0.06s linear;
   }
   .key:hover{ background: var(--surface-alt-2); }
-  .key:active{ transform: scale(0.94); }
+  .key:active,
+  .key.tapped{ transform: scale(0.92); background: var(--primary-container); }
   .key:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
   .key.ghost{ background: transparent; cursor: default; }
   .key.ghost:hover{ background: transparent; }
@@ -492,6 +500,7 @@
     gap: 8px;
     width: 100%;
     aspect-ratio: 16/10;
+    min-height: 150px;
     border: 1.5px dashed var(--outline);
     border-radius: 20px;
     background: var(--surface-alt);
@@ -504,7 +513,28 @@
   .photo-drop img{ width: 100%; height: 100%; object-fit: cover; }
   .photo-drop .icon{ width: 30px; height: 30px; }
   .photo-drop span{ font-size: 13px; font-weight: 600; }
-  .photo-drop input[type=file]{ display: none; }
+  /* The input itself is the tap target, stretched over the whole drop zone:
+     iOS Safari opens the picker far more reliably this way than via a label
+     pointing at a display:none input. */
+  .photo-drop input[type=file]{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 2;
+    cursor: pointer;
+  }
+  #photo-drop-content{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+  }
 
   .photo-ocr{ margin-bottom: 20px; }
   .photo-ocr-caption{
@@ -777,6 +807,28 @@
       (ICONS[name] || "") + "</svg>";
   }
 
+  /* Fire on pointerdown so a tap registers the moment the finger lands —
+     waiting for `click` costs a noticeable beat on touch devices. `click`
+     still runs it for keyboard activation, guarded against double-firing. */
+  function fastTap(node, handler){
+    var lastPointer = 0;
+    function release(){ node.classList.remove("tapped"); }
+    node.addEventListener("pointerdown", function(e){
+      if (e.button && e.button !== 0) return;
+      lastPointer = Date.now();
+      node.classList.add("tapped");
+      handler(e);
+    });
+    node.addEventListener("pointerup", release);
+    node.addEventListener("pointercancel", release);
+    node.addEventListener("pointerleave", release);
+    node.addEventListener("click", function(e){
+      release();
+      if (Date.now() - lastPointer < 700) return;
+      handler(e);
+    });
+  }
+
   var toastTimer = null;
   function toast(msg){
     var t = document.getElementById("toast");
@@ -995,8 +1047,12 @@
       dots.forEach(function(dot, idx){ dot.classList.toggle("filled", idx < state.pin.length); });
     }
 
+    /* Warm the stored password up front so the 8th digit doesn't wait on a
+       round trip to the store before the screen reacts. */
+    var settingsPromise = ensureSettings();
+
     async function checkPin(){
-      var settings = await ensureSettings();
+      var settings = await settingsPromise;
       var hash = await sha256Hex(state.pin);
       if (hash === settings.passwordHash){
         state.unlocked = true;
@@ -1017,7 +1073,7 @@
       if (k === ""){ keypad.appendChild(el('<div class="key ghost"></div>')); return; }
       var label = k === "back" ? icon("backspace") : k;
       var btn = el('<button type="button" class="key">' + label + '</button>');
-      btn.addEventListener("click", function(){
+      fastTap(btn, function(){
         errorBox.textContent = "";
         if (k === "back"){ state.pin = state.pin.slice(0, -1); }
         else if (state.pin.length < 8){ state.pin += k; }
@@ -1224,8 +1280,8 @@
               : '사진은 저장되지 않아요. 이 환경에서는 자동 인식이 지원되지 않아 사진을 보며 직접 입력해주세요') +
           '</p>' +
           '<label class="photo-drop" id="photo-drop">' +
-            '<div id="photo-drop-content">' + icon("photo_camera") + '<span>기프티콘 사진 촬영 / 선택</span></div>' +
-            '<input type="file" accept="image/*" capture="environment" id="photo-input">' +
+            '<div id="photo-drop-content">' + icon("photo_camera") + '<span>사진첩에서 선택하거나 촬영하기</span></div>' +
+            '<input type="file" accept="image/*" id="photo-input">' +
           '</label>' +
           '<div id="ocr-status"></div>' +
         '</div>' +
