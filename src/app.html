@@ -1,14 +1,16 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#F5F7F3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1413" media="(prefers-color-scheme: dark)">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="나의 실험실">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!--
+  Page source for both targets.
+
+  - Claude Artifact: this file is published as-is. The platform wraps it in a
+    document and supplies <head>, including the viewport meta.
+  - Static hosting (Vercel): `node build.js` wraps it into a complete
+    index.html with a real <head>. Without that wrapper a phone lays the page
+    out at 980px and shrinks it to fit, which is what "멀리서 보인다" was.
+
+  Never serve this file directly. Edit here; run the build; never hand-edit
+  index.html.
+-->
+<!--head-->
 <title>나의 실험실</title>
 <meta name="description" content="실험을 하나씩 만들어 모아두는 개인 실험실. 첫 실험은 여행 계획.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -439,8 +441,8 @@
 
   [hidden]{ display: none !important; }
 </style>
-</head>
-<body>
+<!--/head-->
+<!--body-->
 <div class="app">
   <div id="topbar"></div>
   <div id="view"></div>
@@ -901,5 +903,4 @@
   })();
 })();
 </script>
-</body>
-</html>
+<!--/body-->
