@@ -138,14 +138,8 @@
   .mono{ font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .icon{ width: 22px; height: 22px; display: block; flex-shrink: 0; }
 
-  /* ---------- floating action row (replaces the old app bar) ---------- */
-  .toprow{
-    display: flex; align-items: center;
-    padding: calc(var(--safe-t) + 8px) 8px 0;
-    min-height: 0;
-  }
-  .toprow .spacer{ flex: 1; }
-
+  /* No app bar and no back button: the title line carries the only control,
+     so the screen starts at the content. */
   .icon-btn{
     width: 40px; height: 40px;
     border: none; background: transparent; color: var(--ink);
@@ -158,8 +152,10 @@
   .icon-btn .icon{ width: 20px; height: 20px; }
 
   /* ---------- home ---------- */
-  .pad{ padding: 4px 18px 0; }
+  .pad{ padding: calc(var(--safe-t) + 18px) 18px 0; }
+  .wordmark-row{ display: flex; align-items: center; gap: 8px; }
   .wordmark{
+    flex: 1; min-width: 0;
     font-family: "IBM Plex Mono", monospace;
     font-size: 21px; font-weight: 700; letter-spacing: 0.18em;
     margin: 0 0 2px;
@@ -193,8 +189,9 @@
   .build-stamp{ margin: 26px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
 
   /* ---------- trip header ---------- */
-  .hero{ padding: 2px 18px 14px; }
+  .hero{ padding: calc(var(--safe-t) + 16px) 18px 14px; }
   .hero-top{ display: flex; align-items: baseline; gap: 9px; }
+  .hero-top .icon-btn{ align-self: center; margin-left: auto; }
   .hero-city{ font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin: 0; }
   .hero-country{ font-size: 11.5px; color: var(--ink-faint); letter-spacing: 0.14em; }
   .hero-dates{
@@ -1130,12 +1127,9 @@
     var pair = currentPair();
     var status = pair ? "여행 " + (pair.dayIndex + 1) + "일차" : (d > 0 ? "D-" + d : (d === 0 ? "오늘 출발" : "다녀옴"));
 
-    var top = el('<div class="toprow"><span class="spacer"></span></div>');
-    top.appendChild(themeButton());
-
     var wrap = el(
       '<div class="pad">' +
-        '<h1 class="wordmark">BEMLAB</h1>' +
+        '<div class="wordmark-row"><h1 class="wordmark">BEMLAB</h1></div>' +
         '<p class="wordmark-sub">하나씩 만들어보는 개인 실험들</p>' +
         '<div class="lab-list">' +
           '<button class="lab-row" type="button" id="lab-travel">' +
@@ -1159,13 +1153,13 @@
         '<p class="build-stamp mono">build ' + BUILD + '</p>' +
       '</div>'
     );
+    wrap.querySelector(".wordmark-row").appendChild(themeButton());
     tap(wrap.querySelector("#lab-travel"), function(){
       var p = currentPair();
       go({ view:"trip", day: p ? p.dayIndex : 0 });
     });
 
     view.innerHTML = "";
-    view.appendChild(top);
     view.appendChild(wrap);
     window.scrollTo(0, 0);
   }
@@ -1175,14 +1169,7 @@
     var days = tripDays();
     if (state.day >= days.length) state.day = days.length - 1;
 
-    var top = el('<div class="toprow"></div>');
-    top.appendChild(tap(el('<button class="icon-btn" aria-label="실험 목록으로">' + icon("back") + '</button>'),
-      function(){ go({ view:"home" }); }));
-    top.appendChild(el('<span class="spacer"></span>'));
-    top.appendChild(themeButton());
-
     var frag = document.createDocumentFragment();
-    frag.appendChild(top);
     frag.appendChild(renderHero());
 
     var tabs = el('<div class="tabs" role="tablist"></div>');
@@ -1218,6 +1205,7 @@
         '<span class="hero-country mono">' + esc(t.country) + '</span></div>' +
       '</div>'
     );
+    hero.querySelector(".hero-top").appendChild(themeButton());
     var dates = el('<p class="hero-dates mono">' +
       fmtMD(t.start) + ' (' + dowOf(t.start) + ') – ' + fmtMD(t.end) + ' (' + dowOf(t.end) + ') · ' + esc(nightsLabel()) +
       '</p>');
