@@ -28,6 +28,8 @@
     --travel: #9C6427;
     --travel-soft: #F6E7D5;
     --danger: #A32C22;
+    --airline: #DE5F16;
+    --airline-soft: #FBE4D5;
 
     /* itinerary categories — six separated hues, not six tints of the accent */
     --c-air: #3E6FA8;
@@ -64,6 +66,8 @@
       --travel: #E3A96C;
       --travel-soft: #40301C;
       --danger: #FF9E92;
+      --airline: #FF9457;
+      --airline-soft: #46281A;
 
       --c-air: #8FB8E8;
       --c-move: #A3B2BC;
@@ -93,6 +97,8 @@
     --travel: #E3A96C;
     --travel-soft: #40301C;
     --danger: #FF9E92;
+    --airline: #FF9457;
+    --airline-soft: #46281A;
 
     --c-air: #8FB8E8;
     --c-move: #A3B2BC;
@@ -109,11 +115,7 @@
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   button, label, a, summary{ touch-action: manipulation; }
 
-  html{
-    height: 100%;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-  }
+  html{ height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body{
     min-height: 100%;
     margin: 0;
@@ -126,51 +128,32 @@
     justify-content: center;
   }
 
-  .app{
-    width: 100%;
-    max-width: 440px;
-    display: flex;
-    flex-direction: column;
-    background: var(--paper);
-  }
-
+  .app{ width: 100%; max-width: 440px; display: flex; flex-direction: column; background: var(--paper); }
   .mono{ font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .icon{ width: 22px; height: 22px; display: block; flex-shrink: 0; }
 
   /* ---------- top bar ---------- */
   #topbar{
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 4px;
     height: calc(var(--bar-h) + var(--safe-t));
     padding: var(--safe-t) 10px 0;
     background: var(--paper);
     border-bottom: 1px solid var(--line);
   }
   .bar-title{
-    flex: 1;
-    min-width: 0;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex: 1; min-width: 0;
+    font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .bar-pad{ padding-left: 8px; }
 
   .icon-btn{
     width: 40px; height: 40px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
+    border: none; background: transparent; color: var(--ink);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
+    cursor: pointer; flex-shrink: 0;
   }
   .icon-btn:hover, .icon-btn.tapped{ background: var(--surface-sunk); }
   .icon-btn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
@@ -184,10 +167,7 @@
     font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--ink-faint); margin: 0 0 6px;
   }
-  h1.page-title{
-    font-size: 25px; font-weight: 700; letter-spacing: -0.02em;
-    margin: 0 0 6px; text-wrap: balance;
-  }
+  h1.page-title{ font-size: 25px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; text-wrap: balance; }
   .page-sub{ font-size: 13.5px; color: var(--ink-soft); margin: 0 0 26px; max-width: 34em; }
 
   /* ---------- lab index ---------- */
@@ -200,7 +180,6 @@
   }
   .lab-row.tapped{ background: var(--surface-sunk); }
   .lab-row:focus-visible{ outline: 2px solid var(--signal); outline-offset: -2px; }
-
   .lab-mark{
     width: 42px; height: 42px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -213,7 +192,6 @@
   .lab-go{ color: var(--ink-faint); }
   .lab-row.vacant{ cursor: default; opacity: 0.75; }
   .lab-row.vacant .lab-mark{ background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-faint); }
-
   .build-stamp{ margin: 26px 0 0; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
 
   /* ---------- trip hero ---------- */
@@ -225,10 +203,8 @@
 
   .countdown{
     display: flex; align-items: center; gap: 10px;
-    margin-top: 14px; padding: 12px 14px;
-    border-radius: 12px;
-    background: var(--signal-soft);
-    color: var(--signal);
+    margin-top: 14px; padding: 12px 14px; border-radius: 12px;
+    background: var(--signal-soft); color: var(--signal);
   }
   .countdown.live{ background: var(--travel-soft); color: var(--travel); }
   .countdown-big{ font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
@@ -236,25 +212,15 @@
 
   /* ---------- tabs ---------- */
   .tabs{
-    position: sticky;
-    top: calc(var(--bar-h) + var(--safe-t));
-    z-index: 15;
-    display: flex;
-    gap: 2px;
-    padding: 0 12px;
-    background: var(--paper);
-    border-bottom: 1px solid var(--line);
+    position: sticky; top: calc(var(--bar-h) + var(--safe-t)); z-index: 15;
+    display: flex; gap: 2px; padding: 0 12px;
+    background: var(--paper); border-bottom: 1px solid var(--line);
   }
   .tab{
-    flex: 1;
-    padding: 13px 2px 11px;
-    border: none;
-    background: transparent;
-    color: var(--ink-faint);
-    font: inherit; font-size: 13.5px; font-weight: 600;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    flex: 1; padding: 13px 2px 11px;
+    border: none; background: transparent; color: var(--ink-faint);
+    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
   }
   .tab[aria-selected="true"]{ color: var(--ink); border-bottom-color: var(--signal); }
   .tab:focus-visible{ outline: 2px solid var(--signal); outline-offset: -3px; }
@@ -262,14 +228,10 @@
   /* ---------- day switch ---------- */
   .dayrow{ display: flex; gap: 8px; padding: 16px 18px 4px; }
   .daybtn{
-    flex: 1;
-    padding: 9px 4px;
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--ink-soft);
-    font: inherit; font-size: 12.5px; font-weight: 600;
-    cursor: pointer; line-height: 1.3;
+    flex: 1; padding: 9px 4px;
+    border: 1px solid var(--line-strong); border-radius: 10px;
+    background: transparent; color: var(--ink-soft);
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; line-height: 1.3;
   }
   .daybtn b{ display: block; font-size: 14px; font-weight: 700; }
   .daybtn[aria-pressed="true"]{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
@@ -305,7 +267,6 @@
   .tl-rail{ width: 13px; flex-shrink: 0; position: relative; display: flex; justify-content: center; }
   .tl-rail::before{ content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
   .tl-item:first-child .tl-rail::before{ top: 17px; }
-  .tl-item.last .tl-rail::before{ bottom: calc(100% - 17px); }
   .tl-dot{
     position: relative; margin-top: 13px;
     width: 9px; height: 9px; border-radius: 50%;
@@ -314,17 +275,12 @@
   .tl-dot.big{ width: 11px; height: 11px; margin-top: 12px; }
 
   .tl-body{ flex: 1; min-width: 0; padding: 11px 0 13px; border-bottom: 1px solid var(--line); }
-  .tl-item.last .tl-body{ border-bottom: none; }
-  .tl-head{ display: flex; align-items: flex-start; gap: 8px; }
-  .tl-title{ flex: 1; min-width: 0; font-size: 14.5px; font-weight: 600; margin: 0; word-break: keep-all; }
+  .tl-title{ font-size: 14.5px; font-weight: 600; margin: 0; word-break: keep-all; }
   .tl-title .emo{ margin-right: 4px; }
   .tl-line{ font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; word-break: keep-all; }
   .tl-line::before{ content: "— "; color: var(--ink-faint); }
   .tl-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
-
-  .tl-item.done .tl-title,
-  .tl-item.done .tl-line{ text-decoration: line-through; color: var(--ink-faint); }
-  .tl-item.done .tl-dot{ background: var(--c-todo); }
+  .tl-actions{ margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
 
   .tl-item.current .tl-body{
     background: var(--travel-soft);
@@ -332,64 +288,49 @@
     border-radius: 8px; border-bottom-color: transparent;
   }
 
-  .check{
-    width: 30px; height: 30px; flex-shrink: 0;
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    background: transparent;
-    color: transparent;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-  .check .icon{ width: 17px; height: 17px; }
-  .check[aria-pressed="true"]{ background: var(--signal); border-color: var(--signal); color: var(--paper); }
-  .check:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
-
   /* a place name is the map link — no separate "지도" chip to hunt for */
-  .placelink{
-    color: inherit; text-decoration: none;
-    border-bottom: 1px dashed var(--line-strong);
-    padding-bottom: 1px;
-  }
+  .placelink{ color: inherit; text-decoration: none; border-bottom: 1px dashed var(--line-strong); padding-bottom: 1px; }
   .placelink .pinch{
     width: 12px; height: 12px; display: inline-block;
     vertical-align: -1px; margin-left: 3px; color: var(--ink-faint);
   }
   .placelink:hover{ border-bottom-color: var(--signal); }
 
-  /* ---------- badges ---------- */
-  .badge{
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600;
-    padding: 3px 8px; border-radius: 6px;
-    background: var(--surface-sunk); color: var(--ink-soft);
+  /* ---------- attachments ---------- */
+  .att{ margin-top: 9px; display: flex; flex-direction: column; gap: 7px; }
+  .att-photos{ display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .att-photos::-webkit-scrollbar{ display: none; }
+  .att-thumb{
+    width: 66px; height: 66px; flex-shrink: 0;
+    border-radius: 9px; border: 1px solid var(--line);
+    background: var(--surface-sunk);
+    object-fit: cover; cursor: pointer; padding: 0; display: block;
   }
-  .badge.cat{ background: transparent; border: 1px solid currentColor; }
-  .badge.fixed{ background: var(--danger); color: var(--paper); }
-  .badge.reserved{ background: var(--signal); color: var(--paper); }
-  .badge.maybe{ background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-faint); }
-  .badge.mine{ background: transparent; border: 1px solid var(--travel); color: var(--travel); }
-
-  .maplink{
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600;
-    padding: 3px 8px; border-radius: 6px;
-    background: var(--surface-sunk); color: var(--ink-soft);
-    text-decoration: none;
+  .att-note{
+    font-size: 12.5px; color: var(--ink-soft);
+    border-left: 2px solid var(--line-strong);
+    padding: 1px 0 1px 9px; white-space: pre-wrap; word-break: break-word;
   }
-  .maplink .icon{ width: 13px; height: 13px; }
+  .att-link{
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start; max-width: 100%;
+    background: var(--surface-sunk); color: var(--ink);
+    border-radius: 8px; padding: 6px 10px;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+  }
+  .att-link .icon{ width: 14px; height: 14px; color: var(--ink-faint); }
+  .att-link span{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .editbtn{
+  .quietbtn{
     display: inline-flex; align-items: center; gap: 4px;
-    margin-left: auto;
-    border: none; background: transparent;
-    color: var(--ink-faint);
+    border: none; background: transparent; color: var(--ink-faint);
     font: inherit; font-size: 11px; font-weight: 600;
-    padding: 3px 4px; cursor: pointer; border-radius: 6px;
+    padding: 3px 5px; cursor: pointer; border-radius: 6px;
   }
-  .editbtn .icon{ width: 13px; height: 13px; }
-  .editbtn:hover, .editbtn.tapped{ color: var(--signal); }
-  .editbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
+  .quietbtn .icon{ width: 13px; height: 13px; }
+  .quietbtn:hover, .quietbtn.tapped{ color: var(--signal); background: var(--surface-sunk); }
+  .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
+  .quietbtn.has{ color: var(--signal); }
 
   /* ---------- add rows ---------- */
   .tl-add{ display: flex; gap: 11px; align-items: stretch; }
@@ -397,10 +338,8 @@
   .tl-add .tl-rail::before{ bottom: calc(100% - 17px); }
   .tl-add .tl-dot{ border-style: dashed; border-color: var(--line-strong); }
   .addrow{
-    flex: 1;
-    display: flex; align-items: center; gap: 7px;
-    border: none; background: transparent;
-    color: var(--ink-faint);
+    flex: 1; display: flex; align-items: center; gap: 7px;
+    border: none; background: transparent; color: var(--ink-faint);
     font: inherit; font-size: 13px; font-weight: 600;
     padding: 11px 0; cursor: pointer; text-align: left;
   }
@@ -410,12 +349,9 @@
 
   .addcard{
     display: flex; align-items: center; justify-content: center; gap: 7px;
-    width: calc(100% - 36px);
-    margin: 4px 18px 0;
-    border: 1px dashed var(--line-strong);
-    border-radius: 12px;
-    background: transparent;
-    color: var(--ink-faint);
+    width: calc(100% - 36px); margin: 4px 18px 0;
+    border: 1px dashed var(--line-strong); border-radius: 12px;
+    background: transparent; color: var(--ink-faint);
     font: inherit; font-size: 13.5px; font-weight: 600;
     padding: 14px; cursor: pointer;
   }
@@ -427,29 +363,28 @@
   .chiprow::-webkit-scrollbar{ display: none; }
   .chip{
     flex-shrink: 0;
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--line-strong); border-radius: 999px;
     background: transparent; color: var(--ink-soft);
-    border-radius: 999px; padding: 7px 14px;
-    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
   .chip[aria-pressed="true"]{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .chip:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
 
   /* ---------- cards ---------- */
   .card{
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 13px;
-    padding: 14px;
-    margin: 0 18px 10px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 13px; padding: 14px; margin: 0 18px 10px;
   }
   .card.dashed{ background: transparent; border-style: dashed; }
   .card-top{ display: flex; align-items: flex-start; gap: 10px; }
   .card-name{ flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; margin: 0; word-break: keep-all; }
   .card-when{ font-size: 11.5px; color: var(--ink-faint); margin: 0 0 3px; }
+  .card-head{ display: flex; align-items: center; gap: 8px; margin: 0 0 3px; }
+  .card-head .card-when{ margin: 0; flex: 1; }
   .card-kind{ font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 0; }
   .card-note{ font-size: 12px; color: var(--ink-soft); margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed var(--line); }
   .card-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+  .card-empty{ font-size: 12.5px; color: var(--ink-faint); margin: 6px 0 0; }
 
   .group-label{ display: flex; align-items: baseline; gap: 8px; padding: 20px 18px 8px; }
   .group-label h3{
@@ -459,6 +394,16 @@
   .group-count{ font-size: 11px; color: var(--ink-faint); }
 
   /* ---------- shopping ---------- */
+  .check{
+    width: 30px; height: 30px; flex-shrink: 0;
+    border: 1px solid var(--line-strong); border-radius: 8px;
+    background: transparent; color: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .check .icon{ width: 17px; height: 17px; }
+  .check[aria-pressed="true"]{ background: var(--signal); border-color: var(--signal); color: var(--paper); }
+  .check:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+
   .buy-row{ display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px dashed var(--line); }
   .buy-row:first-of-type{ border-top: 1px solid var(--line); margin-top: 10px; }
   .buy-text{ flex: 1; min-width: 0; font-size: 13.5px; word-break: break-word; }
@@ -479,16 +424,14 @@
   .additem input{
     flex: 1; min-width: 0;
     border: 1px solid var(--line-strong); border-radius: 9px;
-    padding: 9px 11px;
-    font-family: inherit; font-size: 16px;
+    padding: 9px 11px; font-family: inherit; font-size: 16px;
     background: var(--paper); color: var(--ink);
   }
   .additem input:focus{ outline: none; border-color: var(--signal); }
   .additem button{
     border: none; border-radius: 9px;
     background: var(--surface-sunk); color: var(--ink);
-    font: inherit; font-size: 13px; font-weight: 600;
-    padding: 0 14px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 600; padding: 0 14px; cursor: pointer;
   }
 
   /* ---------- info ---------- */
@@ -500,57 +443,50 @@
   .fact-value{ font-size: 14px; font-weight: 500; margin: 2px 0 0; word-break: keep-all; }
   .fact-value small{ display: block; font-weight: 400; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
-  .calc{ display: flex; align-items: center; gap: 9px; margin-top: 12px; }
-  .calc input{
+  .airline{
+    display: inline-flex; align-items: center;
+    background: var(--airline-soft); color: var(--airline);
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; padding: 2px 6px; border-radius: 5px;
+    margin-right: 6px; vertical-align: 1px;
+  }
+
+  /* ---------- editable lists ---------- */
+  .listrow{ display: flex; align-items: center; gap: 10px; border-bottom: 1px dashed var(--line); }
+  .listrow:last-of-type{ border-bottom: none; }
+  .listrow-btn{
     flex: 1; min-width: 0;
-    border: 1px solid var(--line-strong); border-radius: 10px;
-    padding: 11px 12px;
-    font-family: "IBM Plex Mono", monospace; font-size: 16px;
-    background: var(--paper); color: var(--ink); text-align: right;
+    display: flex; align-items: center; gap: 8px;
+    border: none; background: transparent; color: inherit;
+    font: inherit; font-size: 13.5px; text-align: left;
+    padding: 10px 0; cursor: pointer;
   }
-  .calc input:focus{ outline: none; border-color: var(--signal); }
-  .calc span{ font-size: 13px; color: var(--ink-faint); flex-shrink: 0; }
-  .rate-row{ display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--ink-soft); }
-  .rate-row input{
-    width: 84px;
-    border: 1px solid var(--line-strong); border-radius: 8px;
-    padding: 6px 9px;
-    font-family: "IBM Plex Mono", monospace; font-size: 16px;
-    background: var(--paper); color: var(--ink); text-align: right;
+  .listrow-btn .icon{ width: 13px; height: 13px; color: var(--ink-faint); opacity: 0; flex-shrink: 0; }
+  .listrow-btn:hover .icon, .listrow-btn.tapped .icon{ opacity: 1; }
+  .listrow-text{ flex: 1; min-width: 0; word-break: break-word; }
+  .listrow.on .listrow-text{ text-decoration: line-through; color: var(--ink-faint); }
+
+  .linkrow{ display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed var(--line); }
+  .linkrow:last-of-type{ border-bottom: none; }
+  .linkrow a{
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+    padding: 11px 0; color: var(--ink); text-decoration: none;
+    font-size: 13.5px; font-weight: 600;
   }
-  .rate-row input:focus{ outline: none; border-color: var(--signal); }
-
-  .quick{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .quick button{
-    border: 1px solid var(--line-strong); border-radius: 8px;
-    background: transparent; color: var(--ink-soft);
-    font-family: "IBM Plex Mono", monospace; font-size: 12px;
-    padding: 6px 10px; cursor: pointer;
+  .linkrow a .icon{ width: 15px; height: 15px; color: var(--signal); flex-shrink: 0; }
+  .linkrow-text{ flex: 1; min-width: 0; }
+  .linkrow-text b{ display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .linkrow-text small{
+    display: block; font-weight: 400; font-size: 11px; color: var(--ink-faint);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .linkrow .quietbtn{ flex-shrink: 0; }
 
-  .pack-row{ display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
-  .pack-row:last-child{ border-bottom: none; }
-  .pack-text{ flex: 1; font-size: 13.5px; }
-  .pack-row.on .pack-text{ text-decoration: line-through; color: var(--ink-faint); }
-
-  .tip{ font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 0; padding-left: 14px; text-indent: -14px; }
-  .tip::before{ content: "· "; color: var(--ink-faint); }
-
-  .notice{
-    display: flex; align-items: flex-start; gap: 8px;
-    background: var(--travel-soft); color: var(--travel);
-    border-radius: 10px; padding: 10px 12px;
-    font-size: 11.5px; font-weight: 500;
-    margin: 14px 18px 0;
-  }
-  .notice .icon{ width: 16px; height: 16px; margin-top: 1px; }
-
-  /* ---------- editor sheet ---------- */
+  /* ---------- sheets & dialogs ---------- */
   .scrim{
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: var(--scrim);
-    display: flex; align-items: flex-end; justify-content: center;
-    z-index: 50;
+    display: flex; align-items: flex-end; justify-content: center; z-index: 50;
   }
   .sheet{
     width: 100%; max-width: 440px;
@@ -561,31 +497,21 @@
     box-shadow: 0 -8px 30px var(--shadow);
   }
   @supports (max-height: 88dvh){ .sheet{ max-height: 88dvh; } }
-
-  .sheet-head{
-    display: flex; align-items: center; gap: 8px;
-    padding: 14px 14px 12px;
-    border-bottom: 1px solid var(--line);
-  }
+  .sheet-head{ display: flex; align-items: center; gap: 8px; padding: 14px 14px 12px; border-bottom: 1px solid var(--line); }
   .sheet-title{ flex: 1; font-size: 15.5px; font-weight: 700; margin: 0; }
+  .sheet-sub{ font-size: 11.5px; color: var(--ink-faint); margin: 2px 0 0; }
   .sheet-body{ overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 18px 4px; }
-  .sheet-foot{
-    display: flex; gap: 8px;
-    padding: 12px 18px calc(14px + var(--safe-b));
-    border-top: 1px solid var(--line);
-  }
+  .sheet-foot{ display: flex; gap: 8px; padding: 12px 18px calc(14px + var(--safe-b)); border-top: 1px solid var(--line); }
 
   .fld{ margin-bottom: 16px; }
   .fld > label{
-    display: block;
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em;
+    display: block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em;
     color: var(--ink-soft); margin-bottom: 6px;
   }
-  .fld input[type=text], .fld input[type=time], .fld textarea{
+  .fld input[type=text], .fld input[type=url], .fld input[type=time], .fld textarea{
     width: 100%;
     border: 1px solid var(--line-strong); border-radius: 10px;
-    padding: 11px 12px;
-    font-family: inherit; font-size: 16px;
+    padding: 11px 12px; font-family: inherit; font-size: 16px;
     background: var(--surface); color: var(--ink);
   }
   .fld textarea{ resize: vertical; min-height: 62px; line-height: 1.5; }
@@ -606,31 +532,57 @@
 
   .btn{
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    border: none; border-radius: 11px;
-    padding: 13px 18px;
+    border: none; border-radius: 11px; padding: 13px 18px;
     font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
   }
   .btn-primary{ background: var(--signal); color: var(--paper); flex: 1; }
   .btn-primary.tapped{ filter: brightness(1.12); }
-  .btn-primary:disabled{ opacity: 0.35; cursor: not-allowed; }
-  .btn-quiet{ background: var(--surface-sunk); color: var(--ink); }
   .btn-danger{ background: transparent; color: var(--danger); border: 1px solid var(--line-strong); }
   .btn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
 
+  .attpick{ display: flex; gap: 7px; margin-bottom: 14px; }
+  .attpick button{
+    flex: 1;
+    border: 1px solid var(--line-strong); border-radius: 10px;
+    background: transparent; color: var(--ink-soft);
+    font: inherit; font-size: 13px; font-weight: 600;
+    padding: 11px 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .attpick button .icon{ width: 15px; height: 15px; }
+  .attpick button[aria-pressed="true"]{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .attlist{ border-top: 1px solid var(--line); margin-top: 4px; }
+  .attlist-row{ display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .attlist-row .att-thumb{ width: 44px; height: 44px; }
+  .attlist-body{ flex: 1; min-width: 0; font-size: 13px; }
+  .attlist-body b{ display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .attlist-body small{ display: block; font-size: 11px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .attlist-body p{ margin: 0; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word; }
+
   .dialog{
-    background: var(--surface); border-radius: 16px; padding: 22px;
-    width: 100%; max-width: 320px; margin: auto;
+    background: var(--surface); border-radius: 16px; padding: 20px;
+    width: 100%; max-width: 330px; margin: auto;
     box-shadow: 0 18px 40px var(--shadow);
   }
-  .dialog h3{ margin: 0 0 8px; font-size: 17px; font-weight: 700; }
-  .dialog p{ margin: 0 0 20px; font-size: 13.5px; color: var(--ink-soft); }
-  .dialog-actions{ display: flex; justify-content: flex-end; gap: 4px; }
+  .dialog h3{ margin: 0 0 14px; font-size: 17px; font-weight: 700; }
+  .dialog p.msg{ margin: 0 0 20px; font-size: 13.5px; color: var(--ink-soft); }
+  .dialog-actions{ display: flex; justify-content: flex-end; gap: 4px; align-items: center; }
+  .dialog-actions .spacer{ flex: 1; }
   .btn-text{
     background: transparent; border: none; color: var(--ink-soft);
-    font: inherit; font-size: 14px; font-weight: 700;
-    padding: 10px 12px; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 700; padding: 10px 12px; cursor: pointer;
   }
+  .btn-text.go{ color: var(--signal); }
   .btn-text.danger{ color: var(--danger); }
+
+  .photoview{
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 80; padding: 16px;
+  }
+  .photoview img{ max-width: 100%; max-height: 100%; border-radius: 8px; }
 
   .toast{
     position: fixed; left: 50%; bottom: calc(26px + var(--safe-b));
@@ -638,7 +590,7 @@
     background: var(--ink); color: var(--paper);
     padding: 12px 18px; border-radius: 11px;
     font-size: 13px; font-weight: 500;
-    z-index: 70; opacity: 0; pointer-events: none;
+    z-index: 90; opacity: 0; pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
     max-width: 88%; text-align: center;
   }
@@ -660,7 +612,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r4";
+  var BUILD = "2026.09.11 · r5";
 
   /* ================= helpers ================= */
   function el(html){
@@ -683,13 +635,15 @@
     pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
     plane: '<path d="M2 13l20-7-7 20-3-8-8-3z"/>',
     bed: '<path d="M3 18v-8h11a5 5 0 0 1 5 5v3"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="7.5" cy="12.5" r="1.6"/>',
-    info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/>',
     clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>',
     x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
-    box: '<path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M3 8l9 4 9-4"/><line x1="12" y1="12" x2="12" y2="20"/>',
     edit: '<path d="M14.5 5.5l4 4L7 21H3v-4L14.5 5.5z"/><line x1="13" y1="7" x2="17" y2="11"/>',
     sun: '<circle cx="12" cy="12" r="4.2"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="7" y2="7"/><line x1="17" y1="17" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="7" y2="17"/><line x1="17" y1="7" x2="18.7" y2="5.3"/>',
-    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'
+    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+    clip: '<path d="M20 11.5l-8.4 8.4a5 5 0 0 1-7-7l9-9a3.4 3.4 0 0 1 4.8 4.8l-8.9 8.9a1.8 1.8 0 0 1-2.5-2.5l8.1-8.1"/>',
+    link: '<path d="M9.5 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L11 6.3"/><path d="M14.5 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7L13 17.7"/>',
+    note: '<line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="13" y2="17"/>',
+    image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-5.5 5.5L8 14l-5 5"/>'
   };
   function icon(name, cls){
     return '<svg class="icon' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" ' +
@@ -719,14 +673,13 @@
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2000);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
   }
 
   function mapUrl(q){
     var query = /후쿠오카|fukuoka/i.test(q) ? q : q + " 후쿠오카";
     return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
   }
-  /* A place name doubles as its own map link. */
   function placeHtml(text, place){
     if (!place) return esc(text);
     return '<a class="placelink" href="' + esc(mapUrl(place)) + '" target="_blank" rel="noopener">' +
@@ -734,23 +687,26 @@
       '<svg class="pinch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS.pin + '</svg></a>';
   }
+  /* Only http(s) gets through — a stored "javascript:" would run on tap. */
+  function safeUrl(u){
+    var s = String(u || "").trim();
+    if (!s) return null;
+    if (!/^https?:\/\//i.test(s)){
+      if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return null;
+      s = "https://" + s;
+    }
+    return s;
+  }
+  function hostOf(u){
+    try{ return new URL(u).hostname.replace(/^www\./, ""); }catch(e){ return u; }
+  }
 
   /* ================= theme ================= */
   var Theme = {
-    get(){
-      try{ return localStorage.getItem("lab.theme") || ""; }catch(e){ return ""; }
-    },
-    systemDark(){
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    },
-    isDark(){
-      var t = this.get();
-      return t ? t === "dark" : this.systemDark();
-    },
-    apply(){
-      var t = this.get();
-      if (t) document.documentElement.setAttribute("data-theme", t);
-    },
+    get(){ try{ return localStorage.getItem("lab.theme") || ""; }catch(e){ return ""; } },
+    systemDark(){ return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; },
+    isDark(){ var t = this.get(); return t ? t === "dark" : this.systemDark(); },
+    apply(){ var t = this.get(); if (t) document.documentElement.setAttribute("data-theme", t); },
     toggle(){
       var next = this.isDark() ? "light" : "dark";
       try{ localStorage.setItem("lab.theme", next); }catch(e){ /* private mode */ }
@@ -765,11 +721,12 @@
     country: "JAPAN",
     start: "2026-09-12",
     end: "2026-09-14",
+    hotel: "더 로얄 파크 캔버스 후쿠오카 나카스",
     days: [
       {
         date: "2026-09-12", dow: "토", theme: "하카타 → 나카스 → 텐진",
         items: [
-          { id:"a1", s:"11:10", cat:"air", emo:"✈️", title:"한국 출발", fixed:true },
+          { id:"a1", s:"11:10", cat:"air", emo:"✈️", title:"한국 출발", fixed:true, lines:["제주항공 7C1471"] },
           { id:"a2", s:"12:40", cat:"air", emo:"🇯🇵", title:"후쿠오카 공항 도착", place:"후쿠오카공항 국제선" },
           { id:"a3", s:"12:40", e:"13:25", cat:"todo", emo:"🛂", title:"입국심사 + 수하물 수령" },
           { id:"a4", s:"13:25", e:"13:40", cat:"todo", emo:"🧳", title:"CARGO PASS 접수",
@@ -777,12 +734,12 @@
           { id:"a5", s:"13:40", e:"14:10", cat:"move", emo:"🚇", title:"공항 → 하카타 이동" },
           { id:"a6", s:"14:10", e:"15:10", cat:"food", emo:"🍖", title:"키와미야 함바그",
             meal:"lunch", place:"키와미야 함바그 하카타", lines:["늦은 점심"] },
-          { id:"a7", s:"15:10", e:"16:10", cat:"shop", emo:"👜", title:"셀린느", place:"셀린느 하카타",
-            lines:["쇼핑"] },
+          { id:"a7", s:"15:10", e:"16:10", cat:"shop", emo:"👜", title:"셀린느", place:"셀린느 하카타", lines:["쇼핑"] },
           { id:"a8", s:"16:10", e:"17:10", cat:"shop", emo:"🛍️", title:"하카타 쇼핑",
             places:["스탠다드 프로덕트 하카타"], lines:["스탠다드 프로덕트 등"] },
           { id:"a9", s:"17:10", e:"17:30", cat:"move", emo:"🚇", title:"하카타 → 나카스 이동" },
           { id:"a10", s:"17:30", e:"18:10", cat:"stay", emo:"🏨", title:"호텔 체크인",
+            place:"더 로얄 파크 캔버스 후쿠오카 나카스",
             lines:["CARGO PASS 짐 수령 / 확인", "잠깐 휴식"] },
           { id:"a11", s:"18:10", e:"18:25", cat:"move", emo:"🚶", title:"호텔 → ONE FUKUOKA BLDG.",
             place:"ONE FUKUOKA BLDG." },
@@ -815,8 +772,7 @@
           { id:"b6", s:"13:30", e:"15:45", cat:"shop", emo:"🛍️", title:"쇼핑 ②",
             places:["이와타야 텐진", "파르코 텐진"],
             lines:["이와타야", "파르코", "텐진 / 다이묘 추가 쇼핑"] },
-          { id:"b7", s:"15:45", e:"16:30", cat:"food", emo:"☕", title:"카페 + 휴식",
-            meal:"cafe", undecided:true },
+          { id:"b7", s:"15:45", e:"16:30", cat:"food", emo:"☕", title:"카페 + 휴식", meal:"cafe", undecided:true },
           { id:"b8", s:"16:30", e:"17:00", cat:"move", emo:"🚶", title:"니시나카스 방향 이동" },
           { id:"b9", s:"17:15", e:"19:00", cat:"food", emo:"🥩", title:"야키니쿠 카쿠라 니시나카스점",
             meal:"dinner", place:"야키니쿠 카쿠라 니시나카스점", fixed:true,
@@ -829,7 +785,7 @@
               { name:"이자카야 / 쿠시카츠 / 바", kind:"토요일에 이미 야키토리를 먹었다면", nomap:true }
             ] },
           { id:"b11", s:"22:00", e:"23:00", cat:"stay", emo:"🏨", title:"호텔 복귀",
-            lines:["22:00~23:00 전후"] }
+            place:"더 로얄 파크 캔버스 후쿠오카 나카스", lines:["22:00~23:00 전후"] }
         ]
       },
       {
@@ -846,11 +802,10 @@
             lines:["캐리어 픽업 + 체크아웃"] },
           { id:"c6", s:"10:55", e:"11:40", cat:"move", emo:"🚕", title:"호텔 → 후쿠오카공항 국제선",
             place:"후쿠오카공항 국제선" },
-          { id:"c7", s:"11:40", cat:"air", emo:"✈️", title:"공항 도착", fixed:true,
-            lines:["비행기 출발 2시간 전"] },
+          { id:"c7", s:"11:40", cat:"air", emo:"✈️", title:"공항 도착", fixed:true, lines:["비행기 출발 2시간 전"] },
           { id:"c8", s:"11:40", e:"13:10", cat:"todo", emo:"🧾", title:"체크인 / 수하물 위탁",
             lines:["출국심사", "면세점"] },
-          { id:"c9", s:"13:40", cat:"air", emo:"✈️", title:"한국행 출발", fixed:true }
+          { id:"c9", s:"13:40", cat:"air", emo:"✈️", title:"한국행 출발", fixed:true, lines:["제주항공 7C1472"] }
         ]
       }
     ]
@@ -871,7 +826,7 @@
     { id:"donki", day:2, time:"08:30", area:"나카스", name:"돈키호테 나카스점", map:"돈키호테 나카스점", preset:["과자","약","기념품"] }
   ];
 
-  var PACKING = [
+  var PACKING_SEED = [
     "여권", "항공권 (모바일)", "엔화 현금", "신용카드",
     "보조배터리", "충전기 · 케이블", "우산", "상비약",
     "쇼핑용 여분 가방", "캐리어 여유 공간"
@@ -889,16 +844,11 @@
   var CAT_ORDER = ["food","shop","move","free","stay","todo","air"];
 
   var MEALS = [
-    { key:"all", label:"전체" },
-    { key:"breakfast", label:"아침" },
-    { key:"lunch", label:"점심" },
-    { key:"dinner", label:"저녁" },
-    { key:"drink", label:"술" },
-    { key:"cafe", label:"카페" }
+    { key:"all", label:"전체" }, { key:"breakfast", label:"아침" }, { key:"lunch", label:"점심" },
+    { key:"dinner", label:"저녁" }, { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
   ];
   var MEAL_LABEL = { breakfast:"아침", lunch:"점심", dinner:"저녁", drink:"술", cafe:"카페" };
   var MEAL_EMO = { breakfast:"🍳", lunch:"🍴", dinner:"🍽️", drink:"🍺", cafe:"☕" };
-
   function autoEmo(cat, meal){
     if (meal && MEAL_EMO[meal]) return MEAL_EMO[meal];
     return (CAT[cat] || CAT.todo).emo;
@@ -911,21 +861,13 @@
     var p = String(hhmm).split(":");
     return (+p[0]) * 60 + (+p[1]);
   }
-  function fmtMD(iso){
-    var p = iso.split("-");
-    return (+p[1]) + "." + (+p[2]);
-  }
+  function fmtMD(iso){ var p = iso.split("-"); return (+p[1]) + "." + (+p[2]); }
   function todayISO(){
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
   }
-  function dayDiff(aISO, bISO){
-    return Math.round((new Date(aISO + "T00:00:00") - new Date(bISO + "T00:00:00")) / 86400000);
-  }
-  function nowMins(){
-    var d = new Date();
-    return d.getHours() * 60 + d.getMinutes();
-  }
+  function dayDiff(a, b){ return Math.round((new Date(a + "T00:00:00") - new Date(b + "T00:00:00")) / 86400000); }
+  function nowMins(){ var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
   function todayIndex(){
     var t = todayISO();
     for (var i = 0; i < TRIP.days.length; i++) if (TRIP.days[i].date === t) return i;
@@ -936,7 +878,11 @@
   var Saved = {
     backend: "local",
     db: null,
-    data: { done:{}, bought:{}, extra:{}, pack:{}, rate:950, edits:{}, added:[], removed:{} },
+    data: {
+      bought:{}, extra:{}, pack:{}, packList:null,
+      edits:{}, added:[], removed:{},
+      notes:[], links:[], attach:{}
+    },
     _t: null,
 
     async init(){
@@ -958,12 +904,17 @@
         if (raw) this.data = Object.assign(this.data, raw);
       }catch(e){ /* first run, or storage unavailable */ }
 
-      if (!this.data.edits) this.data.edits = {};
-      if (!this.data.added) this.data.added = [];
-      if (!this.data.removed) this.data.removed = {};
+      var d = this.data;
+      if (!d.edits) d.edits = {};
+      if (!d.added) d.added = [];
+      if (!d.removed) d.removed = {};
+      if (!d.notes) d.notes = [];
+      if (!d.links) d.links = [];
+      if (!d.attach) d.attach = {};
+      if (!d.packList) d.packList = PACKING_SEED.slice();
     },
 
-    /* Writes are batched: a burst of checkbox taps becomes one save. */
+    /* Writes are batched: a burst of taps becomes one save. */
     flush(){
       var self = this;
       clearTimeout(this._t);
@@ -975,40 +926,71 @@
       }, 400);
     },
 
-    isDone(id){ return !!this.data.done[id]; },
-    toggleDone(id){
-      if (this.data.done[id]) delete this.data.done[id];
-      else this.data.done[id] = 1;
-      this.flush();
-    },
     isBought(k){ return !!this.data.bought[k]; },
     toggleBought(k){
       if (this.data.bought[k]) delete this.data.bought[k];
       else this.data.bought[k] = 1;
       this.flush();
     },
-    extraOf(shopId){ return this.data.extra[shopId] || []; },
-    addExtra(shopId, text){
-      var list = this.data.extra[shopId] || [];
+    extraOf(id){ return this.data.extra[id] || []; },
+    addExtra(id, text){
+      var list = this.data.extra[id] || [];
       list.push(text);
-      this.data.extra[shopId] = list;
+      this.data.extra[id] = list;
       this.flush();
     },
-    removeExtra(shopId, text){
-      this.data.extra[shopId] = (this.data.extra[shopId] || []).filter(function(x){ return x !== text; });
-      delete this.data.bought[shopId + "::" + text];
+    removeExtra(id, text){
+      this.data.extra[id] = (this.data.extra[id] || []).filter(function(x){ return x !== text; });
+      delete this.data.bought[id + "::" + text];
       this.flush();
     },
-    isPacked(k){ return !!this.data.pack[k]; },
-    togglePacked(k){
-      if (this.data.pack[k]) delete this.data.pack[k];
-      else this.data.pack[k] = 1;
-      this.flush();
-    },
-    setRate(v){ this.data.rate = v; this.flush(); },
 
-    /* Itinerary edits are an overlay on the seed, never a copy of it, so a
-       later fix to the seed still reaches items the user never touched. */
+    /* 준비물 — the list itself is editable; the tick is keyed by its text, so
+       a rename carries the tick along instead of losing it. */
+    isPacked(t){ return !!this.data.pack[t]; },
+    togglePacked(t){
+      if (this.data.pack[t]) delete this.data.pack[t];
+      else this.data.pack[t] = 1;
+      this.flush();
+    },
+    addPack(t){ this.data.packList.push(t); this.flush(); },
+    editPack(oldT, newT){
+      this.data.packList = this.data.packList.map(function(x){ return x === oldT ? newT : x; });
+      if (this.data.pack[oldT]){ delete this.data.pack[oldT]; this.data.pack[newT] = 1; }
+      this.flush();
+    },
+    removePack(t){
+      this.data.packList = this.data.packList.filter(function(x){ return x !== t; });
+      delete this.data.pack[t];
+      this.flush();
+    },
+
+    addNote(t){ this.data.notes.push(t); this.flush(); },
+    editNote(i, t){ this.data.notes[i] = t; this.flush(); },
+    removeNote(i){ this.data.notes.splice(i, 1); this.flush(); },
+
+    addLink(o){ this.data.links.push(Object.assign({ id: uid("l") }, o)); this.flush(); },
+    editLink(id, o){
+      this.data.links = this.data.links.map(function(x){ return x.id === id ? Object.assign({}, x, o) : x; });
+      this.flush();
+    },
+    removeLink(id){
+      this.data.links = this.data.links.filter(function(x){ return x.id !== id; });
+      this.flush();
+    },
+
+    attachOf(itemId){ return this.data.attach[itemId] || []; },
+    addAttach(itemId, att){
+      var list = this.data.attach[itemId] || [];
+      list.push(Object.assign({ id: uid("t") }, att));
+      this.data.attach[itemId] = list;
+      this.flush();
+    },
+    removeAttach(itemId, attId){
+      this.data.attach[itemId] = this.attachOf(itemId).filter(function(a){ return a.id !== attId; });
+      this.flush();
+    },
+
     saveItem(draft){
       if (draft.id && SEED_IDS[draft.id]){
         this.data.edits[draft.id] = draft.patch;
@@ -1017,25 +999,97 @@
           return it.id === draft.id ? Object.assign({}, it, draft.patch) : it;
         });
       } else {
-        var item = Object.assign({ id: uid("u") }, draft.patch);
-        this.data.added.push(item);
+        this.data.added.push(Object.assign({ id: uid("u") }, draft.patch));
       }
       this.flush();
     },
     removeItem(id){
       this.data.removed[id] = 1;
-      delete this.data.done[id];
+      delete this.data.attach[id];
       this.flush();
     }
   };
 
-  /* ================= merged itinerary ================= */
-  function merged(seedItem){
-    var patch = Saved.data.edits[seedItem.id];
-    return patch ? Object.assign({}, seedItem, patch) : seedItem;
+  /* ================= photos =================
+     A photo is too big to sit in the trip document (256 KiB for the whole
+     thing), so each one gets its own record and is fetched when shown. */
+  var photoCache = {};
+
+  function compressImage(file, maxSide, quality){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onerror = function(){ reject(new Error("read")); };
+      reader.onload = function(){
+        var img = new Image();
+        img.onerror = function(){ reject(new Error("decode")); };
+        img.onload = function(){
+          var scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
-  function dayOf(item, seedDate){
-    return item.dayDate || seedDate;
+
+  async function storePhoto(file){
+    var data = await compressImage(file, 900, 0.55);
+    if (data.length > 180000) data = await compressImage(file, 640, 0.45);
+    if (data.length > 230000) throw new Error("too big");
+    var pid = uid("p");
+    if (Saved.backend === "db") await Saved.db.doc("photos/" + pid).set({ data: data });
+    else localStorage.setItem("lab.photo." + pid, data);
+    photoCache[pid] = data;
+    return pid;
+  }
+
+  async function loadPhoto(pid){
+    if (photoCache[pid]) return photoCache[pid];
+    var data = null;
+    try{
+      if (Saved.backend === "db"){
+        var snap = await Saved.db.doc("photos/" + pid).get();
+        data = snap.exists ? snap.data().data : null;
+      } else {
+        data = localStorage.getItem("lab.photo." + pid);
+      }
+    }catch(e){ data = null; }
+    if (data) photoCache[pid] = data;
+    return data;
+  }
+
+  function dropPhoto(pid){
+    delete photoCache[pid];
+    try{
+      if (Saved.backend === "db") Saved.db.doc("photos/" + pid).delete();
+      else localStorage.removeItem("lab.photo." + pid);
+    }catch(e){ /* the attachment is gone either way */ }
+  }
+
+  function thumb(pid){
+    var img = el('<img class="att-thumb" alt="첨부 사진">');
+    loadPhoto(pid).then(function(d){ if (d) img.src = d; });
+    tap(img, function(){ openPhoto(pid); });
+    return img;
+  }
+
+  function openPhoto(pid){
+    loadPhoto(pid).then(function(d){
+      if (!d){ toast("사진을 불러오지 못했어요."); return; }
+      var v = el('<div class="photoview"><img src="' + d + '" alt="첨부 사진"></div>');
+      tap(v, closeOverlay);
+      overlay.appendChild(v);
+    });
+  }
+
+  /* ================= merged itinerary ================= */
+  function merged(seed){
+    var patch = Saved.data.edits[seed.id];
+    return patch ? Object.assign({}, seed, patch) : seed;
   }
   function byStart(a, b){ return (mins(a.s) || 0) - (mins(b.s) || 0); }
 
@@ -1046,7 +1100,7 @@
       d.items.forEach(function(seed){
         if (Saved.data.removed[seed.id]) return;
         var it = merged(seed);
-        if (dayOf(it, d.date) === date) out.push(it);
+        if ((it.dayDate || d.date) === date) out.push(it);
       });
     });
     Saved.data.added.forEach(function(it){
@@ -1066,7 +1120,6 @@
   }
   function isMine(it){ return !SEED_IDS[it.id]; }
 
-  /* An item's span; items with no end run until the next one starts. */
   function currentPair(){
     var di = todayIndex();
     if (di < 0) return null;
@@ -1096,6 +1149,7 @@
   var overlay = document.getElementById("overlay");
 
   function go(next){ Object.assign(state, next); render(); }
+  function closeOverlay(){ overlay.innerHTML = ""; }
 
   function themeButton(){
     var dark = Theme.isDark();
@@ -1121,7 +1175,6 @@
   /* ================= home ================= */
   function renderHome(){
     setBar({ title: "나의 실험실" });
-
     var d = dayDiff(TRIP.start, todayISO());
     var di = todayIndex();
     var status = di >= 0 ? "여행 " + (di + 1) + "일차" : (d > 0 ? "D-" + d : "다녀옴");
@@ -1138,8 +1191,7 @@
               '<span class="lab-index mono">EXP 01</span>' +
               '<span class="lab-name">여행 계획</span>' +
               '<span class="lab-desc">후쿠오카 2박 3일 · ' + fmtMD(TRIP.start) + '–' + fmtMD(TRIP.end) + ' · ' + esc(status) + '</span>' +
-            '</span>' +
-            icon("go", "lab-go") +
+            '</span>' + icon("go", "lab-go") +
           '</button>' +
           '<div class="lab-row vacant">' +
             '<span class="lab-mark">' + icon("plus") + '</span>' +
@@ -1171,8 +1223,7 @@
 
     var tabs = el('<div class="tabs" role="tablist"></div>');
     [["sched","일정"],["food","음식"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
-      var b = el('<button class="tab" role="tab" type="button" aria-selected="' +
-        (state.tab === t[0]) + '">' + t[1] + '</button>');
+      var b = el('<button class="tab" role="tab" type="button" aria-selected="' + (state.tab === t[0]) + '">' + t[1] + '</button>');
       tap(b, function(){ go({ tab: t[0] }); });
       tabs.appendChild(b);
     });
@@ -1201,39 +1252,31 @@
       var cur = pair.current, nx = pair.next;
       box = el('<div class="now"></div>');
       box.appendChild(el(
-        '<div class="now-part">' +
-          '<span class="now-tag on">지금</span>' +
-          '<div><p class="now-title">' + (cur ? esc(cur.emo + " " + cur.title) : "일정 사이 — 여유 시간") + '</p>' +
-          '<p class="now-time mono">' + (cur ? esc(cur.s + (cur.e ? "–" + cur.e : "~")) : "") + '</p></div>' +
-        '</div>'
+        '<div class="now-part"><span class="now-tag on">지금</span>' +
+        '<div><p class="now-title">' + (cur ? esc(cur.emo + " " + cur.title) : "일정 사이 — 여유 시간") + '</p>' +
+        '<p class="now-time mono">' + (cur ? esc(cur.s + (cur.e ? "–" + cur.e : "~")) : "") + '</p></div></div>'
       ));
       if (nx){
         box.appendChild(el(
-          '<div class="now-part">' +
-            '<span class="now-tag next">다음</span>' +
-            '<div><p class="now-title">' + esc(nx.emo + " " + nx.title) + '</p>' +
-            '<p class="now-time mono">' + esc(nx.s) + ' 시작</p></div>' +
-          '</div>'
+          '<div class="now-part"><span class="now-tag next">다음</span>' +
+          '<div><p class="now-title">' + esc(nx.emo + " " + nx.title) + '</p>' +
+          '<p class="now-time mono">' + esc(nx.s) + ' 시작</p></div></div>'
         ));
       }
     } else {
       var label = d > 0 ? "D-" + d : (d === 0 ? "오늘 출발" : "여행 완료");
       var sub = d > 0 ? "9월 12일 11:10 한국 출발" : (d === 0 ? "11:10 한국 출발" : "다녀온 여행");
       box = el(
-        '<div class="countdown' + (d === 0 ? " live" : "") + '">' +
-          icon("plane") +
-          '<div><div class="countdown-big mono">' + esc(label) + '</div>' +
-          '<div class="countdown-sub">' + esc(sub) + '</div></div>' +
-        '</div>'
+        '<div class="countdown' + (d === 0 ? " live" : "") + '">' + icon("plane") +
+        '<div><div class="countdown-big mono">' + esc(label) + '</div>' +
+        '<div class="countdown-sub">' + esc(sub) + '</div></div></div>'
       );
     }
 
     var hero = el(
       '<div class="hero">' +
-        '<div class="hero-top">' +
-          '<h1 class="hero-city">' + esc(TRIP.city) + '</h1>' +
-          '<span class="hero-country mono">' + esc(TRIP.country) + '</span>' +
-        '</div>' +
+        '<div class="hero-top"><h1 class="hero-city">' + esc(TRIP.city) + '</h1>' +
+        '<span class="hero-country mono">' + esc(TRIP.country) + '</span></div>' +
         '<p class="hero-dates mono">' + fmtMD(TRIP.start) + ' (토) – ' + fmtMD(TRIP.end) + ' (월) · 2박 3일</p>' +
       '</div>'
     );
@@ -1248,10 +1291,8 @@
     var dayrow = el('<div class="dayrow"></div>');
     TRIP.days.forEach(function(day, i){
       var isToday = pair && pair.dayIndex === i;
-      var b = el(
-        '<button class="daybtn' + (isToday ? " today" : "") + '" type="button" aria-pressed="' +
-          (state.day === i) + '"><b>' + fmtMD(day.date) + '</b>' + day.dow + (isToday ? " · 오늘" : "") + '</button>'
-      );
+      var b = el('<button class="daybtn' + (isToday ? " today" : "") + '" type="button" aria-pressed="' +
+        (state.day === i) + '"><b>' + fmtMD(day.date) + '</b>' + day.dow + (isToday ? " · 오늘" : "") + '</button>');
       tap(b, function(){ go({ day: i }); });
       dayrow.appendChild(b);
     });
@@ -1259,31 +1300,25 @@
 
     var day = TRIP.days[state.day];
     var list = itemsForDay(state.day);
-    var doneCount = list.filter(function(it){ return Saved.isDone(it.id); }).length;
+    var attCount = list.reduce(function(n, it){ return n + Saved.attachOf(it.id).length; }, 0);
 
     root.appendChild(el(
-      '<div class="day-head">' +
-        '<p class="day-theme">' + esc(day.theme) + '</p>' +
-        '<p class="day-stat mono">' + list.length + '개 일정 · ' + doneCount + '개 완료</p>' +
-      '</div>'
+      '<div class="day-head"><p class="day-theme">' + esc(day.theme) + '</p>' +
+      '<p class="day-stat mono">' + list.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p></div>'
     ));
 
     if (pair && pair.dayIndex === state.day && pair.current){
-      root.appendChild(el(
-        '<div class="notice">' + icon("clock") +
-        '<span>지금 진행 중: ' + esc(pair.current.title) + '</span></div>'
-      ));
+      root.appendChild(el('<div class="notice">' + icon("clock") +
+        '<span>지금 진행 중: ' + esc(pair.current.title) + '</span></div>'));
     }
 
     var tl = el('<div class="tl"></div>');
     list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
 
     var add = el(
-      '<div class="tl-add">' +
-        '<div class="tl-time mono">+</div>' +
-        '<div class="tl-rail"><span class="tl-dot"></span></div>' +
-        '<button class="addrow" type="button">' + icon("plus") + '일정 추가</button>' +
-      '</div>'
+      '<div class="tl-add"><div class="tl-time mono">+</div>' +
+      '<div class="tl-rail"><span class="tl-dot"></span></div>' +
+      '<button class="addrow" type="button">' + icon("plus") + '일정 추가</button></div>'
     );
     tap(add.querySelector(".addrow"), function(){ openEditor(null, day.date); });
     tl.appendChild(add);
@@ -1294,26 +1329,17 @@
   function timelineItem(it, pair){
     var cat = CAT[it.cat] || CAT.todo;
     var isCurrent = pair && pair.current && pair.current.id === it.id;
-    var done = Saved.isDone(it.id);
 
     var row = el(
-      '<div class="tl-item' + (done ? " done" : "") + (isCurrent ? " current" : "") + '">' +
+      '<div class="tl-item' + (isCurrent ? " current" : "") + '">' +
         '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) + '</small>' : (it.open ? '<small>~</small>' : '')) + '</div>' +
         '<div class="tl-rail"><span class="tl-dot' + (it.fixed ? " big" : "") + '" style="border-color:' + cat.color + '"></span></div>' +
         '<div class="tl-body">' +
-          '<div class="tl-head">' +
-            '<p class="tl-title"><span class="emo">' + it.emo + '</span>' + placeHtml(it.title, it.place) + '</p>' +
-          '</div>' +
+          '<p class="tl-title"><span class="emo">' + it.emo + '</span>' + placeHtml(it.title, it.place) + '</p>' +
         '</div>' +
       '</div>'
     );
-
     var body = row.querySelector(".tl-body");
-    var head = row.querySelector(".tl-head");
-
-    var check = el('<button class="check" type="button" aria-pressed="' + done + '" aria-label="완료 표시">' + icon("check") + '</button>');
-    tap(check, function(){ Saved.toggleDone(it.id); render(); });
-    head.appendChild(check);
 
     (it.lines || []).forEach(function(line){
       body.appendChild(el('<p class="tl-line">' + esc(line) + '</p>'));
@@ -1323,6 +1349,9 @@
         (c.kind ? " · " + esc(c.kind) : "") + '</p>'));
     });
     if (it.note) body.appendChild(el('<p class="tl-line">' + esc(it.note) + '</p>'));
+
+    var atts = Saved.attachOf(it.id);
+    if (atts.length) body.appendChild(attachStrip(it.id, atts));
 
     var meta = el('<div class="tl-meta"></div>');
     meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + cat.label + '</span>'));
@@ -1338,12 +1367,41 @@
         icon("pin") + esc(p.replace(/\s*(후쿠오카|텐진|하카타)$/, "")) + '</a>'));
     });
 
-    var edit = el('<button class="editbtn" type="button">' + icon("edit") + '수정</button>');
+    var actions = el('<span class="tl-actions"></span>');
+    var clip = el('<button class="quietbtn' + (atts.length ? " has" : "") + '" type="button" aria-label="자료">' +
+      icon("clip") + (atts.length ? atts.length : "") + '</button>');
+    tap(clip, function(){ openAttachSheet(it); });
+    actions.appendChild(clip);
+
+    var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
     tap(edit, function(){ openEditor(it, null); });
-    meta.appendChild(edit);
+    actions.appendChild(edit);
+    meta.appendChild(actions);
 
     body.appendChild(meta);
     return row;
+  }
+
+  /* What an item carries, shown inline so it is there when you need it. */
+  function attachStrip(itemId, atts){
+    var box = el('<div class="att"></div>');
+    var photos = atts.filter(function(a){ return a.type === "photo"; });
+    if (photos.length){
+      var strip = el('<div class="att-photos"></div>');
+      photos.forEach(function(a){ strip.appendChild(thumb(a.pid)); });
+      box.appendChild(strip);
+    }
+    atts.forEach(function(a){
+      if (a.type === "link"){
+        var u = safeUrl(a.url);
+        if (!u) return;
+        box.appendChild(el('<a class="att-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
+          icon("link") + '<span>' + esc(a.title || hostOf(u)) + '</span></a>'));
+      } else if (a.type === "note"){
+        box.appendChild(el('<p class="att-note">' + esc(a.text) + '</p>'));
+      }
+    });
+    return box;
   }
 
   /* ================= tab: food ================= */
@@ -1368,10 +1426,8 @@
       if (f.dayIndex !== lastDay){
         lastDay = f.dayIndex;
         var n = list.filter(function(x){ return x.dayIndex === f.dayIndex; }).length;
-        root.appendChild(el(
-          '<div class="group-label"><h3>' + fmtMD(f.day.date) + ' (' + f.day.dow + ')</h3>' +
-          '<span class="group-count mono">' + n + '</span></div>'
-        ));
+        root.appendChild(el('<div class="group-label"><h3>' + fmtMD(f.day.date) + ' (' + f.day.dow + ')</h3>' +
+          '<span class="group-count mono">' + n + '</span></div>'));
       }
       root.appendChild(foodCard(f));
     });
@@ -1391,22 +1447,20 @@
   function foodCard(f){
     var it = f.item;
     var card = el('<div class="card' + (it.undecided || it.open ? " dashed" : "") + '"></div>');
-
-    card.appendChild(el(
-      '<p class="card-when mono">' + esc(it.s) + (it.e ? '–' + esc(it.e) : '~') + ' · ' +
-      esc(MEAL_LABEL[it.meal] || "") + '</p>'
-    ));
+    card.appendChild(el('<p class="card-when mono">' + esc(it.s) + (it.e ? '–' + esc(it.e) : '~') + ' · ' +
+      esc(MEAL_LABEL[it.meal] || "") + '</p>'));
     card.appendChild(el('<div class="card-top"><p class="card-name">' + it.emo + ' ' +
       placeHtml(it.title, it.place) + '</p></div>'));
 
-    (it.lines || []).forEach(function(l){
-      card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>'));
-    });
+    (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
     (it.candidates || []).forEach(function(c){
       card.appendChild(el('<p class="card-kind">· ' + placeHtml(c.name, c.nomap ? null : c.name) +
         (c.kind ? ' — ' + esc(c.kind) : '') + '</p>'));
     });
     if (it.note) card.appendChild(el('<p class="card-note">' + esc(it.note) + '</p>'));
+
+    var atts = Saved.attachOf(it.id);
+    if (atts.length) card.appendChild(attachStrip(it.id, atts));
 
     var meta = el('<div class="card-meta"></div>');
     if (it.reserved){
@@ -1416,9 +1470,15 @@
     if (it.open) meta.appendChild(el('<span class="badge maybe">후보 중 선택</span>'));
     if (isMine(it)) meta.appendChild(el('<span class="badge mine">직접 추가</span>'));
 
-    var edit = el('<button class="editbtn" type="button">' + icon("edit") + '수정</button>');
+    var actions = el('<span class="tl-actions"></span>');
+    var clip = el('<button class="quietbtn' + (atts.length ? " has" : "") + '" type="button" aria-label="자료">' +
+      icon("clip") + (atts.length ? atts.length : "") + '</button>');
+    tap(clip, function(){ openAttachSheet(it); });
+    actions.appendChild(clip);
+    var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
     tap(edit, function(){ openEditor(it, null); });
-    meta.appendChild(edit);
+    actions.appendChild(edit);
+    meta.appendChild(actions);
 
     card.appendChild(meta);
     return card;
@@ -1433,12 +1493,9 @@
       items.forEach(function(i){ if (Saved.isBought(s.id + "::" + i)) got++; });
     });
 
-    root.appendChild(el(
-      '<div class="day-head" style="padding-top:18px">' +
-        '<p class="day-theme">쇼핑 목록</p>' +
-        '<p class="day-stat mono">' + SHOPS.length + '곳 · 살 것 ' + got + '/' + total + '</p>' +
-      '</div>'
-    ));
+    root.appendChild(el('<div class="day-head" style="padding-top:18px">' +
+      '<p class="day-theme">쇼핑 목록</p>' +
+      '<p class="day-stat mono">' + SHOPS.length + '곳 · 살 것 ' + got + '/' + total + '</p></div>'));
 
     var lastDay = -1;
     SHOPS.forEach(function(s){
@@ -1446,10 +1503,8 @@
         lastDay = s.day;
         var day = TRIP.days[s.day];
         var n = SHOPS.filter(function(x){ return x.day === s.day; }).length;
-        root.appendChild(el(
-          '<div class="group-label"><h3>' + fmtMD(day.date) + ' (' + day.dow + ')</h3>' +
-          '<span class="group-count mono">' + n + '곳</span></div>'
-        ));
+        root.appendChild(el('<div class="group-label"><h3>' + fmtMD(day.date) + ' (' + day.dow + ')</h3>' +
+          '<span class="group-count mono">' + n + '곳</span></div>'));
       }
       root.appendChild(shopCard(s));
     });
@@ -1465,12 +1520,10 @@
       var key = s.id + "::" + name;
       var bought = Saved.isBought(key);
       var row = el('<div class="buy-row' + (bought ? " got" : "") + '"></div>');
-
       var cb = el('<button class="check" type="button" aria-pressed="' + bought + '" aria-label="샀음 표시">' + icon("check") + '</button>');
       tap(cb, function(){ Saved.toggleBought(key); render(); });
       row.appendChild(cb);
       row.appendChild(el('<span class="buy-text">' + esc(name) + '</span>'));
-
       if (s.preset.indexOf(name) === -1){
         var del = el('<button class="buy-del" type="button" aria-label="삭제">' + icon("x") + '</button>');
         tap(del, function(){ Saved.removeExtra(s.id, name); render(); });
@@ -1479,15 +1532,10 @@
       card.appendChild(row);
     });
 
-    /* The input stays folded away: most stores have nothing listed yet, and
-       nine open input boxes turn the page into a wall of identical fields. */
     var addBtn = el('<button class="addtoggle" type="button">+ 살 것 적어두기</button>');
-    var add = el(
-      '<div class="additem" hidden>' +
-        '<input type="text" placeholder="예: 티셔츠" aria-label="살 것 추가">' +
-        '<button type="button">추가</button>' +
-      '</div>'
-    );
+    var add = el('<div class="additem" hidden>' +
+      '<input type="text" placeholder="예: 티셔츠" aria-label="살 것 추가">' +
+      '<button type="button">추가</button></div>');
     var input = add.querySelector("input");
     function submit(){
       var v = input.value.trim();
@@ -1501,184 +1549,376 @@
     input.addEventListener("keydown", function(e){ if (e.key === "Enter") submit(); });
     card.appendChild(addBtn);
     card.appendChild(add);
-
     return card;
   }
 
   /* ================= tab: info ================= */
   function renderInfo(root){
     var flights = el('<div class="card"><p class="card-when mono">항공</p></div>');
-    flights.appendChild(fact("plane", "가는 편 · 9.12 (토)", "11:10 한국 출발<small>12:40 후쿠오카 도착</small>"));
-    flights.appendChild(fact("plane", "오는 편 · 9.14 (월)", "13:40 한국행 출발<small>11:40 공항 도착 — 출발 2시간 전</small>"));
+    flights.appendChild(fact("plane", "가는 편 · 9.12 (토)",
+      '<span class="airline">7C</span>제주항공 7C1471<small>11:10 한국 출발 — 12:40 후쿠오카 도착</small>'));
+    flights.appendChild(fact("plane", "오는 편 · 9.14 (월)",
+      '<span class="airline">7C</span>제주항공 7C1472<small>13:40 한국행 출발 — 11:40 공항 도착 (출발 2시간 전)</small>'));
     root.appendChild(flights);
 
-    var stay = el('<div class="card"><p class="card-when mono">숙소 · 짐</p></div>');
-    stay.appendChild(fact("bed", "나카스 호텔", "9.12 17:30 체크인<small>9.14 10:55 전 체크아웃 · 캐리어 픽업</small>"));
-    stay.appendChild(fact("box", "CARGO PASS", "9.12 13:25–13:40 공항에서 접수<small>캐리어가 숙소로 바로 배송 — 체크인 때 수령 확인</small>"));
+    var stay = el('<div class="card"><p class="card-when mono">숙소</p></div>');
+    stay.appendChild(fact("bed", "나카스",
+      placeHtml(TRIP.hotel, TRIP.hotel) + '<small>체크인 15:00 · 체크아웃 11:00</small>'));
     root.appendChild(stay);
 
     var book = el('<div class="card"><p class="card-when mono">예약 확정</p></div>');
-    book.appendChild(fact("clock", "야키니쿠 카쿠라 니시나카스점", "9.13 (일) 17:15 · 2명<small>이 시간만은 고정 — 16:30 니시나카스 방향 이동</small>"));
+    book.appendChild(fact("clock", "야키니쿠 카쿠라 니시나카스점",
+      '9.13 (일) 17:15 · 2명<small>이 시간만은 고정 — 16:30 니시나카스 방향 이동</small>'));
     root.appendChild(book);
 
-    root.appendChild(currencyCard());
-    root.appendChild(packingCard());
-
-    var tips = el('<div class="card"><p class="card-when mono">메모</p></div>');
-    [
-      "한국과 일본은 시차가 없습니다. 시계 그대로 쓰면 됩니다.",
-      "면세를 받으려면 여권이 필요합니다. 돈키호테·백화점 쇼핑 때 챙기세요.",
-      "작은 이자카야는 현금만 받는 곳이 있습니다. 엔화 현금을 조금은 준비하세요.",
-      "9월 후쿠오카는 비가 올 수 있습니다. 접이식 우산 하나가 편합니다.",
-      "9.12 밤 술집은 건너뛰고 9.13으로 넘겨도 되는 일정입니다."
-    ].forEach(function(t){ tips.appendChild(el('<p class="tip">' + esc(t) + '</p>')); });
-    root.appendChild(tips);
+    root.appendChild(linksCard());
+    root.appendChild(packCard());
+    root.appendChild(notesCard());
   }
 
   function fact(ic, label, valueHtml){
-    return el(
-      '<div class="fact">' + icon(ic) +
-        '<div class="fact-body"><p class="fact-label">' + esc(label) + '</p>' +
-        '<p class="fact-value">' + valueHtml + '</p></div>' +
-      '</div>'
-    );
+    return el('<div class="fact">' + icon(ic) +
+      '<div class="fact-body"><p class="fact-label">' + esc(label) + '</p>' +
+      '<p class="fact-value">' + valueHtml + '</p></div></div>');
   }
 
-  function currencyCard(){
-    var card = el('<div class="card"><p class="card-when mono">환율 계산기</p></div>');
-    card.appendChild(el('<p class="card-name" style="font-size:14px">엔 → 원</p>'));
+  function cardHead(title, count){
+    return el('<div class="card-head"><p class="card-when mono">' + esc(title) +
+      (count != null ? ' · ' + count : '') + '</p></div>');
+  }
 
-    var calc = el(
-      '<div class="calc">' +
-        '<input type="text" inputmode="decimal" id="yen" value="1000" aria-label="엔 금액">' +
-        '<span class="mono">엔 =</span>' +
-      '</div>'
-    );
-    var out = el('<p class="fact-value mono" id="krw" style="margin-top:10px;font-size:19px;font-weight:700"></p>');
-    card.appendChild(calc);
-    card.appendChild(out);
-
-    var quick = el('<div class="quick"></div>');
-    [500, 1000, 3000, 5000, 10000].forEach(function(v){
-      var b = el('<button type="button">' + v.toLocaleString() + '엔</button>');
-      tap(b, function(){ calc.querySelector("#yen").value = String(v); update(); });
-      quick.appendChild(b);
+  /* 유용한 정보 — a title that opens the link it carries. */
+  function linksCard(){
+    var card = el('<div class="card"></div>');
+    var head = cardHead("유용한 정보", Saved.data.links.length || null);
+    var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
+    tap(add, function(){
+      openLinkDialog(null, function(v){ Saved.addLink(v); render(); });
     });
-    card.appendChild(quick);
+    head.appendChild(add);
+    card.appendChild(head);
 
-    var rateRow = el(
-      '<div class="rate-row"><span>기준 · 100엔 =</span>' +
-      '<input type="text" inputmode="decimal" id="rate" value="' + Saved.data.rate + '" aria-label="100엔당 원화">' +
-      '<span>원</span></div>'
-    );
-    card.appendChild(rateRow);
-    card.appendChild(el('<p class="tip" style="margin-top:8px">기본값은 어림값입니다. 실제 환율을 확인해서 고쳐 쓰세요.</p>'));
-
-    function update(){
-      var yen = parseFloat(String(calc.querySelector("#yen").value).replace(/[^0-9.]/g, "")) || 0;
-      var rate = parseFloat(String(rateRow.querySelector("#rate").value).replace(/[^0-9.]/g, "")) || 0;
-      out.textContent = Math.round(yen * rate / 100).toLocaleString() + " 원";
+    if (!Saved.data.links.length){
+      card.appendChild(el('<p class="card-empty">링크를 모아두면 여행 중에 바로 꺼내볼 수 있어요.</p>'));
+      return card;
     }
-    calc.querySelector("#yen").addEventListener("input", update);
-    rateRow.querySelector("#rate").addEventListener("input", function(){
-      var v = parseFloat(String(rateRow.querySelector("#rate").value).replace(/[^0-9.]/g, ""));
-      if (v) Saved.setRate(v);
-      update();
-    });
-    update();
-    return card;
-  }
 
-  function packingCard(){
-    var done = PACKING.filter(function(p){ return Saved.isPacked(p); }).length;
-    var card = el('<div class="card"><p class="card-when mono">준비물 · ' + done + '/' + PACKING.length + '</p></div>');
-    PACKING.forEach(function(p){
-      var on = Saved.isPacked(p);
-      var row = el('<div class="pack-row' + (on ? " on" : "") + '"></div>');
-      var cb = el('<button class="check" type="button" aria-pressed="' + on + '" aria-label="챙김 표시">' + icon("check") + '</button>');
-      tap(cb, function(){ Saved.togglePacked(p); render(); });
-      row.appendChild(cb);
-      row.appendChild(el('<span class="pack-text">' + esc(p) + '</span>'));
+    Saved.data.links.forEach(function(l){
+      var u = safeUrl(l.url);
+      var row = el('<div class="linkrow"></div>');
+      row.appendChild(el('<a href="' + esc(u || "#") + '" target="_blank" rel="noopener">' + icon("link") +
+        '<span class="linkrow-text"><b>' + esc(l.title) + '</b><small>' + esc(u ? hostOf(u) : "잘못된 주소") + '</small></span></a>'));
+      var ed = el('<button class="quietbtn" type="button" aria-label="수정">' + icon("edit") + '</button>');
+      tap(ed, function(){
+        openLinkDialog(l, function(v){ Saved.editLink(l.id, v); render(); },
+          function(){ Saved.removeLink(l.id); render(); });
+      });
+      row.appendChild(ed);
       card.appendChild(row);
     });
     return card;
   }
 
-  /* ================= editor sheet ================= */
-  function closeOverlay(){ overlay.innerHTML = ""; }
-
-  function confirmDialog(opts){
-    return new Promise(function(resolve){
-      var d = el(
-        '<div class="scrim" style="align-items:center"><div class="dialog" role="alertdialog">' +
-          '<h3>' + esc(opts.title) + '</h3><p>' + esc(opts.body) + '</p>' +
-          '<div class="dialog-actions">' +
-            '<button class="btn-text" data-a="no">취소</button>' +
-            '<button class="btn-text danger" data-a="yes">' + esc(opts.ok || "확인") + '</button>' +
-          '</div>' +
-        '</div></div>'
-      );
-      d.addEventListener("click", function(e){ if (e.target === d){ closeOverlay(); resolve(false); } });
-      d.querySelector('[data-a="no"]').addEventListener("click", function(){ closeOverlay(); resolve(false); });
-      d.querySelector('[data-a="yes"]').addEventListener("click", function(){ closeOverlay(); resolve(true); });
-      overlay.appendChild(d);
+  function packCard(){
+    var list = Saved.data.packList;
+    var done = list.filter(function(p){ return Saved.isPacked(p); }).length;
+    var card = el('<div class="card"></div>');
+    var head = cardHead("준비물", done + "/" + list.length);
+    var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
+    tap(add, function(){
+      openTextDialog({ title:"준비물 추가", placeholder:"예: 멀티탭" }, function(v){ Saved.addPack(v); render(); });
     });
+    head.appendChild(add);
+    card.appendChild(head);
+
+    list.forEach(function(p){
+      var on = Saved.isPacked(p);
+      var row = el('<div class="listrow' + (on ? " on" : "") + '"></div>');
+      var cb = el('<button class="check" type="button" aria-pressed="' + on + '" aria-label="챙김 표시">' + icon("check") + '</button>');
+      tap(cb, function(){ Saved.togglePacked(p); render(); });
+      row.appendChild(cb);
+      var btn = el('<button class="listrow-btn" type="button"><span class="listrow-text">' + esc(p) + '</span>' + icon("edit") + '</button>');
+      tap(btn, function(){
+        openTextDialog({ title:"준비물 수정", value:p }, function(v){ Saved.editPack(p, v); render(); },
+          function(){ Saved.removePack(p); render(); });
+      });
+      row.appendChild(btn);
+      card.appendChild(row);
+    });
+    return card;
   }
 
-  /* One sheet for both adding and editing — an item added from 음식 is the
-     same kind of thing as one added from 일정, so it gets the same form. */
+  function notesCard(){
+    var card = el('<div class="card"></div>');
+    var head = cardHead("메모", Saved.data.notes.length || null);
+    var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
+    tap(add, function(){
+      openTextDialog({ title:"메모 추가", placeholder:"기억해둘 것", multiline:true },
+        function(v){ Saved.addNote(v); render(); });
+    });
+    head.appendChild(add);
+    card.appendChild(head);
+
+    if (!Saved.data.notes.length){
+      card.appendChild(el('<p class="card-empty">아직 메모가 없어요.</p>'));
+      return card;
+    }
+
+    Saved.data.notes.forEach(function(t, i){
+      var row = el('<div class="listrow"></div>');
+      var btn = el('<button class="listrow-btn" type="button"><span class="listrow-text">' + esc(t) + '</span>' + icon("edit") + '</button>');
+      tap(btn, function(){
+        openTextDialog({ title:"메모 수정", value:t, multiline:true },
+          function(v){ Saved.editNote(i, v); render(); },
+          function(){ Saved.removeNote(i); render(); });
+      });
+      row.appendChild(btn);
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  /* ================= dialogs ================= */
+  function dialogShell(inner){
+    var scrim = el('<div class="scrim" style="align-items:center">' + inner + '</div>');
+    scrim.addEventListener("click", function(e){ if (e.target === scrim) closeOverlay(); });
+    return scrim;
+  }
+
+  function openTextDialog(opts, onSave, onDelete){
+    var field = opts.multiline
+      ? '<textarea id="dlg-v" placeholder="' + esc(opts.placeholder || "") + '">' + esc(opts.value || "") + '</textarea>'
+      : '<input id="dlg-v" type="text" placeholder="' + esc(opts.placeholder || "") + '" value="' + esc(opts.value || "") + '">';
+    var d = dialogShell(
+      '<div class="dialog" role="dialog" aria-modal="true">' +
+        '<h3>' + esc(opts.title) + '</h3>' +
+        '<div class="fld">' + field + '</div>' +
+        '<div class="dialog-actions">' +
+          (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
+          '<span class="spacer"></span>' +
+          '<button class="btn-text" data-a="no">취소</button>' +
+          '<button class="btn-text go" data-a="ok">확인</button>' +
+        '</div>' +
+      '</div>'
+    );
+    var input = d.querySelector("#dlg-v");
+    d.querySelector('[data-a="no"]').addEventListener("click", closeOverlay);
+    if (onDelete){
+      d.querySelector('[data-a="del"]').addEventListener("click", function(){ closeOverlay(); onDelete(); });
+    }
+    d.querySelector('[data-a="ok"]').addEventListener("click", function(){
+      var v = input.value.trim();
+      if (!v){ input.focus(); return; }
+      closeOverlay();
+      onSave(v);
+    });
+    if (!opts.multiline){
+      input.addEventListener("keydown", function(e){ if (e.key === "Enter") d.querySelector('[data-a="ok"]').click(); });
+    }
+    overlay.appendChild(d);
+    setTimeout(function(){ input.focus(); }, 60);
+  }
+
+  function openLinkDialog(link, onSave, onDelete){
+    var d = dialogShell(
+      '<div class="dialog" role="dialog" aria-modal="true">' +
+        '<h3>' + (link ? "정보 수정" : "정보 추가") + '</h3>' +
+        '<div class="fld"><label for="lk-t">제목</label>' +
+          '<input id="lk-t" type="text" placeholder="예: 공항버스 타는 법" value="' + esc(link ? link.title : "") + '"></div>' +
+        '<div class="fld"><label for="lk-u">링크</label>' +
+          '<input id="lk-u" type="url" inputmode="url" placeholder="https://..." value="' + esc(link ? link.url : "") + '"></div>' +
+        '<div class="dialog-actions">' +
+          (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
+          '<span class="spacer"></span>' +
+          '<button class="btn-text" data-a="no">취소</button>' +
+          '<button class="btn-text go" data-a="ok">확인</button>' +
+        '</div>' +
+      '</div>'
+    );
+    var t = d.querySelector("#lk-t"), u = d.querySelector("#lk-u");
+    d.querySelector('[data-a="no"]').addEventListener("click", closeOverlay);
+    if (onDelete){
+      d.querySelector('[data-a="del"]').addEventListener("click", function(){ closeOverlay(); onDelete(); });
+    }
+    d.querySelector('[data-a="ok"]').addEventListener("click", function(){
+      var title = t.value.trim(), url = safeUrl(u.value);
+      if (!title){ t.focus(); toast("제목을 적어주세요."); return; }
+      if (!url){ u.focus(); toast("http로 시작하는 주소를 넣어주세요."); return; }
+      closeOverlay();
+      onSave({ title: title, url: url });
+    });
+    overlay.appendChild(d);
+    setTimeout(function(){ t.focus(); }, 60);
+  }
+
+  /* ================= attachments sheet ================= */
+  function openAttachSheet(item){
+    var sheet = el(
+      '<div class="scrim"><div class="sheet" role="dialog" aria-modal="true">' +
+        '<div class="sheet-head"><div style="flex:1;min-width:0">' +
+          '<p class="sheet-title">자료</p>' +
+          '<p class="sheet-sub">' + esc(item.s + " " + item.title) + '</p></div>' +
+          '<button class="icon-btn" id="sheet-x" aria-label="닫기">' + icon("x") + '</button>' +
+        '</div>' +
+        '<div class="sheet-body">' +
+          '<div class="attpick">' +
+            '<button type="button" data-k="note" aria-pressed="true">' + icon("note") + '메모</button>' +
+            '<button type="button" data-k="link" aria-pressed="false">' + icon("link") + '링크</button>' +
+            '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button>' +
+          '</div>' +
+          '<div id="att-form"></div>' +
+          '<div class="attlist" id="att-list"></div>' +
+        '</div>' +
+      '</div></div>'
+    );
+    var form = sheet.querySelector("#att-form");
+    var listBox = sheet.querySelector("#att-list");
+    var kind = "note";
+
+    function paintPicks(){
+      sheet.querySelectorAll(".attpick button").forEach(function(b){
+        b.setAttribute("aria-pressed", String(b.getAttribute("data-k") === kind));
+      });
+    }
+    sheet.querySelectorAll(".attpick button").forEach(function(b){
+      tap(b, function(){ kind = b.getAttribute("data-k"); paintPicks(); paintForm(); });
+    });
+
+    function paintForm(){
+      form.innerHTML = "";
+      if (kind === "note"){
+        var f = el('<div><div class="fld"><textarea id="a-note" placeholder="예: 2층 버스 정류장, 줄이 길면 택시"></textarea></div>' +
+          '<button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
+        tap(f.querySelector("button"), function(){
+          var v = f.querySelector("#a-note").value.trim();
+          if (!v) return;
+          Saved.addAttach(item.id, { type:"note", text:v });
+          paintList(); render();
+          f.querySelector("#a-note").value = "";
+          toast("메모를 넣었어요.");
+        });
+        form.appendChild(f);
+      } else if (kind === "link"){
+        var g = el('<div><div class="fld"><label for="a-lt">제목</label>' +
+          '<input id="a-lt" type="text" placeholder="예: 공항버스 후기"></div>' +
+          '<div class="fld"><label for="a-lu">링크</label>' +
+          '<input id="a-lu" type="url" inputmode="url" placeholder="https://..."></div>' +
+          '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
+        tap(g.querySelector("button"), function(){
+          var t = g.querySelector("#a-lt").value.trim();
+          var u = safeUrl(g.querySelector("#a-lu").value);
+          if (!u){ g.querySelector("#a-lu").focus(); toast("http로 시작하는 주소를 넣어주세요."); return; }
+          Saved.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
+          paintList(); render();
+          g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
+          toast("링크를 넣었어요.");
+        });
+        form.appendChild(g);
+      } else {
+        var h = el('<div><label class="btn btn-primary" style="width:100%">' + icon("image") + '사진 고르기' +
+          '<input type="file" accept="image/*" hidden></label>' +
+          '<p class="fld-hint">사진은 크기를 줄여서 저장됩니다.</p></div>');
+        var fileInput = h.querySelector("input");
+        fileInput.addEventListener("change", async function(){
+          var file = fileInput.files[0];
+          if (!file) return;
+          var label = h.querySelector("label");
+          label.textContent = "저장 중...";
+          try{
+            var pid = await storePhoto(file);
+            Saved.addAttach(item.id, { type:"photo", pid: pid });
+            paintList(); render();
+            toast("사진을 넣었어요.");
+          }catch(e){
+            toast("사진을 저장하지 못했어요.");
+          }
+          label.innerHTML = icon("image") + "사진 고르기";
+          label.appendChild(fileInput);
+          fileInput.value = "";
+        });
+        form.appendChild(h);
+      }
+    }
+
+    function paintList(){
+      listBox.innerHTML = "";
+      var atts = Saved.attachOf(item.id);
+      if (!atts.length){
+        listBox.appendChild(el('<p class="card-empty" style="padding:12px 0">아직 넣은 자료가 없어요.</p>'));
+        return;
+      }
+      atts.forEach(function(a){
+        var row = el('<div class="attlist-row"></div>');
+        if (a.type === "photo"){
+          row.appendChild(thumb(a.pid));
+          row.appendChild(el('<div class="attlist-body"><b>사진</b></div>'));
+        } else if (a.type === "link"){
+          row.appendChild(el('<div class="attlist-body"><b>' + esc(a.title) + '</b><small>' + esc(hostOf(a.url)) + '</small></div>'));
+        } else {
+          row.appendChild(el('<div class="attlist-body"><p>' + esc(a.text) + '</p></div>'));
+        }
+        var del = el('<button class="quietbtn" type="button" aria-label="삭제">' + icon("x") + '</button>');
+        tap(del, function(){
+          if (a.type === "photo") dropPhoto(a.pid);
+          Saved.removeAttach(item.id, a.id);
+          paintList(); render();
+        });
+        row.appendChild(del);
+        listBox.appendChild(row);
+      });
+    }
+
+    tap(sheet.querySelector("#sheet-x"), closeOverlay);
+    sheet.addEventListener("click", function(e){ if (e.target === sheet) closeOverlay(); });
+
+    paintPicks(); paintForm(); paintList();
+    overlay.appendChild(sheet);
+  }
+
+  /* ================= item editor sheet ================= */
   function openEditor(item, defaultDate, presets){
     var editing = !!item;
     var seed = item && SEED_IDS[item.id];
     var cur = {
       dayDate: item ? (item.dayDate || dayDateOfSeed(item.id) || defaultDate) : defaultDate,
-      s: item ? item.s : "",
-      e: item ? (item.e || "") : "",
       cat: item ? item.cat : ((presets && presets.cat) || "food"),
-      meal: item ? (item.meal || "") : ((presets && presets.meal) || ""),
-      title: item ? item.title : "",
-      place: item ? (item.place || "") : "",
-      lines: item ? (item.lines || []).join("\n") : ""
+      meal: item ? (item.meal || "") : ((presets && presets.meal) || "")
     };
 
     var sheet = el(
       '<div class="scrim"><div class="sheet" role="dialog" aria-modal="true">' +
-        '<div class="sheet-head">' +
-          '<p class="sheet-title">' + (editing ? "일정 수정" : "일정 추가") + '</p>' +
-          '<button class="icon-btn" id="sheet-x" aria-label="닫기">' + icon("x") + '</button>' +
-        '</div>' +
+        '<div class="sheet-head"><p class="sheet-title">' + (editing ? "일정 수정" : "일정 추가") + '</p>' +
+          '<button class="icon-btn" id="sheet-x" aria-label="닫기">' + icon("x") + '</button></div>' +
         '<div class="sheet-body">' +
           '<div class="fld"><label for="ed-title">이름</label>' +
-            '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(cur.title) + '"></div>' +
+            '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(item ? item.title : "") + '"></div>' +
           '<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>' +
           '<div class="fld-row">' +
-            '<div class="fld"><label for="ed-s">시작</label><input id="ed-s" type="time" value="' + esc(cur.s) + '"></div>' +
-            '<div class="fld"><label for="ed-e">종료</label><input id="ed-e" type="time" value="' + esc(cur.e) + '"></div>' +
+            '<div class="fld"><label for="ed-s">시작</label><input id="ed-s" type="time" value="' + esc(item ? item.s : "") + '"></div>' +
+            '<div class="fld"><label for="ed-e">종료</label><input id="ed-e" type="time" value="' + esc(item && item.e ? item.e : "") + '"></div>' +
           '</div>' +
           '<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>' +
           '<div class="fld"><label>음식 종류</label><div class="pickrow" id="ed-meal"></div>' +
             '<p class="fld-hint">선택하면 음식 탭에도 함께 표시됩니다.</p></div>' +
           '<div class="fld"><label for="ed-place">장소</label>' +
-            '<input id="ed-place" type="text" placeholder="예: 나카스 야타이" value="' + esc(cur.place) + '">' +
+            '<input id="ed-place" type="text" placeholder="예: 나카스 야타이" value="' + esc(item && item.place ? item.place : "") + '">' +
             '<p class="fld-hint">적어두면 이름을 눌러 구글맵으로 갈 수 있습니다.</p></div>' +
           '<div class="fld"><label for="ed-lines">메모</label>' +
-            '<textarea id="ed-lines" placeholder="한 줄에 하나씩">' + esc(cur.lines) + '</textarea></div>' +
+            '<textarea id="ed-lines" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>' +
         '</div>' +
         '<div class="sheet-foot"></div>' +
       '</div></div>'
     );
-
-    var body = sheet.querySelector(".sheet-body");
     var foot = sheet.querySelector(".sheet-foot");
 
-    function pickGroup(host, options, getVal, setVal){
+    function pickGroup(host, options, get, set){
       host.innerHTML = "";
       options.forEach(function(o){
-        var b = el('<button class="pick" type="button" aria-pressed="' + (getVal() === o.key) + '">' + esc(o.label) + '</button>');
+        var b = el('<button class="pick" type="button" aria-pressed="' + (get() === o.key) + '">' + esc(o.label) + '</button>');
         tap(b, function(){
-          setVal(o.key);
+          set(o.key);
           host.querySelectorAll(".pick").forEach(function(x, i){
-            x.setAttribute("aria-pressed", String(options[i].key === getVal()));
+            x.setAttribute("aria-pressed", String(options[i].key === get()));
           });
         });
         host.appendChild(b);
@@ -1686,29 +1926,19 @@
     }
 
     pickGroup(sheet.querySelector("#ed-day"),
-      TRIP.days.map(function(d){ return { key: d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
+      TRIP.days.map(function(d){ return { key:d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
       function(){ return cur.dayDate; }, function(v){ cur.dayDate = v; });
-
     pickGroup(sheet.querySelector("#ed-cat"),
-      CAT_ORDER.map(function(k){ return { key: k, label: CAT[k].label }; }),
+      CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; }),
       function(){ return cur.cat; }, function(v){ cur.cat = v; });
-
     pickGroup(sheet.querySelector("#ed-meal"),
-      [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){
-        return { key: k, label: MEAL_LABEL[k] };
-      })),
+      [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
       function(){ return cur.meal; }, function(v){ cur.meal = v; });
 
     var saveBtn = el('<button class="btn btn-primary" type="button">저장</button>');
     if (editing){
       var delBtn = el('<button class="btn btn-danger" type="button">삭제</button>');
-      tap(delBtn, async function(){
-        var ok = await confirmDialog({
-          title: "이 일정을 지울까요?",
-          body: seed ? "기본 일정에서 빠집니다." : "직접 추가한 일정이 사라집니다.",
-          ok: "삭제"
-        });
-        if (!ok) return;
+      tap(delBtn, function(){
         Saved.removeItem(item.id);
         closeOverlay();
         toast("삭제했어요.");
@@ -1726,9 +1956,6 @@
       if (!title){ titleEl.focus(); toast("이름을 적어주세요."); return; }
       if (!sEl.value){ sEl.focus(); toast("시작 시간을 골라주세요."); return; }
 
-      var lines = sheet.querySelector("#ed-lines").value
-        .split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
-
       var patch = {
         dayDate: cur.dayDate,
         s: sEl.value,
@@ -1737,7 +1964,7 @@
         meal: cur.meal || null,
         title: title,
         place: sheet.querySelector("#ed-place").value.trim() || null,
-        lines: lines
+        lines: sheet.querySelector("#ed-lines").value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean)
       };
       /* Keep a seed item's hand-picked emoji unless its kind actually changed. */
       var keepEmo = seed && seed.cat === patch.cat && (seed.meal || "") === (patch.meal || "");
@@ -1746,7 +1973,6 @@
       Saved.saveItem({ id: item ? item.id : null, patch: patch });
       closeOverlay();
       toast(editing ? "수정했어요." : "추가했어요.");
-
       if (!editing){
         var di = TRIP.days.findIndex(function(d){ return d.date === patch.dayDate; });
         if (di >= 0) state.day = di;
@@ -1756,16 +1982,13 @@
 
     tap(sheet.querySelector("#sheet-x"), closeOverlay);
     sheet.addEventListener("click", function(e){ if (e.target === sheet) closeOverlay(); });
-
     overlay.appendChild(sheet);
     if (!editing) setTimeout(function(){ titleEl.focus(); }, 60);
   }
 
   function dayDateOfSeed(id){
     var found = null;
-    TRIP.days.forEach(function(d){
-      d.items.forEach(function(it){ if (it.id === id) found = d.date; });
-    });
+    TRIP.days.forEach(function(d){ d.items.forEach(function(it){ if (it.id === id) found = d.date; }); });
     return found;
   }
 
