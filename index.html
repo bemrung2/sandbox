@@ -484,6 +484,7 @@
   .card-top{ display: flex; align-items: flex-start; gap: 10px; }
   .card-name{ flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; margin: 0; word-break: keep-all; }
   .card-when{ font-size: 11.5px; color: var(--ink-faint); margin: 0 0 3px; }
+  .card-when.undated{ color: var(--signal); font-weight: 600; }
   .card-kind{ font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 0; }
   .card-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .card-empty{ font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 2px; }
@@ -722,7 +723,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r10";
+  var BUILD = "2026.09.11 · r11";
 
   /* ================= helpers ================= */
   function el(html){
@@ -1589,15 +1590,25 @@
   }
   /* An item shows an emoji only if one was actually set on it. */
   function emoPrefix(it){ return it.emo ? it.emo + " " : ""; }
-  function byStart(a, b){ return (mins(a.s) || 0) - (mins(b.s) || 0); }
+  /* 시간 미정이 맨 위, 그 다음이 시계 순. */
+  function byStart(a, b){
+    var x = mins(a.s), y = mins(b.s);
+    if (x === null || y === null) return x === y ? 0 : (x === null ? -1 : 1);
+    return x - y;
+  }
   function itemsOn(date){
     return trip().items.filter(function(i){ return i.dayDate === date; }).sort(byStart);
+  }
+  /* The timeline is a clock, so only items with a time belong on it. An item
+     without one is a candidate — it lives in 음식, at the top of its day. */
+  function timedOn(date){
+    return itemsOn(date).filter(function(i){ return !!i.s; });
   }
   function currentPair(){
     var days = tripDays(), today = todayISO(), di = -1;
     days.forEach(function(d, i){ if (d.date === today) di = i; });
     if (di < 0) return null;
-    var list = itemsOn(days[di].date), n = nowMins(), cur = null, next = null;
+    var list = timedOn(days[di].date), n = nowMins(), cur = null, next = null;
     for (var i = 0; i < list.length; i++){
       var s = mins(list[i].s), e = list[i].e ? mins(list[i].e) : null;
       if (e === null){
@@ -1893,7 +1904,7 @@
       }
     } else {
       var label = d > 0 ? "D-" + d : (d === 0 ? "오늘 출발" : "여행 완료");
-      var first = itemsOn(t.start)[0];
+      var first = timedOn(t.start)[0];
       var sub = d >= 0 && first ? fmtMD(t.start) + " " + first.s + " " + first.title : "지난 여행";
       box = el('<div class="countdown' + (d === 0 ? " live" : "") + '">' + icon("plane") +
         '<div><div class="countdown-big mono">' + esc(label) + '</div>' +
@@ -1918,7 +1929,7 @@
     root.appendChild(dayrow);
 
     var day = days[state.day];
-    var list = itemsOn(day.date);
+    var list = timedOn(day.date);
 
     var themeRow = el(
       '<button class="theme-row" type="button">' +
@@ -2100,7 +2111,8 @@
     var it = f.item;
     var places = it.places || [];
     var card = el('<div class="card"></div>');
-    card.appendChild(el('<p class="card-when mono">' + esc(it.s) + (it.e ? '–' + esc(it.e) : '') + ' · ' +
+    card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
+      (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') + ' · ' +
       esc(MEAL_LABEL[it.meal] || "") + '</p>'));
     card.appendChild(el('<div class="card-top"><p class="card-name">' +
       (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
@@ -2628,7 +2640,8 @@
     body.appendChild(timeRow);
     body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
     body.appendChild(el('<div class="fld"><label>음식 종류</label><div class="pickrow" id="ed-meal"></div>' +
-      '<p class="fld-hint">선택하면 음식 탭에도 함께 표시됩니다.</p></div>'));
+      '<p class="fld-hint">고르면 음식 탭에도 함께 표시됩니다. 음식은 시작 시간을 비워둘 수 있고, ' +
+      '그러면 음식 탭 맨 위에 시간 미정으로 모입니다.</p></div>'));
     body.appendChild(el('<div class="fld"><label for="ed-tag">배지</label>' +
       '<input id="ed-tag" type="text" placeholder="예: 예약 17:15 · 2명" value="' + esc(item && item.tag ? item.tag : "") + '">' +
       '<p class="fld-hint">짧게 강조할 한마디. 비워두면 표시되지 않습니다.</p></div>'));
@@ -2662,12 +2675,18 @@
       var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
       var title = titleEl.value.trim();
       if (!title){ titleEl.focus(); toast("이름을 적어주세요."); return; }
-      if (!sEl.value){ sEl.focus(); toast("시작 시간을 골라주세요."); return; }
+      /* An item with no time is off the timeline, so it needs 음식 종류 to
+         have somewhere to live — otherwise saving would hide it everywhere. */
+      if (!sEl.value && !cur.meal){
+        sEl.focus();
+        toast("시간을 비우려면 음식 종류를 골라주세요.");
+        return;
+      }
       var lines = function(id){
         return sheet.querySelector(id).value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
       };
       var rec = {
-        dayDate: cur.dayDate, s: sEl.value, e: sheet.querySelector("#ed-e").value || null,
+        dayDate: cur.dayDate, s: sEl.value || null, e: sheet.querySelector("#ed-e").value || null,
         cat: cur.cat, meal: cur.meal || null, title: title,
         tag: sheet.querySelector("#ed-tag").value.trim() || null,
         places: lines("#ed-places"), lines: lines("#ed-lines"),
