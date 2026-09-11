@@ -34,14 +34,29 @@ node build.js
 화면에 보이는 것은 전부 앱 안에서 고치고 지울 수 있다. 하드코딩된 문구는 첫 방문 때 한 번 깔리는
 씨앗(`SEED_*`)뿐이고, 그 뒤로는 저장소의 내용이 곧 화면이다.
 
+아티팩트에서는 여러 명이 같은 계획을 동시에 연다. 그래서 계획 전체를 한 문서에 담지 않고,
+레코드 하나가 문서 하나다. 한 번의 편집은 그 문서 하나만 건드린다.
+
 ```
-{ v, active, trips: [ { id, emoji, city, country, start, end,
-                        dayThemes, dayRoutes, items, shops,
-                        flights, stays, books, links, packList, notes } ],
-  attach: { 일정id: [...] } }
+meta/store                         { v, seeded }
+meta/backup_v2                     { at, plan }      옛 통짜 문서 백업
+trips/<여행id>                      { emoji, city, country, start, end }
+trips/<여행id>/days/<YYYY-MM-DD>    { theme, route[] }
+trips/<여행id>/items/<id>           일정 하나
+trips/<여행id>/shops/<id>           가게 하나 (살 것 목록 포함)
+trips/<여행id>/flights|stays|books|links|packList|notes/<id>
+trips/<여행id>/attach/<id>          { itemId, type, ... }
+photos/<id>                        { data }          사진 한 장
 ```
 
-`v`가 올라가면 `Saved.migrate`가 옛 저장본을 지금 모양으로 접어 넣는다.
+각 컬렉션을 구독하기 때문에, 다른 사람이 고친 내용이 새로고침 없이 들어온다.
+들어온 변경으로 다시 그릴 때는 스크롤을 건드리지 않는다.
+
+**지금 무엇을 열어보고 있는지는 공유하지 않는다.** 어떤 여행을 열었는지는 브라우저에만
+남는다(`lab.trip`, `lab.route`). 공유했다면 한 사람이 화면을 옮길 때 모두가 끌려간다.
+
+`v`가 올라가면 `Saved.moveIn()`(아티팩트) / `legacyTrips()`(그 외)이 옛 저장본을 지금 모양으로
+옮긴다. 옮기기 전 통짜 문서는 `meta/backup_v2`에 남겨둔다.
 
 ## 주소
 
@@ -60,5 +75,8 @@ node build.js
 
 ## 저장 방식
 
-- 아티팩트에서 열면 아티팩트 저장소에 저장된다 (기기 간 유지).
-- 그 외 환경에서는 그 브라우저의 localStorage에만 저장된다. 화면 상단에 그렇다고 표시된다.
+- **아티팩트** — 아티팩트 저장소에 저장된다. 기기 간 유지되고, 아티팩트를 함께 보는 사람이
+  같은 계획을 고칠 수 있다. `db`를 쓰는 아티팩트는 공개 공유가 안 되고 같은 조직 안에서만 공유된다.
+- **그 외(Vercel 등)** — 그 브라우저의 localStorage에만 저장된다. 혼자 쓰는 사본이다.
+
+어느 쪽인지는 홈 화면 맨 아래에 적힌다 (`함께 쓰는 저장소` / `이 기기에만 저장`).

@@ -722,7 +722,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r9";
+  var BUILD = "2026.09.11 · r10";
 
   /* ================= helpers ================= */
   function el(html){
@@ -777,6 +777,12 @@
     return node;
   }
 
+  /* Which copy is this? The artifact reads and writes a store everyone who
+     can open it shares; anywhere else there is only this browser. */
+  function stamp(){
+    return "build " + BUILD + " · " + (Saved.shared ? "함께 쓰는 저장소" : "이 기기에만 저장");
+  }
+
   var toastTimer = null;
   function toast(msg){
     var t = document.getElementById("toast");
@@ -827,7 +833,7 @@
   /* ================= SEED — first-visit content only ================= */
   /* Emoji are deliberately rare: only where one carries meaning on its own
      (비행기 · 호텔 · 짐). Everything else is told by the category colour. */
-  var DATA_V = 2;
+  var DATA_V = 3;
 
   function newTrip(o){
     o = o || {};
@@ -847,7 +853,8 @@
       books: o.books || [],
       links: o.links || [],
       packList: o.packList || [],
-      notes: o.notes || []
+      notes: o.notes || [],
+      attach: o.attach || {}
     };
   }
 
@@ -982,7 +989,7 @@
       flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
       stays: SEED_STAYS.map(function(x){ return Object.assign({}, x); }),
       books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
-      packList: SEED_PACK.map(function(t){ return { id: uid("k"), text: t, on: false }; })
+      packList: SEED_PACK.map(function(t, i){ return { id: uid("k"), text: t, on: false, ord: i }; })
     });
   }
 
@@ -1020,147 +1027,461 @@
   function nowMins(){ var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
 
   /* ================= saved state ================= */
+  /* Several people can have the same plan open, so nothing here writes the
+     plan as a whole. Every record — an 일정, a 가게, a 준비물 — is its own
+     document, and an edit touches only that one: two people working on
+     different things never overwrite each other. The screens subscribe, so
+     an edit made on someone else's phone appears here without a reload.
+
+     What you have OPEN is yours alone. The active trip never goes to the
+     shared store — otherwise one person tapping 후쿠오카 would drag everyone
+     else's screen along with them. */
+  var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes"];
+  var LOCAL_KEY = "lab.fukuoka2026";
+  var SUB_BUDGET = 60;            /* the store allows 64 subscriptions per view */
+
+  function byOrd(a, b){
+    return (a.ord || 0) - (b.ord || 0) || String(a.id).localeCompare(String(b.id));
+  }
+  function ordered(list){ return (list || []).slice().sort(byOrd); }
+
+  /* Older saves kept everything in one document. Fold whatever is there into
+     the shape used now; the attachments move inside their own trip. */
+  function legacyTrips(raw){
+    if (raw.trips && raw.trips.length){
+      var attach = raw.attach || {};
+      return raw.trips.map(function(x){
+        var t = newTrip(x);
+        t.attach = x.attach || {};
+        (t.items || []).forEach(function(it){
+          if (attach[it.id]) t.attach[it.id] = attach[it.id];
+        });
+        return t;
+      });
+    }
+
+    /* The oldest shape: one trip at the top level. The Fukuoka plan was
+       rewritten by hand since, so the seed wins for the itinerary and only
+       what the user typed themselves is carried across. */
+    var t = seedTrip();
+    if (raw.attach) t.attach = raw.attach;
+    if (raw.trip && raw.trip.city){
+      t.city = raw.trip.city;
+      t.country = raw.trip.country || t.country;
+    }
+    if (raw.links && raw.links.length) t.links = raw.links;
+    if (raw.flights && raw.flights.length) t.flights = raw.flights;
+    if (raw.stays && raw.stays.length) t.stays = raw.stays;
+    if (raw.books && raw.books.length) t.books = raw.books;
+    if (raw.notes && raw.notes.length){
+      t.notes = raw.notes.map(function(n){
+        return typeof n === "string" ? { id: uid("n"), text: n } : n;
+      });
+    }
+    if (raw.packList && raw.packList.length){
+      t.packList = raw.packList.map(function(k, i){
+        return typeof k === "string"
+          ? { id: uid("k"), text: k, on: !!(raw.pack && raw.pack[k]), ord: i }
+          : Object.assign({ ord: i }, k);
+      });
+    }
+    if (raw.shops && raw.shops.length){
+      var kept = {};
+      raw.shops.forEach(function(sh){ if (sh.items && sh.items.length) kept[sh.name] = sh.items; });
+      t.shops.forEach(function(sh){ if (kept[sh.name]) sh.items = kept[sh.name]; });
+    }
+    return [t];
+  }
+
   var Saved = {
     backend: "local",
+    shared: false,
     db: null,
     data: null,
+    active: null,
+    onRemote: null,
+    subs: {},
     _t: null,
+    _r: null,
+    _warned: false,
 
-    fresh(){
-      var t = seedTrip();
-      return { v: DATA_V, active: t.id, trips: [t], attach: {} };
-    },
-
-    /* the trip the screens are currently about */
-    cur(){
-      var d = this.data, found = null;
-      d.trips.forEach(function(t){ if (t.id === d.active) found = t; });
-      return found || d.trips[0] || null;
-    },
-
+    /* ---------- opening ---------- */
     async init(){
+      this.data = { trips: [] };
       try{
         if (window.claude && typeof window.claude.use === "function"){
           var db = await window.claude.use("db");
-          if (db){ this.db = db; this.backend = "db"; }
+          if (db){ this.db = db; this.backend = "db"; this.shared = true; }
         }
       }catch(e){ /* stay local */ }
 
-      var raw = null;
-      try{
-        if (this.backend === "db"){
-          var snap = await this.db.doc("trips/fukuoka2026").get();
-          raw = snap.exists ? snap.data() : null;
-        } else {
-          raw = JSON.parse(localStorage.getItem("lab.fukuoka2026") || "null");
+      if (this.backend === "db"){
+        try{
+          var meta = await this.moveIn();
+          await this.readAll();
+          if (!this.data.trips.length && !meta.seeded) await this.seed();
+          this.watch();
+        }catch(e){
+          /* the store is there but unusable — this browser still works alone */
+          this.backend = "local"; this.shared = false; this.db = null;
+          this.loadLocal();
         }
-      }catch(e){ raw = null; }
+      } else {
+        this.loadLocal();
+      }
 
-      this.data = this.fresh();
-      if (raw) this.migrate(raw);
+      this.active = this.lastTrip();
+      if (!this.cur() && this.data.trips.length) this.active = this.data.trips[0].id;
     },
 
-    /* Older saves held a single trip at the top level. The Fukuoka plan itself
-       was rewritten by hand, so the new seed wins for the itinerary; anything
-       the user typed (링크 · 메모 · 준비물 · 살 것 · 항공 / 숙소 / 예약 · 자료) is carried over. */
-    migrate(raw){
-      if (raw.v >= 2 && raw.trips && raw.trips.length){
-        this.data = {
-          v: DATA_V,
-          active: raw.active || raw.trips[0].id,
-          trips: raw.trips.map(function(t){ return Object.assign(newTrip(t), t); }),
-          attach: raw.attach || {}
-        };
-        return;
-      }
-
-      var t = this.data.trips[0];
-      if (raw.attach) this.data.attach = raw.attach;
-      if (raw.trip && raw.trip.city){
-        t.city = raw.trip.city;
-        t.country = raw.trip.country || t.country;
-      }
-      if (raw.links && raw.links.length) t.links = raw.links;
-      if (raw.flights && raw.flights.length) t.flights = raw.flights;
-      if (raw.stays && raw.stays.length) t.stays = raw.stays;
-      if (raw.books && raw.books.length) t.books = raw.books;
-      if (raw.notes && raw.notes.length){
-        t.notes = raw.notes.map(function(n){
-          return typeof n === "string" ? { id: uid("n"), text: n } : n;
-        });
-      }
-      if (raw.packList && raw.packList.length){
-        t.packList = raw.packList.map(function(k){
-          return typeof k === "string" ? { id: uid("k"), text: k, on: !!(raw.pack && raw.pack[k]) } : k;
-        });
-      }
-      if (raw.shops && raw.shops.length){
-        var kept = {};
-        raw.shops.forEach(function(s){ if (s.items && s.items.length) kept[s.name] = s.items; });
-        t.shops.forEach(function(s){ if (kept[s.name]) s.items = kept[s.name]; });
-      }
+    loadLocal(){
+      var raw = null;
+      try{ raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); }catch(e){ raw = null; }
+      if (raw) this.data.trips = legacyTrips(raw);
+      if (!this.data.trips.length && !(raw && raw.seeded)) this.data.trips = [seedTrip()];
+      this.saveLocal();
     },
 
-    /* Writes are batched: a burst of taps becomes one save. */
-    flush(){
+    async seed(){
+      var t = seedTrip();
+      this.data.trips.push(t);
+      await this.writeTrip(t);
+      await this.db.doc("meta/store").set({ v: DATA_V, seeded: true });
+    },
+
+    /* One-time move from the single whole-plan document to one document per
+       record. A copy of the old document is kept as a safety net. */
+    async moveIn(){
+      var ref = this.db.doc("meta/store");
+      var meta = await ref.get();
+      var body = meta.exists ? (meta.data() || {}) : {};
+      if ((body.v || 0) >= DATA_V) return body;
+
+      var lease = await ref.acquire({ holder: uid("w"), ttlMs: 30000 });
+      if (!lease.acquired){
+        /* someone else is moving it; wait for them rather than doing it twice */
+        for (var i = 0; i < 20; i++){
+          await new Promise(function(r){ setTimeout(r, 600); });
+          var again = await ref.get();
+          var b = again.exists ? (again.data() || {}) : {};
+          if ((b.v || 0) >= DATA_V) return b;
+        }
+      }
+
+      var old = await this.db.doc("trips/fukuoka2026").get();
+      var raw = old.exists ? (old.data() || {}) : null;
+      var moved = false;
+      if (raw && (raw.trips || raw.items || raw.trip)){
+        await this.db.doc("meta/backup_v2").set({ at: new Date().toISOString(), plan: raw });
+        var trips = legacyTrips(raw);
+        for (var j = 0; j < trips.length; j++) await this.writeTrip(trips[j]);
+        var keeps = trips.some(function(t){ return t.id === "fukuoka2026"; });
+        if (!keeps) await this.db.doc("trips/fukuoka2026").delete();
+        moved = true;
+      }
+      var next = { v: DATA_V, seeded: body.seeded || moved || false };
+      await ref.set(next);
+      return next;
+    },
+
+    /* ---------- reading ---------- */
+    async readAll(){
+      var snap = await this.db.collection("trips").get();
+      var metas = snap.docs
+        .map(function(d){ return Object.assign({ id: d.id }, d.data()); })
+        .filter(function(m){ return m.city && m.start && !m.trips; });
+      var out = [];
+      for (var i = 0; i < metas.length; i++) out.push(await this.readTrip(metas[i]));
+      this.data.trips = out;
+    },
+
+    async readTrip(meta){
+      var t = newTrip(meta);
+      var base = "trips/" + t.id + "/";
+      var days = await this.db.collection(base + "days").get();
+      days.docs.forEach(function(d){
+        var v = d.data() || {};
+        if (v.theme) t.dayThemes[d.id] = v.theme;
+        if (v.route && v.route.length) t.dayRoutes[d.id] = v.route;
+      });
+      for (var i = 0; i < LISTS.length; i++){
+        var key = LISTS[i];
+        var snap = await this.db.collection(base + key).get();
+        t[key] = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+      }
+      var att = await this.db.collection(base + "attach").get();
+      t.attach = {};
+      att.docs.forEach(function(d){
+        var a = Object.assign({ id: d.id }, d.data());
+        (t.attach[a.itemId] = t.attach[a.itemId] || []).push(a);
+      });
+      return t;
+    },
+
+    /* ---------- staying in sync ---------- */
+    watch(){
+      var self = this;
+      this.subs.__list = [this.db.collection("trips").onSnapshot(function(snap){
+        var seen = {};
+        snap.docs.forEach(function(d){
+          var m = Object.assign({ id: d.id }, d.data());
+          if (!m.city || !m.start || m.trips) return;   /* not a trip record */
+          seen[d.id] = true;
+          var t = self.tripById(d.id);
+          if (t){
+            ["emoji","city","country","start","end"].forEach(function(k){ t[k] = m[k]; });
+          } else {
+            self.readTrip(m).then(function(fresh){
+              if (self.tripById(fresh.id)) return;
+              self.data.trips.push(fresh);
+              self.watchTrip(fresh);
+              self.touch();
+            });
+          }
+        });
+        self.data.trips.slice().forEach(function(t){
+          if (seen[t.id]) return;
+          self.unwatchTrip(t.id);
+          self.data.trips = self.data.trips.filter(function(x){ return x.id !== t.id; });
+        });
+        self.data.trips.forEach(function(t){ self.watchTrip(t); });
+        self.touch();
+      }, function(){ /* the listener is gone; what is on screen still works */ })];
+      this.data.trips.forEach(function(t){ self.watchTrip(t); });
+    },
+
+    subCount(){
+      var n = 0;
+      for (var k in this.subs) if (this.subs.hasOwnProperty(k)) n += this.subs[k].length;
+      return n;
+    },
+
+    watchTrip(t){
+      if (this.subs[t.id]) return;
+      /* with a lot of trips there are not enough subscriptions to go round;
+         the ones left out still load, they just do not update live */
+      if (this.subCount() + LISTS.length + 2 > SUB_BUDGET) return;
+      var self = this, base = "trips/" + t.id + "/", subs = [];
+
+      subs.push(this.db.collection(base + "days").onSnapshot(function(snap){
+        var themes = {}, routes = {};
+        snap.docs.forEach(function(d){
+          var v = d.data() || {};
+          if (v.theme) themes[d.id] = v.theme;
+          if (v.route && v.route.length) routes[d.id] = v.route;
+        });
+        t.dayThemes = themes; t.dayRoutes = routes;
+        self.touch();
+      }));
+      LISTS.forEach(function(key){
+        subs.push(self.db.collection(base + key).onSnapshot(function(snap){
+          t[key] = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+          self.touch();
+        }));
+      });
+      subs.push(this.db.collection(base + "attach").onSnapshot(function(snap){
+        var map = {};
+        snap.docs.forEach(function(d){
+          var a = Object.assign({ id: d.id }, d.data());
+          (map[a.itemId] = map[a.itemId] || []).push(a);
+        });
+        t.attach = map;
+        self.touch();
+      }));
+      this.subs[t.id] = subs;
+    },
+
+    unwatchTrip(id){
+      (this.subs[id] || []).forEach(function(off){ try{ off(); }catch(e){} });
+      delete this.subs[id];
+    },
+
+    /* Someone else's edit lands here. Repaint once for a burst of them, and
+       keep the reader where they were on the page. */
+    touch(){
+      var self = this;
+      clearTimeout(this._r);
+      this._r = setTimeout(function(){ if (self.onRemote) self.onRemote(); }, 90);
+    },
+
+    /* ---------- writing ---------- */
+    failed(){
+      if (this._warned) return;
+      this._warned = true;
+      toast("저장하지 못했어요. 연결을 확인해주세요.");
+      setTimeout(function(){ Saved._warned = false; }, 8000);
+    },
+    write(path, body){
+      if (this.backend !== "db") return this.saveLocal();
+      var self = this;
+      this.db.doc(path).set(body).catch(function(){ self.failed(); });
+    },
+    drop(path){
+      if (this.backend !== "db") return this.saveLocal();
+      var self = this;
+      this.db.doc(path).delete().catch(function(){ self.failed(); });
+    },
+    saveLocal(){
       var self = this;
       clearTimeout(this._t);
       this._t = setTimeout(function(){
         try{
-          if (self.backend === "db") self.db.doc("trips/fukuoka2026").set(self.data);
-          else localStorage.setItem("lab.fukuoka2026", JSON.stringify(self.data));
-        }catch(e){ /* nothing to do from here; state stays in memory */ }
+          localStorage.setItem(LOCAL_KEY, JSON.stringify({
+            v: DATA_V, seeded: true, trips: self.data.trips
+          }));
+        }catch(e){ /* private mode; state stays in memory */ }
       }, 400);
     },
 
-    /* generic list helpers — every section below is just a list of records
-       belonging to the open trip */
-    listAdd(key, rec){ this.cur()[key].push(Object.assign({ id: uid("x") }, rec)); this.flush(); },
-    listEdit(key, id, rec){
-      var c = this.cur();
-      c[key] = c[key].map(function(x){ return x.id === id ? Object.assign({}, x, rec) : x; });
-      this.flush();
+    async writeTrip(t){
+      var base = "trips/" + t.id + "/";
+      await this.db.doc("trips/" + t.id).set(this.metaOf(t));
+      var keys = Object.keys(t.dayThemes || {}).concat(Object.keys(t.dayRoutes || {}));
+      var days = {};
+      keys.forEach(function(d){ days[d] = true; });
+      for (var d in days){
+        if (!days.hasOwnProperty(d)) continue;
+        await this.db.doc(base + "days/" + d).set({
+          theme: t.dayThemes[d] || "", route: t.dayRoutes[d] || []
+        });
+      }
+      for (var i = 0; i < LISTS.length; i++){
+        var key = LISTS[i], list = t[key] || [];
+        for (var j = 0; j < list.length; j++){
+          var rec = Object.assign({ ord: j }, list[j]);
+          await this.db.doc(base + key + "/" + rec.id).set(this.bodyOf(rec));
+        }
+      }
+      var att = t.attach || {};
+      for (var itemId in att){
+        if (!att.hasOwnProperty(itemId)) continue;
+        var group = att[itemId];
+        for (var k = 0; k < group.length; k++){
+          var a = group[k];
+          await this.db.doc(base + "attach/" + a.id).set(
+            Object.assign(this.bodyOf(a), { itemId: itemId })
+          );
+        }
+      }
     },
-    listRemove(key, id){
-      var c = this.cur();
-      c[key] = c[key].filter(function(x){ return x.id !== id; });
-      if (key === "items") delete this.data.attach[id];
-      this.flush();
+    metaOf(t){
+      return { emoji: t.emoji || "", city: t.city, country: t.country || "", start: t.start, end: t.end };
+    },
+    bodyOf(rec){
+      var body = Object.assign({}, rec);
+      delete body.id;
+      return body;
     },
 
-    /* trips */
+    /* ---------- the trip you are looking at ---------- */
+    tripById(id){
+      var found = null;
+      this.data.trips.forEach(function(t){ if (t.id === id) found = t; });
+      return found;
+    },
+    cur(){ return this.tripById(this.active) || null; },
+    lastTrip(){ try{ return localStorage.getItem("lab.trip"); }catch(e){ return null; } },
+    open(id){
+      this.active = id;
+      try{ localStorage.setItem("lab.trip", id); }catch(e){ /* private mode */ }
+    },
+
+    /* ---------- records ---------- */
+    path(key){ return "trips/" + this.active + "/" + key; },
+
+    listAdd(key, rec){
+      var full = Object.assign({ id: uid("x"), ord: Date.now() }, rec);
+      this.cur()[key].push(full);
+      this.write(this.path(key) + "/" + full.id, this.bodyOf(full));
+      return full;
+    },
+    listEdit(key, id, patch){
+      var c = this.cur(), next = null;
+      c[key] = c[key].map(function(x){
+        if (x.id !== id) return x;
+        next = Object.assign({}, x, patch);
+        return next;
+      });
+      if (next) this.write(this.path(key) + "/" + id, this.bodyOf(next));
+    },
+    listRemove(key, id){
+      var self = this, c = this.cur();
+      c[key] = c[key].filter(function(x){ return x.id !== id; });
+      this.drop(this.path(key) + "/" + id);
+      if (key === "items"){
+        (c.attach[id] || []).forEach(function(a){ self.drop(self.path("attach") + "/" + a.id); });
+        delete c.attach[id];
+      }
+    },
+
+    setDay(date, patch){
+      var t = this.cur();
+      if (patch.theme !== undefined){
+        if (patch.theme) t.dayThemes[date] = patch.theme; else delete t.dayThemes[date];
+      }
+      if (patch.route !== undefined){
+        if (patch.route && patch.route.length) t.dayRoutes[date] = patch.route;
+        else delete t.dayRoutes[date];
+      }
+      var theme = t.dayThemes[date] || "", route = t.dayRoutes[date] || [];
+      if (!theme && !route.length) this.drop(this.path("days") + "/" + date);
+      else this.write(this.path("days") + "/" + date, { theme: theme, route: route });
+    },
+
+    attachOf(id){
+      var t = this.cur();
+      return (t && t.attach[id]) || [];
+    },
+    addAttach(itemId, att){
+      var t = this.cur();
+      var full = Object.assign({ id: uid("t"), itemId: itemId }, att);
+      (t.attach[itemId] = t.attach[itemId] || []).push(full);
+      this.write(this.path("attach") + "/" + full.id, this.bodyOf(full));
+    },
+    removeAttach(itemId, attId){
+      var t = this.cur();
+      t.attach[itemId] = this.attachOf(itemId).filter(function(a){ return a.id !== attId; });
+      this.drop(this.path("attach") + "/" + attId);
+    },
+
+    /* ---------- trips ---------- */
     addTrip(rec){
       var t = newTrip(rec);
       this.data.trips.push(t);
-      this.flush();
+      if (this.backend === "db"){
+        var self = this;
+        this.db.doc("trips/" + t.id).set(this.metaOf(t))
+          .then(function(){ self.watchTrip(t); })
+          .catch(function(){ self.failed(); });
+      } else {
+        this.saveLocal();
+      }
       return t;
     },
     editTrip(id, rec){
-      this.data.trips.forEach(function(t){ if (t.id === id) Object.assign(t, rec); });
-      this.flush();
+      var t = this.tripById(id);
+      if (!t) return;
+      Object.assign(t, rec);
+      this.write("trips/" + id, this.metaOf(t));
     },
     removeTrip(id){
-      var self = this;
-      this.data.trips.forEach(function(t){
-        if (t.id !== id) return;
-        t.items.forEach(function(it){ delete self.data.attach[it.id]; });
-      });
-      this.data.trips = this.data.trips.filter(function(t){ return t.id !== id; });
-      if (this.data.active === id) this.data.active = this.data.trips.length ? this.data.trips[0].id : null;
-      this.flush();
-    },
-    open(id){ this.data.active = id; this.flush(); },
+      var self = this, t = this.tripById(id);
+      if (!t) return;
+      this.unwatchTrip(id);
+      this.data.trips = this.data.trips.filter(function(x){ return x.id !== id; });
+      if (this.active === id) this.active = this.data.trips.length ? this.data.trips[0].id : null;
+      if (this.backend !== "db") return this.saveLocal();
 
-    attachOf(id){ return this.data.attach[id] || []; },
-    addAttach(id, att){
-      var list = this.data.attach[id] || [];
-      list.push(Object.assign({ id: uid("t") }, att));
-      this.data.attach[id] = list;
-      this.flush();
-    },
-    removeAttach(id, attId){
-      this.data.attach[id] = this.attachOf(id).filter(function(a){ return a.id !== attId; });
-      this.flush();
+      var base = "trips/" + id + "/";
+      var gone = function(path){ self.db.doc(path).delete().catch(function(){}); };
+      Object.keys(t.dayThemes).concat(Object.keys(t.dayRoutes)).forEach(function(d){ gone(base + "days/" + d); });
+      LISTS.forEach(function(key){
+        (t[key] || []).forEach(function(rec){ gone(base + key + "/" + rec.id); });
+      });
+      Object.keys(t.attach || {}).forEach(function(itemId){
+        (t.attach[itemId] || []).forEach(function(a){ gone(base + "attach/" + a.id); });
+      });
+      gone("trips/" + id);
     }
   };
 
@@ -1387,7 +1708,7 @@
   }
 
   /* ================= home ================= */
-  function renderHome(){
+  function renderHome(keepScroll){
     var trips = tripsSorted();
     var next = null;
     trips.forEach(function(t){ if (!next && dayDiff(t.end, todayISO()) >= 0) next = t; });
@@ -1417,7 +1738,7 @@
             '</span>' +
           '</div>' +
         '</div>' +
-        '<p class="build-stamp mono">build ' + BUILD + '</p>' +
+        '<p class="build-stamp mono">' + esc(stamp()) + '</p>' +
       '</div>'
     );
     wrap.querySelector(".wordmark-row").appendChild(themeButton());
@@ -1425,7 +1746,7 @@
 
     view.innerHTML = "";
     view.appendChild(wrap);
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
   }
 
   /* ================= trip list ================= */
@@ -1437,7 +1758,7 @@
     return soon.concat(past.reverse());
   }
 
-  function renderTrips(){
+  function renderTrips(keepScroll){
     var wrap = el(
       '<div class="pad">' +
         '<div class="page-head">' +
@@ -1461,11 +1782,11 @@
     tap(add, function(){ openTripEditor(null); });
     box.appendChild(add);
     wrap.appendChild(box);
-    wrap.appendChild(el('<p class="build-stamp mono">build ' + BUILD + '</p>'));
+    wrap.appendChild(el('<p class="build-stamp mono">' + esc(stamp()) + '</p>'));
 
     view.innerHTML = "";
     view.appendChild(wrap);
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
   }
 
   function tripCard(t){
@@ -1505,7 +1826,7 @@
   }
 
   /* ================= trip ================= */
-  function renderTrip(){
+  function renderTrip(keepScroll){
     var days = tripDays();
     if (state.day >= days.length) state.day = days.length - 1;
 
@@ -1531,7 +1852,7 @@
     else if (state.tab === "shop") renderShop(body, days);
     else renderInfo(body);
 
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
   }
 
   function renderHero(){
@@ -1608,8 +1929,8 @@
     );
     tap(themeRow, function(){
       openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 하카타 → 나카스 → 텐진" },
-        function(v){ trip().dayThemes[day.date] = v; Saved.flush(); render(); },
-        day.theme ? function(){ delete trip().dayThemes[day.date]; Saved.flush(); render(); } : null);
+        function(v){ Saved.setDay(day.date, { theme: v }); render(); },
+        day.theme ? function(){ Saved.setDay(day.date, { theme: "" }); render(); } : null);
     });
     root.appendChild(themeRow);
 
@@ -1659,9 +1980,9 @@
         multiline: true
       }, function(v){
         var next = v.split(/[\n→>,]/).map(function(x){ return x.trim(); }).filter(Boolean);
-        trip().dayRoutes[day.date] = next;
-        Saved.flush(); render();
-      }, stops.length ? function(){ delete trip().dayRoutes[day.date]; Saved.flush(); render(); } : null);
+        Saved.setDay(day.date, { route: next });
+        render();
+      }, stops.length ? function(){ Saved.setDay(day.date, { route: [] }); render(); } : null);
     });
     return row;
   }
@@ -1849,14 +2170,22 @@
     s.items.forEach(function(i){
       var row = el('<div class="rowline' + (i.got ? " on" : "") + '"></div>');
       var cb = el('<button class="check" type="button" aria-pressed="' + i.got + '" aria-label="샀음 표시">' + icon("check") + '</button>');
-      tap(cb, function(){ i.got = !i.got; Saved.flush(); render(); });
+      tap(cb, function(){
+        i.got = !i.got;
+        Saved.listEdit("shops", s.id, { items: s.items });
+        render();
+      });
       row.appendChild(cb);
       var btn = el('<button class="rowbtn" type="button"><span class="rowbody"><b>' + esc(i.text) + '</b></span>' +
         icon("edit", "rowpen") + '</button>');
       tap(btn, function(){
         openTextDialog({ title:"살 것 수정", value:i.text },
-          function(v){ i.text = v; Saved.flush(); render(); },
-          function(){ s.items = s.items.filter(function(x){ return x.id !== i.id; }); Saved.flush(); render(); });
+          function(v){ i.text = v; Saved.listEdit("shops", s.id, { items: s.items }); render(); },
+          function(){
+            s.items = s.items.filter(function(x){ return x.id !== i.id; });
+            Saved.listEdit("shops", s.id, { items: s.items });
+            render();
+          });
       });
       row.appendChild(btn);
       card.appendChild(row);
@@ -1866,7 +2195,8 @@
     tap(addBtn, function(){
       openTextDialog({ title:"살 것 추가", placeholder:"예: 티셔츠" }, function(v){
         s.items.push({ id: uid("i"), text: v, got: false });
-        Saved.flush(); render();
+        Saved.listEdit("shops", s.id, { items: s.items });
+        render();
       });
     });
     card.appendChild(addBtn);
@@ -1948,7 +2278,7 @@
 
   /* One card shape for every editable list in 정보. */
   function sectionCard(o){
-    var list = trip()[o.key] || [];
+    var list = ordered(trip()[o.key]);
     var card = el('<div class="card"></div>');
     var head = el('<div class="card-head"><h3>' + esc(o.title) + (list.length ? ' · ' + list.length : '') + '</h3></div>');
     var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
@@ -1993,15 +2323,15 @@
   }
 
   function packCard(){
-    var list = trip().packList;
+    var list = ordered(trip().packList);
     var done = list.filter(function(p){ return p.on; }).length;
     var card = el('<div class="card"></div>');
     var head = el('<div class="card-head"><h3>준비물 · ' + done + '/' + list.length + '</h3></div>');
     var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
     tap(add, function(){
       openTextDialog({ title:"준비물 추가", placeholder:"예: 멀티탭" }, function(v){
-        trip().packList.push({ id: uid("k"), text: v, on: false });
-        Saved.flush(); render();
+        Saved.listAdd("packList", { text: v, on: false });
+        render();
       });
     });
     head.appendChild(add);
@@ -2010,13 +2340,13 @@
     list.forEach(function(p){
       var row = el('<div class="rowline' + (p.on ? " on" : "") + '"></div>');
       var cb = el('<button class="check" type="button" aria-pressed="' + p.on + '" aria-label="챙김 표시">' + icon("check") + '</button>');
-      tap(cb, function(){ p.on = !p.on; Saved.flush(); render(); });
+      tap(cb, function(){ Saved.listEdit("packList", p.id, { on: !p.on }); render(); });
       row.appendChild(cb);
       var btn = el('<button class="rowbtn" type="button"><span class="rowbody"><b>' + esc(p.text) + '</b></span>' +
         icon("edit", "rowpen") + '</button>');
       tap(btn, function(){
         openTextDialog({ title:"준비물 수정", value:p.text },
-          function(v){ p.text = v; Saved.flush(); render(); },
+          function(v){ Saved.listEdit("packList", p.id, { text: v }); render(); },
           function(){ Saved.listRemove("packList", p.id); render(); });
       });
       row.appendChild(btn);
@@ -2465,16 +2795,17 @@
   }
 
   /* ================= render ================= */
-  function render(){
-    if (state.view === "home") return renderHome();
-    if (state.view === "trip" && Saved.cur()) return renderTrip();
+  function render(keepScroll){
+    if (state.view === "home") return renderHome(keepScroll);
+    if (state.view === "trip" && Saved.cur()) return renderTrip(keepScroll);
     if (state.view !== "trips"){ state.view = "trips"; Route.push(true); }
-    renderTrips();
+    renderTrips(keepScroll);
   }
 
   (async function boot(){
     Theme.apply();
     await Saved.init();
+    Saved.onRemote = function(){ render(true); };
     var p = currentPair();
     if (p) state.day = p.dayIndex;
 
