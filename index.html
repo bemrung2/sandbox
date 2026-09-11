@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#F5F7F3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1413" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="나의 실험실">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,18 +14,18 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
 <style>
   :root{
-    --paper: #F6F8F4;
+    --paper: #F6F7F9;
     --surface: #FFFFFF;
-    --surface-2: #EFF3EC;
-    --surface-3: #E5EBE2;
-    --ink: #121815;
-    --ink-soft: #566159;
-    --ink-faint: #8A948C;
-    --line: #E0E6DD;
-    --line-strong: #C7D0C4;
+    --surface-2: #EDEFF4;
+    --surface-3: #E1E5EC;
+    --ink: #14161B;
+    --ink-soft: #545A66;
+    --ink-faint: #6E7583;
+    --line: #E1E4EA;
+    --line-strong: #C6CBD5;
 
-    --signal: #0E5C4F;
-    --signal-soft: #DAEDE6;
+    --signal: #3446B5;
+    --signal-soft: #E4E7FA;
     --on-signal: #FFFFFF;
     --travel: #9A6224;
     --travel-soft: #F7E7D3;
@@ -36,12 +36,12 @@
     --c-move: #667A86;
     --c-food: #B26A22;
     --c-shop: #9B3F6A;
-    --c-stay: #0F5C4F;
+    --c-stay: #157F6C;
     --c-free: #6B54B5;
     --c-todo: #6E7671;
 
-    --shadow: rgba(18, 28, 22, 0.10);
-    --scrim: rgba(12, 20, 16, 0.44);
+    --shadow: rgba(18, 22, 32, 0.10);
+    --scrim: rgba(14, 16, 24, 0.44);
 
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-t: env(safe-area-inset-top, 0px);
@@ -49,19 +49,19 @@
 
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --paper: #0E1312;
-      --surface: #171E1C;
-      --surface-2: #1E2624;
-      --surface-3: #27302D;
-      --ink: #E9EEEA;
-      --ink-soft: #9EA9A3;
-      --ink-faint: #6E7A75;
-      --line: #242E2A;
-      --line-strong: #36423D;
+      --paper: #101115;
+      --surface: #171A20;
+      --surface-2: #1E2129;
+      --surface-3: #282D36;
+      --ink: #E9EBF0;
+      --ink-soft: #A0A6B2;
+      --ink-faint: #717784;
+      --line: #24272F;
+      --line-strong: #373C47;
 
-      --signal: #66D7BB;
-      --signal-soft: #123C34;
-      --on-signal: #06231D;
+      --signal: #97A6FF;
+      --signal-soft: #1F2550;
+      --on-signal: #0A0F2E;
       --travel: #E3A96C;
       --travel-soft: #3D2F1C;
       --danger: #FF9E92;
@@ -71,7 +71,7 @@
       --c-move: #A3B2BC;
       --c-food: #E3A96C;
       --c-shop: #E38BB4;
-      --c-stay: #66D7BB;
+      --c-stay: #5FD3C0;
       --c-free: #AE9BF0;
       --c-todo: #9DA9A3;
 
@@ -80,19 +80,19 @@
     }
   }
   :root[data-theme="dark"]{
-    --paper: #0E1312;
-    --surface: #171E1C;
-    --surface-2: #1E2624;
-    --surface-3: #27302D;
-    --ink: #E9EEEA;
-    --ink-soft: #9EA9A3;
-    --ink-faint: #6E7A75;
-    --line: #242E2A;
-    --line-strong: #36423D;
+    --paper: #101115;
+    --surface: #171A20;
+    --surface-2: #1E2129;
+    --surface-3: #282D36;
+    --ink: #E9EBF0;
+    --ink-soft: #A0A6B2;
+    --ink-faint: #717784;
+    --line: #24272F;
+    --line-strong: #373C47;
 
-    --signal: #66D7BB;
-    --signal-soft: #123C34;
-    --on-signal: #06231D;
+    --signal: #97A6FF;
+    --signal-soft: #1F2550;
+    --on-signal: #0A0F2E;
     --travel: #E3A96C;
     --travel-soft: #3D2F1C;
     --danger: #FF9E92;
@@ -102,7 +102,7 @@
     --c-move: #A3B2BC;
     --c-food: #E3A96C;
     --c-shop: #E38BB4;
-    --c-stay: #66D7BB;
+    --c-stay: #5FD3C0;
     --c-free: #AE9BF0;
     --c-todo: #9DA9A3;
 
@@ -256,12 +256,6 @@
     display: flex; align-items: center; gap: 6px;
     font-size: 13px; color: var(--ink-soft); margin: 5px 0 0;
   }
-  .hero-stay{
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; color: var(--ink-faint); margin: 4px 0 0;
-  }
-  .hero-stay .icon{ width: 15px; height: 15px; }
-  .hero-stay span{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .countdown{
     display: flex; align-items: center; gap: 11px;
@@ -728,7 +722,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r8";
+  var BUILD = "2026.09.11 · r9";
 
   /* ================= helpers ================= */
   function el(html){
@@ -1563,9 +1557,6 @@
     tap(pen, function(){ openTripEditor(t); });
     dates.appendChild(pen);
     hero.appendChild(dates);
-    if (t.stays.length){
-      hero.appendChild(el('<p class="hero-stay">' + icon("bed") + '<span>' + esc(t.stays[0].name) + '</span></p>'));
-    }
 
     var box;
     if (pair){
