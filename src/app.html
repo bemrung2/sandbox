@@ -1596,7 +1596,7 @@
       openTextDialog({
         title: fmtMD(day.date) + " 동선",
         value: stops.join("\n"),
-        placeholder: "한 줄에 한 곳\n공항\n하카타\n호텔",
+        placeholder: "한 줄에 한 곳",
         multiline: true
       }, function(v){
         var next = v.split(/[\n→>,]/).map(function(x){ return x.trim(); }).filter(Boolean);
@@ -2231,7 +2231,6 @@
     nameInner.appendChild(el('<div class="fld-col"><label for="ed-title">이름</label>' +
       '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(item ? item.title : "") + '"></div>'));
     body.appendChild(nameRow);
-    body.appendChild(el('<p class="fld-hint">아이콘은 비워두는 게 기본입니다. 비행기 · 호텔처럼 한눈에 알아볼 것만 넣어주세요.</p>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
     var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
     var row = timeRow.querySelector(".fld-row");
