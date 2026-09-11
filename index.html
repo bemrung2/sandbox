@@ -180,7 +180,16 @@
     cursor: default; background: transparent; border-style: dashed; color: var(--ink-faint);
   }
   .lab-row.vacant .lab-mark{ background: var(--surface-2); color: var(--ink-faint); }
-  .build-stamp{ margin: 26px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
+  .build-stamp{ margin: 18px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
+  .moverow{ display: flex; justify-content: center; gap: 4px; margin-top: 22px; flex-wrap: wrap; }
+  .linkbtn{
+    display: inline-flex; align-items: center; gap: 5px;
+    border: none; background: transparent; color: var(--ink-faint);
+    font: inherit; font-size: 12px; font-weight: 600;
+    padding: 7px 11px; border-radius: 999px; cursor: pointer;
+  }
+  .linkbtn .icon{ width: 14px; height: 14px; }
+  .linkbtn:hover, .linkbtn.tapped{ color: var(--signal); background: var(--surface-2); }
 
   /* ---------- trip list ---------- */
   .page-head{ display: flex; align-items: center; gap: 4px; margin: 0 0 22px; }
@@ -723,7 +732,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r11";
+  var BUILD = "2026.09.11 · r12";
 
   /* ================= helpers ================= */
   function el(html){
@@ -781,16 +790,21 @@
   /* Which copy is this? The artifact reads and writes a store everyone who
      can open it shares; anywhere else there is only this browser. */
   function stamp(){
-    return "build " + BUILD + " · " + (Saved.shared ? "함께 쓰는 저장소" : "이 기기에만 저장");
+    return "build " + BUILD + " · " + (Saved.store ? Saved.store.label : "이 기기에만 저장");
   }
 
-  var toastTimer = null;
-  function toast(msg){
+  var toastTimer = null, toastHold = 0;
+  /* `hold` is for a message that must not be buried by whatever the caller
+     says next — a refusal, told after the action that seemed to succeed. */
+  function toast(msg, hold){
+    var now = Date.now();
+    if (!hold && now < toastHold) return;
+    toastHold = hold ? now + 2600 : 0;
     var t = document.getElementById("toast");
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
   }
 
   function mapUrl(q){
@@ -1028,372 +1042,581 @@
   function nowMins(){ var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
 
   /* ================= saved state ================= */
-  /* Several people can have the same plan open, so nothing here writes the
-     plan as a whole. Every record — an 일정, a 가게, a 준비물 — is its own
-     document, and an edit touches only that one: two people working on
-     different things never overwrite each other. The screens subscribe, so
-     an edit made on someone else's phone appears here without a reload.
+  /* Three places this page can keep a plan, and one shape for all of them:
+     a flat map of document path to body.
 
-     What you have OPEN is yours alone. The active trip never goes to the
-     shared store — otherwise one person tapping 후쿠오카 would drag everyone
-     else's screen along with them. */
+       trips/<id>                    여행
+       trips/<id>/days/<YYYY-MM-DD>  그날 요약 + 동선
+       trips/<id>/items/<id>         일정 하나
+       trips/<id>/<목록>/<id>         가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
+       trips/<id>/attach/<id>        일정에 붙인 자료
+       photos/<id>                   사진 한 장 (동기화에서 제외 — 무겁다)
+
+     A record is a document, so an edit writes one path and two people
+     editing different things never overwrite each other.
+
+       LocalStore     이 브라우저에만. 혼자 쓰는 사본.
+       ArtifactStore  아티팩트 저장소. 아티팩트를 함께 보는 사람과 공유.
+       RemoteStore    /api/plan. 링크를 아는 사람이면 누구나 같은 계획.
+
+     What you have OPEN is never in the store — it stays in this browser, or
+     one person tapping a trip would drag everyone else's screen along. */
   var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes"];
+  var GROUPS = ["days", "attach"].concat(LISTS);
   var LOCAL_KEY = "lab.fukuoka2026";
-  var SUB_BUDGET = 60;            /* the store allows 64 subscriptions per view */
+  var API = "api/plan";
+  var SUB_BUDGET = 60;            /* the artifact store allows 64 per view */
 
   function byOrd(a, b){
     return (a.ord || 0) - (b.ord || 0) || String(a.id).localeCompare(String(b.id));
   }
   function ordered(list){ return (list || []).slice().sort(byOrd); }
 
-  /* Older saves kept everything in one document. Fold whatever is there into
-     the shape used now; the attachments move inside their own trip. */
-  function legacyTrips(raw){
-    if (raw.trips && raw.trips.length){
-      var attach = raw.attach || {};
-      return raw.trips.map(function(x){
-        var t = newTrip(x);
-        t.attach = x.attach || {};
-        (t.items || []).forEach(function(it){
-          if (attach[it.id]) t.attach[it.id] = attach[it.id];
-        });
-        return t;
-      });
-    }
-
-    /* The oldest shape: one trip at the top level. The Fukuoka plan was
-       rewritten by hand since, so the seed wins for the itinerary and only
-       what the user typed themselves is carried across. */
-    var t = seedTrip();
-    if (raw.attach) t.attach = raw.attach;
-    if (raw.trip && raw.trip.city){
-      t.city = raw.trip.city;
-      t.country = raw.trip.country || t.country;
-    }
-    if (raw.links && raw.links.length) t.links = raw.links;
-    if (raw.flights && raw.flights.length) t.flights = raw.flights;
-    if (raw.stays && raw.stays.length) t.stays = raw.stays;
-    if (raw.books && raw.books.length) t.books = raw.books;
-    if (raw.notes && raw.notes.length){
-      t.notes = raw.notes.map(function(n){
-        return typeof n === "string" ? { id: uid("n"), text: n } : n;
-      });
-    }
-    if (raw.packList && raw.packList.length){
-      t.packList = raw.packList.map(function(k, i){
-        return typeof k === "string"
-          ? { id: uid("k"), text: k, on: !!(raw.pack && raw.pack[k]), ord: i }
-          : Object.assign({ ord: i }, k);
-      });
-    }
-    if (raw.shops && raw.shops.length){
-      var kept = {};
-      raw.shops.forEach(function(sh){ if (sh.items && sh.items.length) kept[sh.name] = sh.items; });
-      t.shops.forEach(function(sh){ if (kept[sh.name]) sh.items = kept[sh.name]; });
-    }
-    return [t];
+  function metaOf(t){
+    return { emoji: t.emoji || "", city: t.city, country: t.country || "", start: t.start, end: t.end };
+  }
+  function bodyOf(rec){
+    var body = Object.assign({}, rec);
+    delete body.id;
+    return body;
   }
 
+  /* ---------- the map is the truth; trips are a reading of it ---------- */
+  function modelFrom(map){
+    var trips = {};
+    function tripFor(id){
+      return trips[id] || (trips[id] = { t: newTrip({ id: id }), meta: false });
+    }
+    Object.keys(map).forEach(function(path){
+      var body = map[path];
+      if (!body) return;                       /* deleted */
+      var p = path.split("/");
+      if (p[0] !== "trips" || !p[1]) return;
+      var slot = tripFor(p[1]), t = slot.t;
+      if (p.length === 2){
+        if (body.trips || !body.city) return;  /* the old whole-plan document */
+        Object.assign(t, metaOf(body));
+        slot.meta = true;
+      } else if (p[2] === "days" && p[3]){
+        if (body.theme) t.dayThemes[p[3]] = body.theme;
+        if (body.route && body.route.length) t.dayRoutes[p[3]] = body.route;
+      } else if (p[2] === "attach" && p[3]){
+        var a = Object.assign({ id: p[3] }, body);
+        (t.attach[a.itemId] = t.attach[a.itemId] || []).push(a);
+      } else if (LISTS.indexOf(p[2]) >= 0 && p[3]){
+        t[p[2]].push(Object.assign({ id: p[3] }, body));
+      }
+    });
+    return Object.keys(trips)
+      .filter(function(id){ return trips[id].meta; })
+      .map(function(id){ return trips[id].t; });
+  }
+
+  function tripToMap(t, into){
+    var base = "trips/" + t.id + "/";
+    into["trips/" + t.id] = metaOf(t);
+    var days = {};
+    Object.keys(t.dayThemes || {}).concat(Object.keys(t.dayRoutes || {})).forEach(function(d){ days[d] = true; });
+    Object.keys(days).forEach(function(d){
+      into[base + "days/" + d] = { theme: t.dayThemes[d] || "", route: t.dayRoutes[d] || [] };
+    });
+    LISTS.forEach(function(key){
+      (t[key] || []).forEach(function(rec, i){
+        into[base + key + "/" + rec.id] = bodyOf(Object.assign({ ord: i }, rec));
+      });
+    });
+    Object.keys(t.attach || {}).forEach(function(itemId){
+      (t.attach[itemId] || []).forEach(function(a){
+        into[base + "attach/" + a.id] = Object.assign(bodyOf(a), { itemId: itemId });
+      });
+    });
+    return into;
+  }
+
+  /* Older saves kept the whole plan in one document. Fold whatever is there
+     into the map; the Fukuoka itinerary itself was rewritten by hand since,
+     so for the oldest shape the seed wins and only what the user typed is
+     carried across. */
+  function mapFromLegacy(raw){
+    var out = {};
+    var trips;
+    if (raw.trips && raw.trips.length){
+      var attach = raw.attach || {};
+      trips = raw.trips.map(function(x){
+        var t = newTrip(x);
+        t.attach = x.attach || {};
+        (t.items || []).forEach(function(it){ if (attach[it.id]) t.attach[it.id] = attach[it.id]; });
+        return t;
+      });
+    } else {
+      var t = seedTrip();
+      if (raw.attach) t.attach = raw.attach;
+      if (raw.trip && raw.trip.city){
+        t.city = raw.trip.city;
+        t.country = raw.trip.country || t.country;
+      }
+      if (raw.links && raw.links.length) t.links = raw.links;
+      if (raw.flights && raw.flights.length) t.flights = raw.flights;
+      if (raw.stays && raw.stays.length) t.stays = raw.stays;
+      if (raw.books && raw.books.length) t.books = raw.books;
+      if (raw.notes && raw.notes.length){
+        t.notes = raw.notes.map(function(n){
+          return typeof n === "string" ? { id: uid("n"), text: n } : n;
+        });
+      }
+      if (raw.packList && raw.packList.length){
+        t.packList = raw.packList.map(function(k, i){
+          return typeof k === "string"
+            ? { id: uid("k"), text: k, on: !!(raw.pack && raw.pack[k]), ord: i }
+            : Object.assign({ ord: i }, k);
+        });
+      }
+      if (raw.shops && raw.shops.length){
+        var kept = {};
+        raw.shops.forEach(function(sh){ if (sh.items && sh.items.length) kept[sh.name] = sh.items; });
+        t.shops.forEach(function(sh){ if (kept[sh.name]) sh.items = kept[sh.name]; });
+      }
+      trips = [t];
+    }
+    trips.forEach(function(t){ tripToMap(t, out); });
+    out["meta/store"] = { v: DATA_V, seeded: true };
+    return out;
+  }
+
+  /* ---------- store: this browser only ---------- */
+  function LocalStore(){
+    this.kind = "local";
+    this.shared = false;
+    this.label = "이 기기에만 저장";
+    this.map = {};
+    this._t = null;
+  }
+  LocalStore.prototype.open = async function(){
+    var raw = null;
+    try{ raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); }catch(e){ raw = null; }
+    if (!raw) return;
+    this.map = raw.docs ? raw.docs : mapFromLegacy(raw);
+  };
+  LocalStore.prototype.write = function(path, body){
+    if (body === null) delete this.map[path]; else this.map[path] = body;
+    var self = this;
+    clearTimeout(this._t);
+    this._t = setTimeout(function(){
+      try{
+        localStorage.setItem(LOCAL_KEY, JSON.stringify({ v: DATA_V, seeded: true, docs: self.map }));
+      }catch(e){ /* private mode; the plan stays in memory */ }
+    }, 300);
+  };
+  LocalStore.prototype.watch = function(){};
+  LocalStore.prototype.blobPut = async function(pid, data){ localStorage.setItem("lab.photo." + pid, data); };
+  LocalStore.prototype.blobGet = async function(pid){ return localStorage.getItem("lab.photo." + pid); };
+  LocalStore.prototype.blobDrop = function(pid){ try{ localStorage.removeItem("lab.photo." + pid); }catch(e){} };
+
+  /* ---------- store: the artifact's own ---------- */
+  function ArtifactStore(db){
+    this.kind = "artifact";
+    this.shared = true;
+    this.label = "함께 쓰는 저장소";
+    this.db = db;
+    this.map = {};
+    this.subs = {};
+    this.cb = null;
+  }
+  ArtifactStore.prototype.open = async function(){
+    var meta = await this.db.doc("meta/store").get();
+    if (meta.exists) this.map["meta/store"] = meta.data();
+    var snap = await this.db.collection("trips").get();
+    for (var i = 0; i < snap.docs.length; i++){
+      var d = snap.docs[i], body = d.data() || {};
+      this.map["trips/" + d.id] = body;
+      if (body.trips || !body.city) continue;        /* a legacy document, not a trip */
+      await this.readTrip(d.id);
+    }
+  };
+  ArtifactStore.prototype.readTrip = async function(id){
+    var base = "trips/" + id + "/", self = this;
+    for (var i = 0; i < GROUPS.length; i++){
+      var group = GROUPS[i];
+      var snap = await this.db.collection(base + group).get();
+      snap.docs.forEach(function(d){ self.map[base + group + "/" + d.id] = d.data(); });
+    }
+  };
+  ArtifactStore.prototype.write = function(path, body){
+    if (body === null){
+      delete this.map[path];
+      this.db.doc(path).delete().catch(function(){ Saved.failed(); });
+    } else {
+      this.map[path] = body;
+      this.db.doc(path).set(body).catch(function(){ Saved.failed(); });
+    }
+  };
+  ArtifactStore.prototype.lease = async function(){
+    var got = await this.db.doc("meta/store").acquire({ holder: uid("w"), ttlMs: 30000 });
+    return !!got.acquired;
+  };
+  ArtifactStore.prototype.watch = function(cb){
+    var self = this;
+    this.cb = cb;
+    this.subs.__list = [this.db.collection("trips").onSnapshot(function(snap){
+      var seen = {};
+      snap.docs.forEach(function(d){
+        seen[d.id] = true;
+        var body = d.data() || {};
+        self.map["trips/" + d.id] = body;
+        if (body.trips || !body.city) return;
+        if (self.subs[d.id]) return;
+        self.readTrip(d.id).then(function(){ self.watchTrip(d.id); cb(); });
+      });
+      Object.keys(self.subs).forEach(function(id){
+        if (id === "__list" || seen[id]) return;
+        self.unwatchTrip(id);
+        self.forget("trips/" + id);
+      });
+      cb();
+    }, function(){ /* the listener is gone; what is on screen still works */ })];
+    Object.keys(this.map).forEach(function(path){
+      var p = path.split("/");
+      if (p[0] === "trips" && p.length === 2) self.watchTrip(p[1]);
+    });
+  };
+  ArtifactStore.prototype.forget = function(prefix){
+    var self = this;
+    Object.keys(this.map).forEach(function(path){
+      if (path === prefix || path.indexOf(prefix + "/") === 0) delete self.map[path];
+    });
+  };
+  ArtifactStore.prototype.subCount = function(){
+    var n = 0, self = this;
+    Object.keys(this.subs).forEach(function(k){ n += self.subs[k].length; });
+    return n;
+  };
+  ArtifactStore.prototype.watchTrip = function(id){
+    if (this.subs[id]) return;
+    /* with a lot of trips there are not enough subscriptions to go round; the
+       ones left out still load, they just do not update live */
+    if (this.subCount() + GROUPS.length > SUB_BUDGET) return;
+    var self = this, base = "trips/" + id + "/", subs = [];
+    GROUPS.forEach(function(group){
+      subs.push(self.db.collection(base + group).onSnapshot(function(snap){
+        var prefix = base + group + "/";
+        Object.keys(self.map).forEach(function(path){
+          if (path.indexOf(prefix) === 0) delete self.map[path];
+        });
+        snap.docs.forEach(function(d){ self.map[prefix + d.id] = d.data(); });
+        if (self.cb) self.cb();
+      }));
+    });
+    this.subs[id] = subs;
+  };
+  ArtifactStore.prototype.unwatchTrip = function(id){
+    (this.subs[id] || []).forEach(function(off){ try{ off(); }catch(e){} });
+    delete this.subs[id];
+  };
+  ArtifactStore.prototype.blobPut = async function(pid, data){
+    await this.db.doc("photos/" + pid).set({ data: data });
+  };
+  ArtifactStore.prototype.blobGet = async function(pid){
+    var snap = await this.db.doc("photos/" + pid).get();
+    return snap.exists ? snap.data().data : null;
+  };
+  ArtifactStore.prototype.blobDrop = function(pid){
+    this.db.doc("photos/" + pid).delete().catch(function(){});
+  };
+
+  /* ---------- store: a plan anyone with the link can edit ---------- */
+  /* Talks to /api/plan on the same origin. The whole plan is small, so a poll
+     asks "anything new since rev N?" and the server answers with the lot or
+     with nothing at all. Photos never ride along — they are fetched by id. */
+  function RemoteStore(){
+    this.kind = "remote";
+    this.shared = true;
+    this.label = "함께 쓰는 저장소";
+    this.map = {};
+    this.rev = 0;
+    this.cb = null;
+    this.pending = {};
+    this._t = null;
+    this._poll = null;
+    this.key = "";
+    try{ this.key = localStorage.getItem("lab.key") || ""; }catch(e){ this.key = ""; }
+  }
+  RemoteStore.prototype.headers = function(){
+    var h = { "content-type": "application/json" };
+    if (this.key) h["x-lab-key"] = this.key;
+    return h;
+  };
+  RemoteStore.prototype.open = async function(){
+    var res = await fetch(API, { headers: this.headers(), cache: "no-store" });
+    if (!res.ok) throw new Error("plan " + res.status);
+    var data = await res.json();
+    if (!data || !data.ok) throw new Error("plan not ready");
+    this.map = data.docs || {};
+    this.rev = data.rev || 0;
+    if (data.locked){
+      /* the server has no passcode set, so nobody can write yet */
+      this.locked = true;
+      this.label = "함께 쓰는 저장소 (읽기 전용)";
+    }
+  };
+  RemoteStore.prototype.write = function(path, body){
+    if (body === null) delete this.map[path]; else this.map[path] = body;
+    this.pending[path] = body === null ? null : body;
+    this.send();
+  };
+  RemoteStore.prototype.send = function(){
+    var self = this;
+    clearTimeout(this._t);
+    this._t = setTimeout(function(){ self.flush(); }, 300);
+  };
+  RemoteStore.prototype.flush = async function(){
+    var all = Object.keys(this.pending);
+    if (this.locked || !all.length) return;
+    /* the endpoint takes 200 paths at a time; an import can be bigger */
+    var writes = {}, self = this;
+    all.slice(0, 150).forEach(function(path){
+      writes[path] = self.pending[path];
+      delete self.pending[path];
+    });
+    if (Object.keys(this.pending).length) setTimeout(function(){ self.flush(); }, 60);
+    try{
+      var res = await fetch(API, {
+        method: "POST", headers: this.headers(),
+        body: JSON.stringify({ writes: writes })
+      });
+      if (res.status === 401){
+        /* put them back; they go out once a key is entered */
+        Object.assign(this.pending, writes);
+        Saved.askKey();
+        return;
+      }
+      if (res.status === 403){
+        /* editing is not turned on at all — retrying cannot help */
+        Object.assign(this.pending, writes);
+        this.locked = true;
+        this.label = "함께 쓰는 저장소 (읽기 전용)";
+        Saved.refuse();
+        return;
+      }
+      if (!res.ok) throw new Error("write " + res.status);
+      var data = await res.json();
+      this.rev = data.rev || this.rev;
+    }catch(e){
+      Object.assign(this.pending, writes);
+      Saved.failed();
+      var self = this;
+      setTimeout(function(){ self.send(); }, 4000);
+    }
+  };
+  RemoteStore.prototype.watch = function(cb){
+    var self = this;
+    this.cb = cb;
+    var tick = async function(){
+      if (document.hidden) return;
+      try{
+        var res = await fetch(API + "?rev=" + self.rev, { headers: self.headers(), cache: "no-store" });
+        if (!res.ok) return;
+        var data = await res.json();
+        if (!data.ok || data.unchanged) return;
+        self.map = data.docs || {};
+        self.rev = data.rev || self.rev;
+        cb();
+      }catch(e){ /* a poll that fails is simply the next one's problem */ }
+    };
+    this._poll = setInterval(tick, 4000);
+    document.addEventListener("visibilitychange", function(){ if (!document.hidden) tick(); });
+  };
+  RemoteStore.prototype.setKey = function(key){
+    this.key = key;
+    this.locked = false;
+    this.label = "함께 쓰는 저장소";
+    try{ localStorage.setItem("lab.key", key); }catch(e){ /* private mode */ }
+    this.flush();
+  };
+  RemoteStore.prototype.blobPut = async function(pid, data){
+    await fetch(API, {
+      method: "POST", headers: this.headers(),
+      body: JSON.stringify({ writes: { ["photos/" + pid]: { data: data } } })
+    });
+  };
+  RemoteStore.prototype.blobGet = async function(pid){
+    var res = await fetch(API + "?path=" + encodeURIComponent("photos/" + pid), {
+      headers: this.headers(), cache: "no-store"
+    });
+    if (!res.ok) return null;
+    var data = await res.json();
+    return data.doc ? data.doc.data : null;
+  };
+  RemoteStore.prototype.blobDrop = function(pid){
+    fetch(API, {
+      method: "POST", headers: this.headers(),
+      body: JSON.stringify({ writes: { ["photos/" + pid]: null } })
+    }).catch(function(){});
+  };
+
+  /* ---------- picking one, and everything above it ---------- */
   var Saved = {
+    store: null,
     backend: "local",
     shared: false,
-    db: null,
     data: null,
     active: null,
     onRemote: null,
-    subs: {},
-    _t: null,
     _r: null,
     _warned: false,
 
-    /* ---------- opening ---------- */
     async init(){
-      this.data = { trips: [] };
-      try{
-        if (window.claude && typeof window.claude.use === "function"){
-          var db = await window.claude.use("db");
-          if (db){ this.db = db; this.backend = "db"; this.shared = true; }
-        }
-      }catch(e){ /* stay local */ }
+      this.store = await this.pick();
+      this.backend = this.store.kind;
+      this.shared = this.store.shared;
 
-      if (this.backend === "db"){
-        try{
-          var meta = await this.moveIn();
-          await this.readAll();
-          if (!this.data.trips.length && !meta.seeded) await this.seed();
-          this.watch();
-        }catch(e){
-          /* the store is there but unusable — this browser still works alone */
-          this.backend = "local"; this.shared = false; this.db = null;
-          this.loadLocal();
-        }
-      } else {
-        this.loadLocal();
+      await this.moveIn();
+      this.reread();
+      /* A backend anyone can reach is not seeded behind the user's back: the
+         first write there is theirs to make, and it needs their passcode. */
+      if (!this.data.trips.length && !this.seeded() && this.store.kind !== "remote"){
+        await this.plant();
       }
+
+      var self = this;
+      this.store.watch(function(){ self.reread(); self.touch(); });
 
       this.active = this.lastTrip();
       if (!this.cur() && this.data.trips.length) this.active = this.data.trips[0].id;
     },
 
-    loadLocal(){
-      var raw = null;
-      try{ raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); }catch(e){ raw = null; }
-      if (raw) this.data.trips = legacyTrips(raw);
-      if (!this.data.trips.length && !(raw && raw.seeded)) this.data.trips = [seedTrip()];
-      this.saveLocal();
-    },
-
-    async seed(){
-      var t = seedTrip();
-      this.data.trips.push(t);
-      await this.writeTrip(t);
-      await this.db.doc("meta/store").set({ v: DATA_V, seeded: true });
-    },
-
-    /* One-time move from the single whole-plan document to one document per
-       record. A copy of the old document is kept as a safety net. */
-    async moveIn(){
-      var ref = this.db.doc("meta/store");
-      var meta = await ref.get();
-      var body = meta.exists ? (meta.data() || {}) : {};
-      if ((body.v || 0) >= DATA_V) return body;
-
-      var lease = await ref.acquire({ holder: uid("w"), ttlMs: 30000 });
-      if (!lease.acquired){
-        /* someone else is moving it; wait for them rather than doing it twice */
-        for (var i = 0; i < 20; i++){
-          await new Promise(function(r){ setTimeout(r, 600); });
-          var again = await ref.get();
-          var b = again.exists ? (again.data() || {}) : {};
-          if ((b.v || 0) >= DATA_V) return b;
-        }
+    async pick(){
+      var db = null;
+      try{
+        if (window.claude && typeof window.claude.use === "function") db = await window.claude.use("db");
+      }catch(e){ db = null; }
+      if (db){
+        var artifact = new ArtifactStore(db);
+        try{ await artifact.open(); return artifact; }catch(e){ /* fall through */ }
       }
-
-      var old = await this.db.doc("trips/fukuoka2026").get();
-      var raw = old.exists ? (old.data() || {}) : null;
-      var moved = false;
-      if (raw && (raw.trips || raw.items || raw.trip)){
-        await this.db.doc("meta/backup_v2").set({ at: new Date().toISOString(), plan: raw });
-        var trips = legacyTrips(raw);
-        for (var j = 0; j < trips.length; j++) await this.writeTrip(trips[j]);
-        var keeps = trips.some(function(t){ return t.id === "fukuoka2026"; });
-        if (!keeps) await this.db.doc("trips/fukuoka2026").delete();
-        moved = true;
+      if (location.protocol === "http:" || location.protocol === "https:"){
+        var remote = new RemoteStore();
+        try{ await remote.open(); return remote; }catch(e){ /* no backend deployed */ }
       }
-      var next = { v: DATA_V, seeded: body.seeded || moved || false };
-      await ref.set(next);
-      return next;
+      var local = new LocalStore();
+      await local.open();
+      return local;
     },
 
-    /* ---------- reading ---------- */
-    async readAll(){
-      var snap = await this.db.collection("trips").get();
-      var metas = snap.docs
-        .map(function(d){ return Object.assign({ id: d.id }, d.data()); })
-        .filter(function(m){ return m.city && m.start && !m.trips; });
-      var out = [];
-      for (var i = 0; i < metas.length; i++) out.push(await this.readTrip(metas[i]));
-      this.data.trips = out;
+    seeded(){
+      var meta = this.store.map["meta/store"];
+      return !!(meta && meta.seeded);
     },
 
-    async readTrip(meta){
-      var t = newTrip(meta);
-      var base = "trips/" + t.id + "/";
-      var days = await this.db.collection(base + "days").get();
-      days.docs.forEach(function(d){
-        var v = d.data() || {};
-        if (v.theme) t.dayThemes[d.id] = v.theme;
-        if (v.route && v.route.length) t.dayRoutes[d.id] = v.route;
-      });
-      for (var i = 0; i < LISTS.length; i++){
-        var key = LISTS[i];
-        var snap = await this.db.collection(base + key).get();
-        t[key] = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
-      }
-      var att = await this.db.collection(base + "attach").get();
-      t.attach = {};
-      att.docs.forEach(function(d){
-        var a = Object.assign({ id: d.id }, d.data());
-        (t.attach[a.itemId] = t.attach[a.itemId] || []).push(a);
-      });
-      return t;
-    },
-
-    /* ---------- staying in sync ---------- */
-    watch(){
+    /* An empty shared store is bootstrapped from whatever this browser had,
+       so switching a copy over to a backend does not throw its plan away. */
+    async plant(){
+      var local = new LocalStore();
+      await local.open();
+      var carried = modelFrom(local.map);
+      var trips = carried.length ? carried : [seedTrip()];
+      var map = {};
+      trips.forEach(function(t){ tripToMap(t, map); });
       var self = this;
-      this.subs.__list = [this.db.collection("trips").onSnapshot(function(snap){
-        var seen = {};
-        snap.docs.forEach(function(d){
-          var m = Object.assign({ id: d.id }, d.data());
-          if (!m.city || !m.start || m.trips) return;   /* not a trip record */
-          seen[d.id] = true;
-          var t = self.tripById(d.id);
-          if (t){
-            ["emoji","city","country","start","end"].forEach(function(k){ t[k] = m[k]; });
-          } else {
-            self.readTrip(m).then(function(fresh){
-              if (self.tripById(fresh.id)) return;
-              self.data.trips.push(fresh);
-              self.watchTrip(fresh);
-              self.touch();
-            });
-          }
-        });
-        self.data.trips.slice().forEach(function(t){
-          if (seen[t.id]) return;
-          self.unwatchTrip(t.id);
-          self.data.trips = self.data.trips.filter(function(x){ return x.id !== t.id; });
-        });
-        self.data.trips.forEach(function(t){ self.watchTrip(t); });
-        self.touch();
-      }, function(){ /* the listener is gone; what is on screen still works */ })];
-      this.data.trips.forEach(function(t){ self.watchTrip(t); });
+      Object.keys(map).forEach(function(path){ self.store.write(path, map[path]); });
+      this.store.write("meta/store", { v: DATA_V, seeded: true });
+      this.reread();
     },
 
-    subCount(){
-      var n = 0;
-      for (var k in this.subs) if (this.subs.hasOwnProperty(k)) n += this.subs[k].length;
-      return n;
+    /* One-time move off the single whole-plan document. */
+    async moveIn(){
+      var map = this.store.map;
+      var meta = map["meta/store"];
+      if (meta && (meta.v || 0) >= DATA_V) return;
+      var old = map["trips/fukuoka2026"];
+      if (!old || !(old.trips || old.items || old.trip)){
+        if (Object.keys(map).length) this.store.write("meta/store", { v: DATA_V, seeded: true });
+        return;
+      }
+      if (this.store.lease && !(await this.store.lease())) return;   /* someone else is moving it */
+      this.store.write("meta/backup_v2", { at: new Date().toISOString(), plan: old });
+      var fresh = mapFromLegacy(old);
+      var self = this;
+      if (!fresh["trips/fukuoka2026"]) this.store.write("trips/fukuoka2026", null);
+      Object.keys(fresh).forEach(function(path){ self.store.write(path, fresh[path]); });
     },
 
-    watchTrip(t){
-      if (this.subs[t.id]) return;
-      /* with a lot of trips there are not enough subscriptions to go round;
-         the ones left out still load, they just do not update live */
-      if (this.subCount() + LISTS.length + 2 > SUB_BUDGET) return;
-      var self = this, base = "trips/" + t.id + "/", subs = [];
-
-      subs.push(this.db.collection(base + "days").onSnapshot(function(snap){
-        var themes = {}, routes = {};
-        snap.docs.forEach(function(d){
-          var v = d.data() || {};
-          if (v.theme) themes[d.id] = v.theme;
-          if (v.route && v.route.length) routes[d.id] = v.route;
-        });
-        t.dayThemes = themes; t.dayRoutes = routes;
-        self.touch();
-      }));
-      LISTS.forEach(function(key){
-        subs.push(self.db.collection(base + key).onSnapshot(function(snap){
-          t[key] = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
-          self.touch();
-        }));
-      });
-      subs.push(this.db.collection(base + "attach").onSnapshot(function(snap){
-        var map = {};
-        snap.docs.forEach(function(d){
-          var a = Object.assign({ id: d.id }, d.data());
-          (map[a.itemId] = map[a.itemId] || []).push(a);
-        });
-        t.attach = map;
-        self.touch();
-      }));
-      this.subs[t.id] = subs;
+    reread(){
+      this.data = { trips: modelFrom(this.store.map) };
     },
 
-    unwatchTrip(id){
-      (this.subs[id] || []).forEach(function(off){ try{ off(); }catch(e){} });
-      delete this.subs[id];
-    },
-
-    /* Someone else's edit lands here. Repaint once for a burst of them, and
-       keep the reader where they were on the page. */
     touch(){
       var self = this;
       clearTimeout(this._r);
       this._r = setTimeout(function(){ if (self.onRemote) self.onRemote(); }, 90);
     },
 
-    /* ---------- writing ---------- */
     failed(){
       if (this._warned) return;
       this._warned = true;
       toast("저장하지 못했어요. 연결을 확인해주세요.");
       setTimeout(function(){ Saved._warned = false; }, 8000);
     },
+    askKey(){
+      if (this._asking) return;
+      this._asking = true;
+      var self = this;
+      openTextDialog({
+        title: "편집 암호",
+        placeholder: "계획을 함께 쓰는 사람에게 받은 암호",
+        hint: "이 기기에 저장되고, 보는 건 암호 없이도 됩니다."
+      }, function(v){
+        self._asking = false;
+        self.store.setKey(v);
+        toast("암호를 저장했어요.");
+      }, null, function(){ self._asking = false; });
+    },
+
+    /* ---------- moving a plan between copies ---------- */
+    /* An artifact cannot reach the outside network, so the two copies can
+       never sync themselves. Text is the bridge. */
+    exportText(){
+      var map = this.store.map, out = {};
+      Object.keys(map).forEach(function(path){
+        if (path.indexOf("trips/") === 0 && map[path]) out[path] = map[path];
+      });
+      return JSON.stringify({ lab: "bemlab", v: DATA_V, at: new Date().toISOString(), docs: out });
+    },
+    importText(text){
+      var parsed = JSON.parse(text);
+      var docs = parsed && parsed.docs ? parsed.docs : parsed;
+      if (!docs || typeof docs !== "object") throw new Error("shape");
+      var paths = Object.keys(docs).filter(function(path){ return path.indexOf("trips/") === 0; });
+      if (!paths.length) throw new Error("empty");
+      var self = this;
+      paths.forEach(function(path){ self.write(path, docs[path]); });
+      this.write("meta/store", { v: DATA_V, seeded: true });
+      this.reread();
+      return paths.length;
+    },
+
+    /* ---------- writing ---------- */
+    /* A read-only copy must not look like it saved. The write is refused, the
+       model is read back from the store, and the screen returns to what is
+       actually stored. */
     write(path, body){
-      if (this.backend !== "db") return this.saveLocal();
+      if (this.store.locked){ this.refuse(); return; }
+      this.store.write(path, body);
+    },
+    refuse(){
       var self = this;
-      this.db.doc(path).set(body).catch(function(){ self.failed(); });
+      clearTimeout(this._back);
+      this._back = setTimeout(function(){
+        toast("이 주소에서는 편집이 잠겨 있어요.", true);
+        self.reread();
+        if (self.onRemote) self.onRemote();
+      }, 120);
     },
-    drop(path){
-      if (this.backend !== "db") return this.saveLocal();
-      var self = this;
-      this.db.doc(path).delete().catch(function(){ self.failed(); });
-    },
-    saveLocal(){
-      var self = this;
-      clearTimeout(this._t);
-      this._t = setTimeout(function(){
-        try{
-          localStorage.setItem(LOCAL_KEY, JSON.stringify({
-            v: DATA_V, seeded: true, trips: self.data.trips
-          }));
-        }catch(e){ /* private mode; state stays in memory */ }
-      }, 400);
-    },
-
-    async writeTrip(t){
-      var base = "trips/" + t.id + "/";
-      await this.db.doc("trips/" + t.id).set(this.metaOf(t));
-      var keys = Object.keys(t.dayThemes || {}).concat(Object.keys(t.dayRoutes || {}));
-      var days = {};
-      keys.forEach(function(d){ days[d] = true; });
-      for (var d in days){
-        if (!days.hasOwnProperty(d)) continue;
-        await this.db.doc(base + "days/" + d).set({
-          theme: t.dayThemes[d] || "", route: t.dayRoutes[d] || []
-        });
-      }
-      for (var i = 0; i < LISTS.length; i++){
-        var key = LISTS[i], list = t[key] || [];
-        for (var j = 0; j < list.length; j++){
-          var rec = Object.assign({ ord: j }, list[j]);
-          await this.db.doc(base + key + "/" + rec.id).set(this.bodyOf(rec));
-        }
-      }
-      var att = t.attach || {};
-      for (var itemId in att){
-        if (!att.hasOwnProperty(itemId)) continue;
-        var group = att[itemId];
-        for (var k = 0; k < group.length; k++){
-          var a = group[k];
-          await this.db.doc(base + "attach/" + a.id).set(
-            Object.assign(this.bodyOf(a), { itemId: itemId })
-          );
-        }
-      }
-    },
-    metaOf(t){
-      return { emoji: t.emoji || "", city: t.city, country: t.country || "", start: t.start, end: t.end };
-    },
-    bodyOf(rec){
-      var body = Object.assign({}, rec);
-      delete body.id;
-      return body;
-    },
-
-    /* ---------- the trip you are looking at ---------- */
-    tripById(id){
-      var found = null;
-      this.data.trips.forEach(function(t){ if (t.id === id) found = t; });
-      return found;
-    },
-    cur(){ return this.tripById(this.active) || null; },
-    lastTrip(){ try{ return localStorage.getItem("lab.trip"); }catch(e){ return null; } },
-    open(id){
-      this.active = id;
-      try{ localStorage.setItem("lab.trip", id); }catch(e){ /* private mode */ }
-    },
-
-    /* ---------- records ---------- */
     path(key){ return "trips/" + this.active + "/" + key; },
 
     listAdd(key, rec){
       var full = Object.assign({ id: uid("x"), ord: Date.now() }, rec);
       this.cur()[key].push(full);
-      this.write(this.path(key) + "/" + full.id, this.bodyOf(full));
+      this.write(this.path(key) + "/" + full.id, bodyOf(full));
       return full;
     },
     listEdit(key, id, patch){
@@ -1403,14 +1626,14 @@
         next = Object.assign({}, x, patch);
         return next;
       });
-      if (next) this.write(this.path(key) + "/" + id, this.bodyOf(next));
+      if (next) this.write(this.path(key) + "/" + id, bodyOf(next));
     },
     listRemove(key, id){
       var self = this, c = this.cur();
       c[key] = c[key].filter(function(x){ return x.id !== id; });
-      this.drop(this.path(key) + "/" + id);
+      this.write(this.path(key) + "/" + id, null);
       if (key === "items"){
-        (c.attach[id] || []).forEach(function(a){ self.drop(self.path("attach") + "/" + a.id); });
+        (c.attach[id] || []).forEach(function(a){ self.write(self.path("attach") + "/" + a.id, null); });
         delete c.attach[id];
       }
     },
@@ -1425,7 +1648,7 @@
         else delete t.dayRoutes[date];
       }
       var theme = t.dayThemes[date] || "", route = t.dayRoutes[date] || [];
-      if (!theme && !route.length) this.drop(this.path("days") + "/" + date);
+      if (!theme && !route.length) this.write(this.path("days") + "/" + date, null);
       else this.write(this.path("days") + "/" + date, { theme: theme, route: route });
     },
 
@@ -1437,52 +1660,57 @@
       var t = this.cur();
       var full = Object.assign({ id: uid("t"), itemId: itemId }, att);
       (t.attach[itemId] = t.attach[itemId] || []).push(full);
-      this.write(this.path("attach") + "/" + full.id, this.bodyOf(full));
+      this.write(this.path("attach") + "/" + full.id, bodyOf(full));
     },
     removeAttach(itemId, attId){
       var t = this.cur();
       t.attach[itemId] = this.attachOf(itemId).filter(function(a){ return a.id !== attId; });
-      this.drop(this.path("attach") + "/" + attId);
+      this.write(this.path("attach") + "/" + attId, null);
     },
 
     /* ---------- trips ---------- */
+    tripById(id){
+      var found = null;
+      this.data.trips.forEach(function(t){ if (t.id === id) found = t; });
+      return found;
+    },
+    cur(){ return this.tripById(this.active) || null; },
+    lastTrip(){ try{ return localStorage.getItem("lab.trip"); }catch(e){ return null; } },
+    open(id){
+      this.active = id;
+      try{ localStorage.setItem("lab.trip", id); }catch(e){ /* private mode */ }
+    },
+
     addTrip(rec){
       var t = newTrip(rec);
       this.data.trips.push(t);
-      if (this.backend === "db"){
-        var self = this;
-        this.db.doc("trips/" + t.id).set(this.metaOf(t))
-          .then(function(){ self.watchTrip(t); })
-          .catch(function(){ self.failed(); });
-      } else {
-        this.saveLocal();
-      }
+      this.write("trips/" + t.id, metaOf(t));
+      if (this.store.watchTrip) this.store.watchTrip(t.id);
       return t;
     },
     editTrip(id, rec){
       var t = this.tripById(id);
       if (!t) return;
       Object.assign(t, rec);
-      this.write("trips/" + id, this.metaOf(t));
+      this.write("trips/" + id, metaOf(t));
     },
     removeTrip(id){
       var self = this, t = this.tripById(id);
       if (!t) return;
-      this.unwatchTrip(id);
+      if (this.store.unwatchTrip) this.store.unwatchTrip(id);
       this.data.trips = this.data.trips.filter(function(x){ return x.id !== id; });
       if (this.active === id) this.active = this.data.trips.length ? this.data.trips[0].id : null;
-      if (this.backend !== "db") return this.saveLocal();
-
       var base = "trips/" + id + "/";
-      var gone = function(path){ self.db.doc(path).delete().catch(function(){}); };
-      Object.keys(t.dayThemes).concat(Object.keys(t.dayRoutes)).forEach(function(d){ gone(base + "days/" + d); });
+      Object.keys(t.dayThemes).concat(Object.keys(t.dayRoutes)).forEach(function(d){
+        self.write(base + "days/" + d, null);
+      });
       LISTS.forEach(function(key){
-        (t[key] || []).forEach(function(rec){ gone(base + key + "/" + rec.id); });
+        (t[key] || []).forEach(function(rec){ self.write(base + key + "/" + rec.id, null); });
       });
       Object.keys(t.attach || {}).forEach(function(itemId){
-        (t.attach[itemId] || []).forEach(function(a){ gone(base + "attach/" + a.id); });
+        (t.attach[itemId] || []).forEach(function(a){ self.write(base + "attach/" + a.id, null); });
       });
-      gone("trips/" + id);
+      this.write("trips/" + id, null);
     }
   };
 
@@ -1515,31 +1743,20 @@
     if (data.length > 180000) data = await compressImage(file, 640, 0.45);
     if (data.length > 230000) throw new Error("too big");
     var pid = uid("p");
-    if (Saved.backend === "db") await Saved.db.doc("photos/" + pid).set({ data: data });
-    else localStorage.setItem("lab.photo." + pid, data);
+    await Saved.store.blobPut(pid, data);
     photoCache[pid] = data;
     return pid;
   }
   async function loadPhoto(pid){
     if (photoCache[pid]) return photoCache[pid];
     var data = null;
-    try{
-      if (Saved.backend === "db"){
-        var snap = await Saved.db.doc("photos/" + pid).get();
-        data = snap.exists ? snap.data().data : null;
-      } else {
-        data = localStorage.getItem("lab.photo." + pid);
-      }
-    }catch(e){ data = null; }
+    try{ data = await Saved.store.blobGet(pid); }catch(e){ data = null; }
     if (data) photoCache[pid] = data;
     return data;
   }
   function dropPhoto(pid){
     delete photoCache[pid];
-    try{
-      if (Saved.backend === "db") Saved.db.doc("photos/" + pid).delete();
-      else localStorage.removeItem("lab.photo." + pid);
-    }catch(e){ /* the attachment is gone either way */ }
+    try{ Saved.store.blobDrop(pid); }catch(e){ /* the attachment is gone either way */ }
   }
   function thumb(pid){
     var img = el('<img class="att-thumb" alt="첨부 사진">');
@@ -1574,12 +1791,12 @@
     }
     return out;
   }
-  function tripDays(){ return tripDaysOf(trip()); }
+  function tripDays(){ var t = trip(); return t ? tripDaysOf(t) : []; }
   function nightsOf(t){
     var n = dayDiff(t.end, t.start);
     return n > 0 ? n + "박 " + (n + 1) + "일" : "당일";
   }
-  function nightsLabel(){ return nightsOf(trip()); }
+  function nightsLabel(){ var t = trip(); return t ? nightsOf(t) : ""; }
   /* D-7 / 여행 중 / 다녀옴 — one label, used by both the list and the header. */
   function tripStatus(t){
     var d = dayDiff(t.start, todayISO()), back = dayDiff(t.end, todayISO());
@@ -1606,6 +1823,7 @@
   }
   function currentPair(){
     var days = tripDays(), today = todayISO(), di = -1;
+    if (!days.length) return null;
     days.forEach(function(d, i){ if (d.date === today) di = i; });
     if (di < 0) return null;
     var list = timedOn(days[di].date), n = nowMins(), cur = null, next = null;
@@ -1793,11 +2011,58 @@
     tap(add, function(){ openTripEditor(null); });
     box.appendChild(add);
     wrap.appendChild(box);
+    wrap.appendChild(moveRow());
     wrap.appendChild(el('<p class="build-stamp mono">' + esc(stamp()) + '</p>'));
 
     view.innerHTML = "";
     view.appendChild(wrap);
     if (!keepScroll) window.scrollTo(0, 0);
+  }
+
+  /* Moving a plan between the two copies, and the passcode the shared one
+     asks for. Quiet, at the bottom — needed rarely, but needed. */
+  function moveRow(){
+    var row = el('<div class="moverow"></div>');
+    var out = el('<button class="linkbtn" type="button">' + icon("note") + '내보내기</button>');
+    tap(out, function(){
+      openTextDialog({
+        title: "계획 내보내기",
+        value: Saved.exportText(),
+        multiline: true,
+        hint: "전체를 복사해서, 옮길 곳의 가져오기에 붙여넣으세요.",
+        okLabel: "복사"
+      }, function(v){
+        try{
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v);
+        }catch(e){ /* the text is on screen to copy by hand */ }
+        toast("복사했어요.");
+      });
+    });
+    row.appendChild(out);
+
+    var into = el('<button class="linkbtn" type="button">' + icon("plus") + '가져오기</button>');
+    tap(into, function(){
+      openTextDialog({
+        title: "계획 가져오기",
+        placeholder: "내보내기에서 복사한 내용을 붙여넣으세요",
+        multiline: true,
+        hint: "같은 이름의 여행은 덮어씁니다."
+      }, function(v){
+        try{
+          var n = Saved.importText(v);
+          toast(n + "개 항목을 가져왔어요.");
+          render();
+        }catch(e){ toast("가져올 내용을 알아보지 못했어요."); }
+      });
+    });
+    row.appendChild(into);
+
+    if (Saved.store && Saved.store.kind === "remote"){
+      var key = el('<button class="linkbtn" type="button">' + icon("edit") + '편집 암호</button>');
+      tap(key, function(){ Saved.askKey(); });
+      row.appendChild(key);
+    }
+    return row;
   }
 
   function tripCard(t){
@@ -2432,21 +2697,23 @@
     setTimeout(function(){ inputs[opts.fields[0].key].focus(); }, 60);
   }
 
-  function openTextDialog(opts, onSave, onDelete){
+  function openTextDialog(opts, onSave, onDelete, onCancel){
     var field = opts.multiline
       ? '<textarea id="dlg-v" placeholder="' + esc(opts.placeholder || "") + '">' + esc(opts.value || "") + '</textarea>'
       : '<input id="dlg-v" type="text" placeholder="' + esc(opts.placeholder || "") + '" value="' + esc(opts.value || "") + '">';
     var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
-      '<h3>' + esc(opts.title) + '</h3><div class="fld">' + field + '</div>' +
+      '<h3>' + esc(opts.title) + '</h3><div class="fld">' + field +
+      (opts.hint ? '<p class="fld-hint">' + esc(opts.hint) + '</p>' : '') + '</div>' +
       '<div class="dialog-actions">' +
         (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
         '<span class="spacer"></span>' +
         '<button class="btn-text" data-a="no">취소</button>' +
-        '<button class="btn-text go" data-a="ok">확인</button>' +
+        '<button class="btn-text go" data-a="ok">' + esc(opts.okLabel || "확인") + '</button>' +
       '</div></div></div>');
-    scrim.addEventListener("click", function(e){ if (e.target === scrim) closeOverlay(); });
+    function give(){ closeOverlay(); if (onCancel) onCancel(); }
+    scrim.addEventListener("click", function(e){ if (e.target === scrim) give(); });
     var input = scrim.querySelector("#dlg-v");
-    scrim.querySelector('[data-a="no"]').addEventListener("click", closeOverlay);
+    scrim.querySelector('[data-a="no"]').addEventListener("click", give);
     if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){ closeOverlay(); onDelete(); });
     scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
       var v = input.value.trim();
