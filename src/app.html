@@ -508,26 +508,32 @@
   .fld-row{ display: flex; gap: 10px; }
   .fld-col{ flex: 1 1 0; min-width: 0; }
 
-  /* A time input measures itself from its own text, so on iOS an empty one
-     ("--:-- --") and a filled one ("08:30 PM") come out different widths and
-     neither respects its column. Pinning the input inside a fixed box takes
-     its intrinsic size out of the layout: the box is what has a size, and it
-     is identical whether the field holds a value or not. */
-  .timebox{
+  /* Date and time inputs are drawn by the platform: iOS sizes them from their
+     own text (so an empty one and a filled one differ) and parks the value at
+     the top of the box. So the box paints the value itself as ordinary text,
+     and the real input lies invisible on top of it — the native picker still
+     opens on tap, but nothing about the platform's rendering reaches layout. */
+  .pickbox{
     position: relative;
-    width: 100%; height: 47px;
+    display: flex; align-items: center;
+    width: 100%; height: 47px; padding: 0 13px;
     border: 1px solid var(--line-strong); border-radius: 12px;
     background: var(--surface);
     overflow: hidden;
   }
-  .timebox:focus-within{ border-color: var(--signal); }
-  .timebox input[type=time]{
+  .pickbox:focus-within{ border-color: var(--signal); }
+  .pickbox .pickval{
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 16px; color: var(--ink);
+    line-height: 1; white-space: nowrap;
+  }
+  .pickbox.empty .pickval{ color: var(--ink-faint); }
+  .pickbox input{
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%; min-width: 0;
-    border: none; border-radius: 0;
-    padding: 0 12px;
-    background: transparent; color: var(--ink);
-    font-family: inherit; font-size: 16px;
+    margin: 0; padding: 0; border: none;
+    opacity: 0;
+    background: transparent;
     -webkit-appearance: none; appearance: none;
   }
 
@@ -1775,12 +1781,8 @@
     body.appendChild(el(
       '<div class="fld"><label for="t-country">라벨</label><input id="t-country" type="text" value="' + esc(t.country) + '" placeholder="예: JAPAN"></div>'
     ));
-    body.appendChild(el(
-      '<div class="fld"><label for="t-start">시작일</label><input id="t-start" type="date" value="' + esc(t.start) + '"></div>'
-    ));
-    body.appendChild(el(
-      '<div class="fld"><label for="t-end">종료일</label><input id="t-end" type="date" value="' + esc(t.end) + '"></div>'
-    ));
+    body.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t.start }));
+    body.appendChild(pickerField({ type:"date", id:"t-end", label:"종료일", value: t.end }));
     body.appendChild(el('<p class="fld-hint">날짜를 줄이면 그 날에 있던 일정은 화면에서 빠집니다. 다시 늘리면 돌아옵니다.</p>'));
 
     var save = el('<button class="btn btn-primary" type="button">저장</button>');
@@ -1811,12 +1813,12 @@
     body.appendChild(el('<div class="fld"><label for="sh-name">이름</label>' +
       '<input id="sh-name" type="text" placeholder="예: 빔스" value="' + esc(shop ? shop.name : "") + '"></div>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="sh-day"></div></div>'));
-    body.appendChild(el('<div class="fld"><div class="fld-row">' +
-      '<div class="fld-col"><label for="sh-time">시간</label>' +
-        '<div class="timebox"><input id="sh-time" type="time" value="' + esc(shop ? shop.time : "") + '"></div></div>' +
-      '<div class="fld-col"><label for="sh-area">지역</label>' +
-        '<input id="sh-area" type="text" placeholder="예: 텐진" value="' + esc(shop ? shop.area : "") + '"></div>' +
-      '</div></div>'));
+    var shRow = el('<div class="fld"><div class="fld-row"></div></div>');
+    var shInner = shRow.querySelector(".fld-row");
+    shInner.appendChild(pickerField({ type:"time", id:"sh-time", label:"시간", value: shop ? shop.time : "", col:true }));
+    shInner.appendChild(el('<div class="fld-col"><label for="sh-area">지역</label>' +
+      '<input id="sh-area" type="text" placeholder="예: 텐진" value="' + esc(shop ? shop.area : "") + '"></div>'));
+    body.appendChild(shRow);
     body.appendChild(el('<div class="fld"><label for="sh-map">지도 검색어</label>' +
       '<input id="sh-map" type="text" placeholder="비우면 이름으로 검색" value="' + esc(shop && shop.map ? shop.map : "") + '"></div>'));
 
@@ -1851,6 +1853,34 @@
     overlay.appendChild(sheet);
   }
 
+  /* A date or time field whose box never moves: the value is painted as text
+     and the native input sits invisible over it. */
+  function pickerField(o){
+    function show(v){
+      if (!v) return o.type === "time" ? "--:--" : "----.--.--";
+      return o.type === "time" ? v : v.replace(/-/g, ".") + " (" + dowOf(v) + ")";
+    }
+    var wrap = el(
+      '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
+        '<label for="' + o.id + '">' + esc(o.label) + '</label>' +
+        '<div class="pickbox' + (o.value ? "" : " empty") + '">' +
+          '<span class="pickval">' + esc(show(o.value)) + '</span>' +
+          '<input id="' + o.id + '" type="' + o.type + '" value="' + esc(o.value || "") + '">' +
+        '</div>' +
+      '</div>'
+    );
+    var input = wrap.querySelector("input");
+    var box = wrap.querySelector(".pickbox");
+    var val = wrap.querySelector(".pickval");
+    function sync(){
+      val.textContent = show(input.value);
+      box.classList.toggle("empty", !input.value);
+    }
+    input.addEventListener("input", sync);
+    input.addEventListener("change", sync);
+    return wrap;
+  }
+
   function pickGroup(host, options, get, set){
     host.innerHTML = "";
     options.forEach(function(o){
@@ -1879,12 +1909,11 @@
     body.appendChild(el('<div class="fld"><label for="ed-title">이름</label>' +
       '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(item ? item.title : "") + '"></div>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
-    body.appendChild(el('<div class="fld"><div class="fld-row">' +
-      '<div class="fld-col"><label for="ed-s">시작</label>' +
-        '<div class="timebox"><input id="ed-s" type="time" value="' + esc(item ? item.s : "") + '"></div></div>' +
-      '<div class="fld-col"><label for="ed-e">종료</label>' +
-        '<div class="timebox"><input id="ed-e" type="time" value="' + esc(item && item.e ? item.e : "") + '"></div></div>' +
-      '</div><p class="fld-hint">종료는 비워둬도 됩니다.</p></div>'));
+    var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
+    var row = timeRow.querySelector(".fld-row");
+    row.appendChild(pickerField({ type:"time", id:"ed-s", label:"시작", value: item ? item.s : "", col:true }));
+    row.appendChild(pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true }));
+    body.appendChild(timeRow);
     body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
     body.appendChild(el('<div class="fld"><label>음식 종류</label><div class="pickrow" id="ed-meal"></div>' +
       '<p class="fld-hint">선택하면 음식 탭에도 함께 표시됩니다.</p></div>'));
