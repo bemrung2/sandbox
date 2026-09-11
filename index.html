@@ -26,6 +26,7 @@
 
     --signal: #3446B5;
     --signal-soft: #E4E7FA;
+    --signal-tint: rgba(52, 70, 181, 0.07);
     --on-signal: #FFFFFF;
     --travel: #9A6224;
     --travel-soft: #F7E7D3;
@@ -61,6 +62,7 @@
 
       --signal: #97A6FF;
       --signal-soft: #1F2550;
+      --signal-tint: rgba(151, 166, 255, 0.13);
       --on-signal: #0A0F2E;
       --travel: #E3A96C;
       --travel-soft: #3D2F1C;
@@ -92,6 +94,7 @@
 
     --signal: #97A6FF;
     --signal-soft: #1F2550;
+    --signal-tint: rgba(151, 166, 255, 0.13);
     --on-signal: #0A0F2E;
     --travel: #E3A96C;
     --travel-soft: #3D2F1C;
@@ -266,14 +269,58 @@
     font-size: 13px; color: var(--ink-soft); margin: 5px 0 0;
   }
 
-  .countdown{
-    display: flex; align-items: center; gap: 11px;
-    margin-top: 14px; padding: 13px 15px; border-radius: 18px;
-    background: var(--signal-soft); color: var(--signal);
+  /* ---------- where the day is right now ---------- */
+  .pulse{
+    margin-top: 14px; padding: 14px 16px 13px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px;
   }
-  .countdown.live{ background: var(--travel-soft); color: var(--travel); }
-  .countdown-big{ font-size: 19px; font-weight: 700; }
-  .countdown-sub{ font-size: 12px; opacity: 0.9; }
+  .pulse-head{ display: flex; align-items: center; gap: 10px; }
+  .pulse-live{
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--signal); text-transform: uppercase;
+  }
+  .pulse-live i{
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--signal); flex-shrink: 0;
+    box-shadow: 0 0 0 0 var(--signal-tint);
+    animation: beat 2.4s ease-out infinite;
+  }
+  .pulse-live.idle{ color: var(--ink-faint); }
+  .pulse-live.idle i{ background: var(--ink-faint); animation: none; }
+  @keyframes beat{
+    0%{ box-shadow: 0 0 0 0 var(--signal-tint); }
+    70%{ box-shadow: 0 0 0 7px transparent; }
+    100%{ box-shadow: 0 0 0 0 transparent; }
+  }
+  .pulse-clock{ margin-left: auto; font-size: 12px; color: var(--ink-soft); }
+  .pulse-title{
+    font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 7px 0 0; word-break: keep-all;
+  }
+  .pulse-title.muted{ font-size: 14.5px; font-weight: 500; color: var(--ink-faint); }
+  .pulse-bar{
+    height: 3px; border-radius: 2px; margin-top: 11px;
+    background: var(--surface-2); overflow: hidden;
+  }
+  .pulse-bar span{ display: block; height: 100%; background: var(--signal); border-radius: 2px; }
+  .pulse-left{ font-size: 11px; color: var(--ink-faint); margin: 6px 0 0; }
+  .pulse-next{
+    display: flex; align-items: baseline; gap: 9px;
+    margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
+  }
+  .pulse-when{ font-size: 12px; font-weight: 600; color: var(--ink-soft); flex-shrink: 0; }
+  .pulse-name{
+    flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pulse-in{ font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
+
+  .pulse.count{ padding-bottom: 15px; }
+  .count-big{ font-size: 30px; font-weight: 700; letter-spacing: -0.03em; margin: 6px 0 0; line-height: 1.05; }
+  .pulse.count.live .count-big{ color: var(--signal); }
+  .count-sub{ font-size: 12.5px; color: var(--ink-soft); margin: 5px 0 0; word-break: keep-all; }
 
   /* ---------- tabs ---------- */
   .tabs{
@@ -384,10 +431,21 @@
   .tl-line::before{ content: "— "; color: var(--ink-faint); }
   .tl-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .tl-actions{ margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+  /* The running item is marked, not shouted at: a wash of the accent, the
+     time in it, and a filled dot with a ring. */
   .tl-item.current .tl-body{
-    background: var(--travel-soft);
+    background: var(--signal-tint);
     margin-left: -10px; padding-left: 10px; padding-right: 10px;
-    border-radius: 14px; border-bottom-color: transparent;
+    border-radius: 12px; border-bottom-color: transparent;
+  }
+  .tl-item.current .tl-time{ color: var(--signal); }
+  .tl-item.current .tl-dot{
+    background: var(--signal); border-color: var(--signal);
+    box-shadow: 0 0 0 4px var(--signal-tint);
+  }
+  .badge.live{
+    background: var(--signal-soft); color: var(--signal);
+    letter-spacing: 0.06em; font-weight: 700;
   }
 
   .placelink{ color: inherit; text-decoration: none; border-bottom: 1px dashed var(--line-strong); padding-bottom: 1px; }
@@ -695,14 +753,6 @@
   }
   .photoview img{ max-width: 100%; max-height: 100%; border-radius: 10px; }
 
-  .notice{
-    display: flex; align-items: flex-start; gap: 8px;
-    background: var(--travel-soft); color: var(--travel);
-    border-radius: 14px; padding: 11px 13px;
-    font-size: 11.5px; font-weight: 500; margin: 14px 18px 0;
-  }
-  .notice .icon{ width: 16px; height: 16px; margin-top: 1px; }
-
   .toast{
     position: fixed; left: 50%; bottom: calc(26px + var(--safe-b));
     transform: translateX(-50%) translateY(8px);
@@ -717,7 +767,10 @@
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
 
-  @media (prefers-reduced-motion: reduce){ .toast{ transition: none; } }
+  @media (prefers-reduced-motion: reduce){
+    .toast{ transition: none; }
+    .pulse-live i{ animation: none; }
+  }
   [hidden]{ display: none !important; }
 </style>
 </head>
@@ -732,7 +785,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r12";
+  var BUILD = "2026.09.11 · r13";
 
   /* ================= helpers ================= */
   function el(html){
@@ -1805,6 +1858,12 @@
     if (back >= 0) return { kind:"live", label:"여행 중 " + (1 - d) + "일차" };
     return { kind:"past", label:"다녀옴" };
   }
+  function spanLabel(m){
+    if (m <= 1) return "곧";
+    if (m < 60) return m + "분";
+    var h = Math.floor(m / 60), r = m % 60;
+    return r ? h + "시간 " + r + "분" : h + "시간";
+  }
   /* An item shows an emoji only if one was actually set on it. */
   function emoPrefix(it){ return it.emo ? it.emo + " " : ""; }
   /* 시간 미정이 맨 위, 그 다음이 시계 순. */
@@ -1826,7 +1885,7 @@
     if (!days.length) return null;
     days.forEach(function(d, i){ if (d.date === today) di = i; });
     if (di < 0) return null;
-    var list = timedOn(days[di].date), n = nowMins(), cur = null, next = null;
+    var list = timedOn(days[di].date), n = nowMins(), cur = null, next = null, from = null, to = null;
     for (var i = 0; i < list.length; i++){
       var s = mins(list[i].s), e = list[i].e ? mins(list[i].e) : null;
       if (e === null){
@@ -1836,10 +1895,10 @@
         }
         if (e === null) e = s + 90;
       }
-      if (!cur && n >= s && n < e) cur = list[i];
+      if (!cur && n >= s && n < e){ cur = list[i]; from = s; to = e; }
       if (!next && s > n) next = list[i];
     }
-    return { dayIndex: di, current: cur, next: next };
+    return { dayIndex: di, current: cur, next: next, from: from, to: to, now: n };
   }
 
   /* ================= routing ================= */
@@ -2155,28 +2214,65 @@
     dates.appendChild(pen);
     hero.appendChild(dates);
 
-    var box;
-    if (pair){
-      var cur = pair.current, nx = pair.next;
-      box = el('<div class="now"></div>');
-      box.appendChild(el('<div class="now-part"><span class="now-tag on">지금</span>' +
-        '<div><p class="now-title">' + (cur ? esc(emoPrefix(cur) + cur.title) : "일정 사이 — 여유 시간") + '</p>' +
-        '<p class="now-time mono">' + (cur ? esc(cur.s + (cur.e ? "–" + cur.e : "~")) : "") + '</p></div></div>'));
-      if (nx){
-        box.appendChild(el('<div class="now-part"><span class="now-tag next">다음</span>' +
-          '<div><p class="now-title">' + esc(emoPrefix(nx) + nx.title) + '</p>' +
-          '<p class="now-time mono">' + esc(nx.s) + ' 시작</p></div></div>'));
-      }
-    } else {
-      var label = d > 0 ? "D-" + d : (d === 0 ? "오늘 출발" : "여행 완료");
-      var first = timedOn(t.start)[0];
-      var sub = d >= 0 && first ? fmtMD(t.start) + " " + first.s + " " + first.title : "지난 여행";
-      box = el('<div class="countdown' + (d === 0 ? " live" : "") + '">' + icon("plane") +
-        '<div><div class="countdown-big mono">' + esc(label) + '</div>' +
-        '<div class="countdown-sub">' + esc(sub) + '</div></div></div>');
-    }
-    hero.appendChild(box);
+    hero.appendChild(pair ? nowCard(pair) : countCard(t, d));
     return hero;
+  }
+
+  /* Where the day is, right now: what is running, how far through it is, and
+     what follows. One accent, a hairline, and numbers that line up. */
+  function nowCard(pair){
+    var cur = pair.current, nx = pair.next;
+    var card = el('<div class="pulse"></div>');
+
+    var head = el('<div class="pulse-head"></div>');
+    head.appendChild(el('<span class="pulse-live' + (cur ? '' : ' idle') + '"><i></i>' +
+      (cur ? '지금' : '여유 시간') + '</span>'));
+    if (cur){
+      head.appendChild(el('<span class="pulse-clock mono">' +
+        esc(cur.s) + (cur.e ? '–' + esc(cur.e) : '') + '</span>'));
+    }
+    card.appendChild(head);
+
+    if (cur){
+      card.appendChild(el('<p class="pulse-title">' + esc(emoPrefix(cur) + cur.title) + '</p>'));
+      var span = Math.max(1, pair.to - pair.from);
+      var done = Math.min(100, Math.max(0, Math.round((pair.now - pair.from) / span * 100)));
+      var bar = el('<div class="pulse-bar"><span></span></div>');
+      bar.firstElementChild.style.width = done + "%";
+      card.appendChild(bar);
+      card.appendChild(el('<p class="pulse-left mono">' + esc(spanLabel(pair.to - pair.now)) + ' 남음</p>'));
+    } else {
+      card.appendChild(el('<p class="pulse-title muted">' +
+        (nx ? '다음 일정까지 비어 있어요' : '오늘 일정은 여기까지') + '</p>'));
+    }
+
+    if (nx){
+      card.appendChild(el(
+        '<div class="pulse-next">' +
+          '<span class="pulse-when mono">' + esc(nx.s) + '</span>' +
+          '<span class="pulse-name">' + esc(emoPrefix(nx) + nx.title) + '</span>' +
+          '<span class="pulse-in mono">' + esc(spanLabel(mins(nx.s) - pair.now)) + ' 뒤</span>' +
+        '</div>'
+      ));
+    }
+    return card;
+  }
+
+  function countCard(t, d){
+    var label = d > 0 ? "D-" + d : (d === 0 ? "D-DAY" : "다녀온 여행");
+    var kicker = d > 0 ? "출발까지" : (d === 0 ? "오늘 출발" : "여행 기록");
+    var first = timedOn(t.start)[0];
+    var sub = d >= 0 && first
+      ? fmtMD(t.start) + " (" + dowOf(t.start) + ") " + first.s + " · " + first.title
+      : fmtMD(t.start) + " – " + fmtMD(t.end);
+    var card = el(
+      '<div class="pulse count' + (d === 0 ? " live" : "") + '">' +
+        '<span class="pulse-live' + (d === 0 ? '' : ' idle') + '"><i></i>' + esc(kicker) + '</span>' +
+        '<p class="count-big mono">' + esc(label) + '</p>' +
+        '<p class="count-sub">' + esc(sub) + '</p>' +
+      '</div>'
+    );
+    return card;
   }
 
   /* ================= tab: schedule ================= */
@@ -2214,11 +2310,6 @@
 
     var attCount = list.reduce(function(n, it){ return n + Saved.attachOf(it.id).length; }, 0);
     root.appendChild(el('<p class="day-stat mono">' + list.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
-
-    if (pair && pair.dayIndex === state.day && pair.current){
-      root.appendChild(el('<div class="notice">' + icon("clock") +
-        '<span>지금 진행 중: ' + esc(pair.current.title) + '</span></div>'));
-    }
 
     var tl = el('<div class="tl"></div>');
     list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
@@ -2272,7 +2363,8 @@
     var row = el(
       '<div class="tl-item' + (isCurrent ? " current" : "") + '">' +
         '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) + '</small>' : '') + '</div>' +
-        '<div class="tl-rail"><span class="tl-dot" style="border-color:' + cat.color + '"></span></div>' +
+        '<div class="tl-rail"><span class="tl-dot"' +
+          (isCurrent ? '' : ' style="border-color:' + cat.color + '"') + '></span></div>' +
         '<div class="tl-body"><p class="tl-title">' +
           (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml + '</p></div>' +
       '</div>'
@@ -2284,6 +2376,7 @@
     if (atts.length) body.appendChild(attachStrip(it.id, atts));
 
     var meta = el('<div class="tl-meta"></div>');
+    if (isCurrent) meta.appendChild(el('<span class="badge live">지금</span>'));
     meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + cat.label + '</span>'));
     if (it.meal) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
     if (it.tag) meta.appendChild(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
@@ -3088,10 +3181,19 @@
     renderTrips(keepScroll);
   }
 
+  /* The card says how far through the current item you are, so it has to
+     move on its own — otherwise it is only true at the moment you opened it. */
+  function tick(){
+    if (state.view !== "trip") return;
+    var pair = currentPair();
+    if (pair) render(true);
+  }
+
   (async function boot(){
     Theme.apply();
     await Saved.init();
     Saved.onRemote = function(){ render(true); };
+    setInterval(tick, 60000);
     var p = currentPair();
     if (p) state.day = p.dayIndex;
 
