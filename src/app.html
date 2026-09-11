@@ -734,7 +734,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r7";
+  var BUILD = "2026.09.11 · r8";
 
   /* ================= helpers ================= */
   function el(html){
@@ -1307,10 +1307,84 @@
   /* ================= routing ================= */
   var state = { view:"home", tab:"sched", day:0, meal:"all" };
   /* home → trips(여행 목록) → trip(한 여행) */
+  var TABS = ["sched", "food", "shop", "info"];
   var view = document.getElementById("view");
   var overlay = document.getElementById("overlay");
-  function go(next){ Object.assign(state, next); render(); }
   function closeOverlay(){ overlay.innerHTML = ""; }
+
+  /* The address is the screen. Reloading, or reopening the page, lands back
+     where you were instead of at the top — and the browser's back gesture
+     walks the screens you came through.
+
+     Two places remember it, because neither is enough alone: the address bar
+     (survives a reload, can be bookmarked or shared) and storage (survives
+     the viewer reopening the page with a fresh address, which is what an
+     artifact frame does). */
+  var Route = {
+    of(){
+      if (state.view === "home") return "#/";
+      if (state.view === "trips") return "#/trips";
+      var t = Saved.cur();
+      return "#/t/" + encodeURIComponent(t ? t.id : "") + "/" + state.tab + "/" + state.day +
+        (state.tab === "food" && state.meal !== "all" ? "/" + state.meal : "");
+    },
+    parse(hash){
+      var parts = String(hash || "").replace(/^#\/?/, "").split("/").filter(Boolean);
+      if (!parts.length) return null;
+      var p = parts.map(function(x){ try{ return decodeURIComponent(x); }catch(e){ return x; } });
+      if (p[0] === "trips") return { view:"trips" };
+      if (p[0] !== "t" || !p[1]) return null;
+      var known = false;
+      Saved.data.trips.forEach(function(t){ if (t.id === p[1]) known = true; });
+      if (!known) return { view:"trips" };   /* the trip was deleted since */
+      return {
+        view: "trip", id: p[1],
+        tab: TABS.indexOf(p[2]) >= 0 ? p[2] : "sched",
+        day: Math.max(0, parseInt(p[3], 10) || 0),
+        meal: p[4] || "all"
+      };
+    },
+    apply(r){
+      if (r.view === "trip"){
+        Saved.open(r.id);
+        state.view = "trip"; state.tab = r.tab; state.day = r.day; state.meal = r.meal || "all";
+      } else {
+        state.view = r.view;
+      }
+    },
+    remember(h){ try{ localStorage.setItem("lab.route", h); }catch(e){ /* private mode */ } },
+    last(){ try{ return localStorage.getItem("lab.route"); }catch(e){ return null; } },
+    /* replace: correcting the address for the screen already shown, so it
+       does not become a separate step in the back history */
+    push(replace){
+      var h = this.of();
+      this.remember(h);
+      if (location.hash === h) return;
+      try{
+        if (replace) history.replaceState(null, "", h);
+        else history.pushState(null, "", h);
+      }catch(e){
+        /* a frame may refuse history writes; the hash alone still routes */
+        location.hash = h;
+      }
+    }
+  };
+
+  function enter(hash){
+    Route.apply(Route.parse(hash) || { view:"home" });
+    /* what was asked for and what can be shown are not always the same — a
+       deleted trip lands on the list — so the address is rewritten to match
+       the screen, in place, without becoming its own step in the history */
+    Route.push(true);
+    render();
+  }
+  window.addEventListener("hashchange", function(){
+    if (location.hash === Route.of()) return;   /* our own write */
+    enter(location.hash);
+  });
+  window.addEventListener("popstate", function(){ enter(location.hash); });
+
+  function go(next){ Object.assign(state, next); Route.push(); render(); }
 
   function themeButton(){
     var dark = Theme.isDark();
@@ -2409,6 +2483,7 @@
   function render(){
     if (state.view === "home") return renderHome();
     if (state.view === "trip" && Saved.cur()) return renderTrip();
+    if (state.view !== "trips"){ state.view = "trips"; Route.push(true); }
     renderTrips();
   }
 
@@ -2417,6 +2492,13 @@
     await Saved.init();
     var p = currentPair();
     if (p) state.day = p.dayIndex;
+
+    /* the address wins; with none, the last screen; with neither, home */
+    var r = location.hash ? Route.parse(location.hash) : null;
+    if (!r && !location.hash) r = Route.parse(Route.last());
+    if (r) Route.apply(r);
+    Route.push(true);
+
     render();
   })();
 })();
