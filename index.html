@@ -182,16 +182,86 @@
   .lab-row.vacant .lab-mark{ background: var(--surface-2); color: var(--ink-faint); }
   .build-stamp{ margin: 26px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
 
+  /* ---------- trip list ---------- */
+  .page-head{ display: flex; align-items: center; gap: 4px; margin: 0 0 22px; }
+  .page-head .back{ margin-left: -10px; }
+  .page-title{ flex: 1; min-width: 0; }
+  .page-kicker{ display: block; font-size: 10.5px; letter-spacing: 0.12em; color: var(--ink-faint); }
+  .page-title h1{ font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+
+  .trip-list{ display: flex; flex-direction: column; gap: 12px; }
+  .trip-card{
+    display: flex; flex-direction: column;
+    width: 100%; padding: 16px 16px 13px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 22px;
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+  }
+  .trip-card.tapped{ background: var(--surface-2); }
+  .trip-card:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+  .trip-card.live{ border-color: var(--travel); }
+  .trip-card.past{ opacity: 0.66; }
+
+  .trip-top{ display: flex; align-items: center; gap: 11px; }
+  .trip-flag{
+    width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); font-size: 21px; line-height: 1;
+    color: var(--ink-faint);
+  }
+  .trip-id{ flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .trip-city{ font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .trip-country{ font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); }
+  .trip-status{
+    flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+    padding: 4px 10px; border-radius: 9px;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .trip-status.soon{ background: var(--signal-soft); color: var(--signal); }
+  .trip-status.live{ background: var(--travel); color: var(--paper); }
+
+  .trip-dates{
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    font-size: 12px; color: var(--ink-soft); margin-top: 13px;
+  }
+  .trip-nights{
+    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-size: 11px; padding: 2px 7px; border-radius: 7px;
+    background: var(--surface-2); color: var(--ink-faint);
+  }
+  .trip-theme{
+    font-size: 12.5px; color: var(--ink-faint); margin-top: 6px;
+    word-break: keep-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .trip-stats{
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line);
+  }
+  .trip-stat{ font-size: 11px; color: var(--ink-faint); }
+  .trip-stat b{ font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-right: 3px; }
+  .trip-go{ margin-left: auto; color: var(--ink-faint); display: flex; }
+  .trip-add{ margin-top: 2px; }
+
   /* ---------- trip header ---------- */
   .hero{ padding: calc(var(--safe-t) + 16px) 18px 14px; }
   .hero-top{ display: flex; align-items: baseline; gap: 9px; }
-  .hero-top .icon-btn{ align-self: center; margin-left: auto; }
+  .hero-top .icon-btn{ align-self: center; }
+  /* The way back sits on the title line — no app bar, no extra row. */
+  .hero-back{ margin-left: -10px; margin-right: -2px; color: var(--ink-soft); }
+  .hero-top .icon-btn:last-child{ margin-left: auto; }
+  .hero-flag{ margin-right: 6px; }
   .hero-city{ font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin: 0; }
   .hero-country{ font-size: 11.5px; color: var(--ink-faint); letter-spacing: 0.14em; }
   .hero-dates{
     display: flex; align-items: center; gap: 6px;
     font-size: 13px; color: var(--ink-soft); margin: 5px 0 0;
   }
+  .hero-stay{
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--ink-faint); margin: 4px 0 0;
+  }
+  .hero-stay .icon{ width: 15px; height: 15px; }
+  .hero-stay span{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .countdown{
     display: flex; align-items: center; gap: 11px;
@@ -246,6 +316,31 @@
   .theme-text.empty{ color: var(--ink-faint); font-weight: 400; }
   .theme-row .icon{ width: 15px; height: 15px; color: var(--ink-faint); }
 
+  /* ---------- day route ---------- */
+  .routerow{
+    display: flex; align-items: flex-start; gap: 9px;
+    margin: 8px 18px 0; padding: 11px 14px;
+    width: calc(100% - 36px);
+    background: transparent; border: 1px dashed var(--line-strong); border-radius: 16px;
+    font: inherit; text-align: left; color: inherit; cursor: pointer;
+  }
+  .routerow.tapped{ background: var(--surface-2); }
+  .routerow:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+  .route-label{
+    flex-shrink: 0; font-size: 10px; letter-spacing: 0.1em; color: var(--ink-faint);
+    padding-top: 3px;
+  }
+  .route-chain{ flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+  .route-seg{ display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; margin-right: 5px; }
+  .route-chain.empty{ font-size: 12.5px; color: var(--ink-faint); }
+  .route-stop{
+    font-size: 11.5px; line-height: 1.3; padding: 3px 8px; border-radius: 8px;
+    background: var(--surface-2); color: var(--ink-soft); word-break: keep-all;
+  }
+  .route-arrow{ font-size: 10.5px; color: var(--ink-faint); }
+  .route-stop{ white-space: normal; }
+  .route-pen{ width: 14px; height: 14px; color: var(--ink-faint); flex-shrink: 0; margin-top: 3px; }
+
   .day-stat{ font-size: 11.5px; color: var(--ink-faint); margin: 10px 18px 0; }
 
   /* ---------- now banner ---------- */
@@ -281,7 +376,7 @@
 
   .tl-body{ flex: 1; min-width: 0; padding: 11px 0 14px; border-bottom: 1px solid var(--line); }
   .tl-title{ font-size: 14.5px; font-weight: 600; margin: 0; word-break: keep-all; }
-  .tl-title .emo{ margin-right: 4px; }
+  .tl-title .emo, .card-name .emo{ margin-right: 4px; }
   .tl-line{ font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; word-break: keep-all; }
   .tl-line::before{ content: "— "; color: var(--ink-faint); }
   .tl-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
@@ -501,6 +596,9 @@
 
   .fld-row{ display: flex; gap: 10px; }
   .fld-col{ flex: 1 1 0; min-width: 0; }
+  /* just wide enough for one emoji — it must never crowd the name beside it */
+  .flag-col{ flex: 0 0 74px; width: 74px; }
+  .flag-col input{ text-align: center; }
 
   /* Date and time inputs are drawn by the platform: iOS sizes them from their
      own text (so an empty one and a filled one differ) and parks the value at
@@ -630,7 +728,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r6";
+  var BUILD = "2026.09.11 · r7";
 
   /* ================= helpers ================= */
   function el(html){
@@ -695,7 +793,8 @@
   }
 
   function mapUrl(q){
-    var city = (Saved.data.trip && Saved.data.trip.city) || "";
+    var t = Saved.data ? Saved.cur() : null;
+    var city = (t && t.city) || "";
     var query = city && q.indexOf(city) === -1 ? q + " " + city : q;
     return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
   }
@@ -732,90 +831,134 @@
   };
 
   /* ================= SEED — first-visit content only ================= */
-  var SEED_TRIP = { city:"후쿠오카", country:"JAPAN", start:"2026-09-12", end:"2026-09-14" };
+  /* Emoji are deliberately rare: only where one carries meaning on its own
+     (비행기 · 호텔 · 짐). Everything else is told by the category colour. */
+  var DATA_V = 2;
+
+  function newTrip(o){
+    o = o || {};
+    return {
+      id: o.id || uid("tr"),
+      emoji: o.emoji || "",
+      city: o.city || "",
+      country: o.country || "",
+      start: o.start || todayISO(),
+      end: o.end || o.start || todayISO(),
+      dayThemes: o.dayThemes || {},
+      dayRoutes: o.dayRoutes || {},
+      items: o.items || [],
+      shops: o.shops || [],
+      flights: o.flights || [],
+      stays: o.stays || [],
+      books: o.books || [],
+      links: o.links || [],
+      packList: o.packList || [],
+      notes: o.notes || []
+    };
+  }
+
+  var HOTEL = "더 로얄 파크 캔버스 후쿠오카 나카스";
+  var SEED_TRIP = { id:"fukuoka2026", emoji:"🇯🇵", city:"후쿠오카", country:"JAPAN", start:"2026-09-12", end:"2026-09-14" };
   var SEED_THEMES = {
-    "2026-09-12": "하카타 → 나카스 → 텐진",
-    "2026-09-13": "텐진 · 다이묘 올데이",
-    "2026-09-14": "이치란 → 공항 → 귀국"
+    "2026-09-12": "하카타 쇼핑 + 캐널시티 + 나카스",
+    "2026-09-13": "텐진 · 다이묘 쇼핑 + 스시 + 야키니쿠 + 쿠시카츠",
+    "2026-09-14": "돈키호테 + 이치란 + 귀국"
+  };
+  var SEED_ROUTES = {
+    "2026-09-12": ["공항", "CARGO PASS", "하카타", "키와미야", "셀린느", "스탠다드 프로덕트",
+                   "캐널시티", "호텔", "쿠로부타 돈까스", "나카스 / 텐진 한잔"],
+    "2026-09-13": ["이치란", "텐진 / 다이묘", "스시 긴자 오노데라", "ONE FUKUOKA 살로몬",
+                   "텐진 / 다이묘 쇼핑", "17:15 카쿠라", "자유시간", "쿠시카츠 센스"],
+    "2026-09-14": ["돈키호테", "이치란", "체크아웃", "11:40 공항", "13:40 출국"]
   };
   var SEED_ITEMS = [
     { id:"a1", d:"2026-09-12", s:"11:10", cat:"air", emo:"✈️", t:"한국 출발", lines:["제주항공 7C1471"] },
-    { id:"a2", d:"2026-09-12", s:"12:40", cat:"air", emo:"🇯🇵", t:"후쿠오카 공항 도착", places:["후쿠오카공항 국제선"] },
-    { id:"a3", d:"2026-09-12", s:"12:40", e:"13:25", cat:"todo", emo:"🛂", t:"입국심사 + 수하물 수령" },
-    { id:"a4", d:"2026-09-12", s:"13:25", e:"13:40", cat:"todo", emo:"🧳", t:"CARGO PASS 접수", lines:["캐리어를 숙소로 바로 배송"] },
-    { id:"a5", d:"2026-09-12", s:"13:40", e:"14:10", cat:"move", emo:"🚇", t:"공항 → 하카타 이동" },
-    { id:"a6", d:"2026-09-12", s:"14:10", e:"15:10", cat:"food", emo:"🍖", t:"키와미야 함바그", meal:"lunch",
+    { id:"a2", d:"2026-09-12", s:"12:40", cat:"air", emo:"✈️", t:"후쿠오카 공항 도착", places:["후쿠오카공항 국제선"] },
+    { id:"a3", d:"2026-09-12", s:"12:40", e:"13:25", cat:"todo", t:"입국심사 + 수하물 수령" },
+    { id:"a4", d:"2026-09-12", s:"13:25", e:"13:40", cat:"todo", emo:"🧳", t:"CARGO PASS 접수",
+      lines:["캐리어를 호텔로 바로 배송"] },
+    { id:"a5", d:"2026-09-12", s:"13:40", e:"14:10", cat:"move", t:"공항 → 하카타 이동" },
+    { id:"a6", d:"2026-09-12", s:"14:10", e:"15:10", cat:"food", t:"키와미야 함바그", meal:"lunch",
       places:["키와미야 함바그 하카타"], lines:["늦은 점심"] },
-    { id:"a7", d:"2026-09-12", s:"15:10", e:"16:10", cat:"shop", emo:"👜", t:"셀린느", places:["셀린느 하카타"] },
-    { id:"a8", d:"2026-09-12", s:"16:10", e:"17:10", cat:"shop", emo:"🛍️", t:"하카타 쇼핑",
+    { id:"a7", d:"2026-09-12", s:"15:10", e:"16:00", cat:"shop", t:"셀린느", places:["셀린느 하카타"] },
+    { id:"a8", d:"2026-09-12", s:"16:00", e:"16:50", cat:"shop", t:"하카타 쇼핑",
       places:["스탠다드 프로덕트 하카타"], lines:["스탠다드 프로덕트 등"] },
-    { id:"a9", d:"2026-09-12", s:"17:10", e:"17:30", cat:"move", emo:"🚇", t:"하카타 → 나카스 이동" },
-    { id:"a10", d:"2026-09-12", s:"17:30", e:"18:10", cat:"stay", emo:"🏨", t:"호텔 체크인",
-      places:["더 로얄 파크 캔버스 후쿠오카 나카스"], lines:["CARGO PASS 짐 수령 / 확인", "잠깐 휴식"] },
-    { id:"a11", d:"2026-09-12", s:"18:10", e:"18:25", cat:"move", emo:"🚶", t:"호텔 → ONE FUKUOKA BLDG.",
-      places:["ONE FUKUOKA BLDG."] },
-    { id:"a12", d:"2026-09-12", s:"18:25", e:"19:10", cat:"shop", emo:"👟", t:"Salomon",
-      places:["Salomon ONE FUKUOKA"], lines:["ONE FUKUOKA BLDG. 내"] },
-    { id:"a13", d:"2026-09-12", s:"19:20", e:"20:30", cat:"food", emo:"🍣", t:"스시 사카바 사시스", meal:"dinner",
-      places:["스시 사카바 사시스"], lines:["ONE FUKUOKA BLDG. 내에서 저녁"] },
-    { id:"a14", d:"2026-09-12", s:"20:30", cat:"free", emo:"🍺", t:"텐진 / 나카스 자유시간", meal:"drink", tag:"후보 중 선택",
+    { id:"a9", d:"2026-09-12", s:"16:50", e:"17:10", cat:"move", t:"하카타 → 캐널시티 이동" },
+    { id:"a15", d:"2026-09-12", s:"17:10", e:"18:00", cat:"shop", t:"캐널시티 하카타 구경",
+      places:["캐널시티 하카타"] },
+    { id:"a16", d:"2026-09-12", s:"18:00", e:"18:20", cat:"move", t:"캐널시티 → 호텔 이동" },
+    { id:"a10", d:"2026-09-12", s:"18:20", e:"18:50", cat:"stay", emo:"🏨", t:"호텔 체크인",
+      places:[HOTEL], lines:["CARGO PASS 짐 확인", "잠깐 휴식"] },
+    { id:"a17", d:"2026-09-12", s:"19:00", e:"20:30", cat:"food", t:"쿠로부타 돈까스", meal:"dinner",
+      places:["쿠로부타 돈까스 후쿠오카"], lines:["19:00 전후"] },
+    { id:"a14", d:"2026-09-12", s:"20:30", cat:"free", t:"나카스 / 텐진 자유시간", meal:"drink", tag:"후보 중 선택",
       places:["츠치야 후쿠오카", "토리사카바 후쿠오카"],
-      lines:["츠치야 · 야키토리", "토리사카바 · 야키토리 / 이자카야", "또는 현장에서 마음에 드는 곳",
-             "토요일에 굳이 안 가도 됨 — 일요일 밤으로 넘겨도 OK"] },
+      lines:["츠치야 · 야키토리", "토리사카바 · 야키토리 / 이자카야", "또는 현장에서 다른 곳",
+             "토요일 밤은 컨디션 따라 유동적으로"] },
 
-    { id:"b1", d:"2026-09-13", s:"08:30", cat:"todo", emo:"⏰", t:"기상" },
-    { id:"b2", d:"2026-09-13", s:"09:00", e:"10:00", cat:"food", emo:"🍜", t:"이치란 본사총본점", meal:"breakfast",
+    { id:"b1", d:"2026-09-13", s:"08:30", cat:"todo", t:"기상" },
+    { id:"b2", d:"2026-09-13", s:"09:00", e:"10:00", cat:"food", t:"이치란 본사총본점", meal:"breakfast",
       places:["이치란 본사총본점"] },
-    { id:"b3", d:"2026-09-13", s:"10:00", e:"10:30", cat:"move", emo:"🚶", t:"텐진 / 다이묘 이동" },
-    { id:"b4", d:"2026-09-13", s:"10:30", e:"12:30", cat:"shop", emo:"🛍️", t:"쇼핑 ①",
-      places:["꼼데가르송 후쿠오카", "HUMAN MADE 후쿠오카"], lines:["다이묘 주변 편집숍"] },
-    { id:"b5", d:"2026-09-13", s:"12:30", e:"13:30", cat:"food", emo:"🍴", t:"점심", meal:"lunch", tag:"가게 미정",
-      lines:["텐진 / 다이묘에서"] },
-    { id:"b6", d:"2026-09-13", s:"13:30", e:"15:45", cat:"shop", emo:"🛍️", t:"쇼핑 ②",
-      places:["이와타야 텐진", "파르코 텐진"], lines:["텐진 / 다이묘 추가 쇼핑"] },
-    { id:"b7", d:"2026-09-13", s:"15:45", e:"16:30", cat:"food", emo:"☕", t:"카페 + 휴식", meal:"cafe", tag:"가게 미정" },
-    { id:"b8", d:"2026-09-13", s:"16:30", e:"17:00", cat:"move", emo:"🚶", t:"니시나카스 방향 이동" },
-    { id:"b9", d:"2026-09-13", s:"17:15", e:"19:00", cat:"food", emo:"🥩", t:"야키니쿠 카쿠라 니시나카스점", meal:"dinner",
-      tag:"예약 17:15 · 2명", places:["야키니쿠 카쿠라 니시나카스점"] },
-    { id:"b10", d:"2026-09-13", s:"19:00", cat:"free", emo:"🍺", t:"니시나카스 / 나카스 자유시간", meal:"drink",
-      places:["츠치야 후쿠오카", "토리사카바 후쿠오카"],
-      lines:["토요일에 안 갔다면 — 츠치야 / 토리사카바", "이미 야키토리를 먹었다면 — 이자카야 / 쿠시카츠 / 바"] },
-    { id:"b11", d:"2026-09-13", s:"22:00", e:"23:00", cat:"stay", emo:"🏨", t:"호텔 복귀",
-      places:["더 로얄 파크 캔버스 후쿠오카 나카스"], lines:["22:00~23:00 전후"] },
+    { id:"b3", d:"2026-09-13", s:"10:00", e:"10:50", cat:"shop", t:"텐진 / 다이묘 쇼핑 시작",
+      places:["텐진 다이묘"] },
+    { id:"b12", d:"2026-09-13", s:"11:00", e:"12:15", cat:"food", t:"스시 긴자 오노데라 하카타점", meal:"lunch",
+      places:["스시 긴자 오노데라 하카타점"] },
+    { id:"b13", d:"2026-09-13", s:"12:15", e:"12:30", cat:"move", t:"ONE FUKUOKA BLDG. 이동",
+      places:["ONE FUKUOKA BLDG."] },
+    { id:"b14", d:"2026-09-13", s:"12:30", e:"13:15", cat:"shop", t:"Salomon",
+      places:["Salomon ONE FUKUOKA"], lines:["ONE FUKUOKA BLDG. 내"] },
+    { id:"b6", d:"2026-09-13", s:"13:15", e:"15:45", cat:"shop", t:"텐진 / 다이묘 쇼핑",
+      places:["꼼데가르송 후쿠오카", "HUMAN MADE 후쿠오카", "이와타야 텐진", "파르코 텐진"],
+      lines:["다이묘 주변 편집숍 등"] },
+    { id:"b7", d:"2026-09-13", s:"15:45", e:"16:30", cat:"food", t:"카페 + 휴식", meal:"cafe", tag:"가게 미정" },
+    { id:"b8", d:"2026-09-13", s:"16:30", e:"17:00", cat:"move", t:"니시나카스 이동" },
+    { id:"b9", d:"2026-09-13", s:"17:15", e:"19:00", cat:"food", t:"야키니쿠 카쿠라 니시나카스점", meal:"dinner",
+      tag:"예약 확정 17:15 · 2명", places:["야키니쿠 카쿠라 니시나카스점"] },
+    { id:"b10", d:"2026-09-13", s:"19:00", e:"21:00", cat:"free", t:"텐진 / 니시나카스 / 나카스 자유시간",
+      lines:["산책 · 쇼핑 · 카페 또는 가볍게 한잔", "야키니쿠 소화시키기"] },
+    { id:"b15", d:"2026-09-13", s:"21:00", e:"22:30", cat:"food", t:"쿠시카츠 센스", meal:"drink",
+      places:["쿠시카츠 센스 후쿠오카"], lines:["야식 · 하이볼 / 맥주", "21:00 전후"] },
+    { id:"b11", d:"2026-09-13", s:"22:30", e:"23:00", cat:"stay", emo:"🏨", t:"호텔 복귀",
+      places:[HOTEL], lines:["22:30~23:00 전후"] },
 
-    { id:"c1", d:"2026-09-14", s:"08:00", cat:"todo", emo:"⏰", t:"기상" },
-    { id:"c2", d:"2026-09-14", s:"08:30", e:"09:30", cat:"shop", emo:"🛒", t:"돈키호테 나카스점",
-      places:["돈키호테 나카스점"], lines:["과자 / 약 / 기념품 등 마지막 쇼핑"] },
-    { id:"c3", d:"2026-09-14", s:"09:30", e:"10:00", cat:"stay", emo:"🏨", t:"호텔 복귀", lines:["쇼핑한 물건 넣고 최종 짐 정리"] },
-    { id:"c4", d:"2026-09-14", s:"10:00", e:"10:40", cat:"food", emo:"🍜", t:"이치란 본사총본점", meal:"breakfast",
-      places:["이치란 본사총본점"], lines:["여행 마지막 아점"] },
-    { id:"c5", d:"2026-09-14", s:"10:40", e:"10:55", cat:"stay", emo:"🏨", t:"호텔 복귀", lines:["캐리어 픽업 + 체크아웃"] },
-    { id:"c6", d:"2026-09-14", s:"10:55", e:"11:40", cat:"move", emo:"🚕", t:"호텔 → 후쿠오카공항 국제선",
+    { id:"c1", d:"2026-09-14", s:"08:00", cat:"todo", t:"기상" },
+    { id:"c2", d:"2026-09-14", s:"08:30", e:"09:30", cat:"shop", t:"돈키호테 나카스점",
+      places:["돈키호테 나카스점"], lines:["과자 / 약 / 기념품"] },
+    { id:"c3", d:"2026-09-14", s:"09:30", e:"10:00", cat:"stay", emo:"🏨", t:"호텔 복귀",
+      places:[HOTEL], lines:["쇼핑한 물건 정리", "캐리어 최종 정리"] },
+    { id:"c4", d:"2026-09-14", s:"10:00", e:"10:40", cat:"food", t:"이치란 본사총본점", meal:"breakfast",
+      places:["이치란 본사총본점"], lines:["마지막 아점"] },
+    { id:"c5", d:"2026-09-14", s:"10:40", e:"10:55", cat:"stay", emo:"🏨", t:"호텔 복귀",
+      places:[HOTEL], lines:["캐리어 픽업 + 체크아웃"] },
+    { id:"c6", d:"2026-09-14", s:"10:55", e:"11:40", cat:"move", t:"호텔 → 후쿠오카공항 국제선",
       places:["후쿠오카공항 국제선"] },
-    { id:"c7", d:"2026-09-14", s:"11:40", cat:"air", emo:"✈️", t:"공항 도착" },
-    { id:"c8", d:"2026-09-14", s:"11:40", e:"13:10", cat:"todo", emo:"🧾", t:"체크인 / 수하물 위탁", lines:["출국심사", "면세점"] },
+    { id:"c7", d:"2026-09-14", s:"11:40", cat:"air", emo:"✈️", t:"후쿠오카공항 국제선 도착",
+      lines:["비행기 출발 2시간 전"] },
+    { id:"c8", d:"2026-09-14", s:"11:40", e:"13:10", cat:"todo", t:"체크인 / 수하물 위탁",
+      lines:["출국심사", "면세점"] },
     { id:"c9", d:"2026-09-14", s:"13:40", cat:"air", emo:"✈️", t:"한국행 출발", lines:["제주항공 7C1472"] }
   ];
   var SEED_SHOPS = [
     { id:"s1", d:"2026-09-12", time:"15:10", area:"하카타", name:"셀린느", map:"셀린느 하카타", items:[] },
-    { id:"s2", d:"2026-09-12", time:"16:10", area:"하카타", name:"하카타 쇼핑", map:"스탠다드 프로덕트 하카타", items:["스탠다드 프로덕트"] },
-    { id:"s3", d:"2026-09-12", time:"18:25", area:"ONE FUKUOKA BLDG.", name:"Salomon", map:"Salomon ONE FUKUOKA", items:[] },
-    { id:"s4", d:"2026-09-13", time:"10:30", area:"다이묘", name:"꼼데가르송", map:"꼼데가르송 후쿠오카", items:[] },
-    { id:"s5", d:"2026-09-13", time:"10:30", area:"다이묘", name:"HUMAN MADE", map:"HUMAN MADE 후쿠오카", items:[] },
-    { id:"s6", d:"2026-09-13", time:"10:30", area:"다이묘", name:"다이묘 주변 편집숍", map:"다이묘 편집숍", items:[] },
-    { id:"s7", d:"2026-09-13", time:"13:30", area:"텐진", name:"이와타야", map:"이와타야 텐진", items:[] },
-    { id:"s8", d:"2026-09-13", time:"13:30", area:"텐진", name:"파르코", map:"파르코 텐진", items:[] },
+    { id:"s2", d:"2026-09-12", time:"16:00", area:"하카타", name:"하카타 쇼핑", map:"스탠다드 프로덕트 하카타", items:["스탠다드 프로덕트"] },
+    { id:"s10", d:"2026-09-12", time:"17:10", area:"캐널시티", name:"캐널시티 하카타", map:"캐널시티 하카타", items:[] },
+    { id:"s3", d:"2026-09-13", time:"12:30", area:"ONE FUKUOKA BLDG.", name:"Salomon", map:"Salomon ONE FUKUOKA", items:[] },
+    { id:"s4", d:"2026-09-13", time:"13:15", area:"다이묘", name:"꼼데가르송", map:"꼼데가르송 후쿠오카", items:[] },
+    { id:"s5", d:"2026-09-13", time:"13:15", area:"다이묘", name:"HUMAN MADE", map:"HUMAN MADE 후쿠오카", items:[] },
+    { id:"s6", d:"2026-09-13", time:"13:15", area:"다이묘", name:"다이묘 주변 편집숍", map:"다이묘 편집숍", items:[] },
+    { id:"s7", d:"2026-09-13", time:"13:15", area:"텐진", name:"이와타야", map:"이와타야 텐진", items:[] },
+    { id:"s8", d:"2026-09-13", time:"13:15", area:"텐진", name:"파르코", map:"파르코 텐진", items:[] },
     { id:"s9", d:"2026-09-14", time:"08:30", area:"나카스", name:"돈키호테 나카스점", map:"돈키호테 나카스점", items:["과자","약","기념품"] }
   ];
   var SEED_FLIGHTS = [
     { id:"f1", label:"가는 편 · 9.12 (토)", airline:"제주항공", no:"7C1471", detail:"11:10 한국 출발 — 12:40 후쿠오카 도착" },
-    { id:"f2", label:"오는 편 · 9.14 (월)", airline:"제주항공", no:"7C1472", detail:"13:40 한국행 출발 — 11:40 공항 도착" }
+    { id:"f2", label:"오는 편 · 9.14 (월)", airline:"제주항공", no:"7C1472", detail:"11:40 공항 도착 — 13:40 한국행 출발" }
   ];
   var SEED_STAYS = [
-    { id:"h1", name:"더 로얄 파크 캔버스 후쿠오카 나카스", area:"나카스", detail:"체크인 15:00 · 체크아웃 11:00" }
+    { id:"h1", name:HOTEL, area:"나카스", detail:"체크인 15:00 · 체크아웃 11:00" }
   ];
   var SEED_BOOKS = [
-    { id:"k1", name:"야키니쿠 카쿠라 니시나카스점", when:"9.13 (일) 17:15 · 2명", detail:"16:30 니시나카스 방향 이동" }
+    { id:"k1", name:"야키니쿠 카쿠라 니시나카스점", when:"9.13 (일) 17:15 · 2명", detail:"예약 확정" }
   ];
   var SEED_PACK = [
     "여권", "항공권 (모바일)", "엔화 현금", "신용카드",
@@ -823,14 +966,40 @@
     "쇼핑용 여분 가방", "캐리어 여유 공간"
   ];
 
+  function seedTrip(){
+    return newTrip({
+      id: SEED_TRIP.id, emoji: SEED_TRIP.emoji, city: SEED_TRIP.city, country: SEED_TRIP.country,
+      start: SEED_TRIP.start, end: SEED_TRIP.end,
+      dayThemes: Object.assign({}, SEED_THEMES),
+      dayRoutes: JSON.parse(JSON.stringify(SEED_ROUTES)),
+      items: SEED_ITEMS.map(function(s){
+        return {
+          id: s.id, dayDate: s.d, s: s.s, e: s.e || null, cat: s.cat, meal: s.meal || null,
+          title: s.t, emo: s.emo || "", tag: s.tag || null,
+          places: (s.places || []).slice(), lines: (s.lines || []).slice()
+        };
+      }),
+      shops: SEED_SHOPS.map(function(s){
+        return {
+          id: s.id, dayDate: s.d, time: s.time, area: s.area, name: s.name, map: s.map,
+          items: s.items.map(function(t){ return { id: uid("i"), text: t, got: false }; })
+        };
+      }),
+      flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
+      stays: SEED_STAYS.map(function(x){ return Object.assign({}, x); }),
+      books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
+      packList: SEED_PACK.map(function(t){ return { id: uid("k"), text: t, on: false }; })
+    });
+  }
+
   var CAT = {
-    air:  { label:"항공", color:"var(--c-air)", emo:"✈️" },
-    move: { label:"이동", color:"var(--c-move)", emo:"🚶" },
-    food: { label:"식사", color:"var(--c-food)", emo:"🍴" },
-    shop: { label:"쇼핑", color:"var(--c-shop)", emo:"🛍️" },
-    stay: { label:"숙소", color:"var(--c-stay)", emo:"🏨" },
-    free: { label:"자유", color:"var(--c-free)", emo:"🍺" },
-    todo: { label:"준비", color:"var(--c-todo)", emo:"✅" }
+    air:  { label:"항공", color:"var(--c-air)" },
+    move: { label:"이동", color:"var(--c-move)" },
+    food: { label:"식사", color:"var(--c-food)" },
+    shop: { label:"쇼핑", color:"var(--c-shop)" },
+    stay: { label:"숙소", color:"var(--c-stay)" },
+    free: { label:"자유", color:"var(--c-free)" },
+    todo: { label:"준비", color:"var(--c-todo)" }
   };
   var CAT_ORDER = ["food","shop","move","free","stay","todo","air"];
   var MEALS = [
@@ -838,11 +1007,6 @@
     { key:"dinner", label:"저녁" }, { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
   ];
   var MEAL_LABEL = { breakfast:"아침", lunch:"점심", dinner:"저녁", drink:"술", cafe:"카페" };
-  var MEAL_EMO = { breakfast:"🍳", lunch:"🍴", dinner:"🍽️", drink:"🍺", cafe:"☕" };
-  function autoEmo(cat, meal){
-    if (meal && MEAL_EMO[meal]) return MEAL_EMO[meal];
-    return (CAT[cat] || CAT.todo).emo;
-  }
   var DOW = ["일","월","화","수","목","금","토"];
 
   /* ================= time ================= */
@@ -869,30 +1033,15 @@
     _t: null,
 
     fresh(){
-      return {
-        trip: Object.assign({}, SEED_TRIP),
-        dayThemes: Object.assign({}, SEED_THEMES),
-        items: SEED_ITEMS.map(function(s){
-          return {
-            id: s.id, dayDate: s.d, s: s.s, e: s.e || null, cat: s.cat, meal: s.meal || null,
-            title: s.t, emo: s.emo, tag: s.tag || null,
-            places: (s.places || []).slice(), lines: (s.lines || []).slice()
-          };
-        }),
-        shops: SEED_SHOPS.map(function(s){
-          return {
-            id: s.id, dayDate: s.d, time: s.time, area: s.area, name: s.name, map: s.map,
-            items: s.items.map(function(t){ return { id: uid("i"), text: t, got: false }; })
-          };
-        }),
-        flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
-        stays: SEED_STAYS.map(function(x){ return Object.assign({}, x); }),
-        books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
-        links: [],
-        packList: SEED_PACK.map(function(t){ return { id: uid("k"), text: t, on: false }; }),
-        notes: [],
-        attach: {}
-      };
+      var t = seedTrip();
+      return { v: DATA_V, active: t.id, trips: [t], attach: {} };
+    },
+
+    /* the trip the screens are currently about */
+    cur(){
+      var d = this.data, found = null;
+      d.trips.forEach(function(t){ if (t.id === d.active) found = t; });
+      return found || d.trips[0] || null;
     },
 
     async init(){
@@ -917,69 +1066,44 @@
       if (raw) this.migrate(raw);
     },
 
-    /* Earlier versions stored edits as a patch over a hard-coded seed. Fold
-       whatever is there into the flat, fully editable shape used now. */
+    /* Older saves held a single trip at the top level. The Fukuoka plan itself
+       was rewritten by hand, so the new seed wins for the itinerary; anything
+       the user typed (링크 · 메모 · 준비물 · 살 것 · 항공 / 숙소 / 예약 · 자료) is carried over. */
     migrate(raw){
-      var d = this.data;
-      if (raw.attach) d.attach = raw.attach;
-      if (raw.notes && raw.notes.length){
-        d.notes = raw.notes.map(function(t){
-          return typeof t === "string" ? { id: uid("n"), text: t } : t;
-        });
-      }
-      if (raw.links) d.links = raw.links;
-
-      if (raw.items){ /* already the current shape */
-        d.trip = raw.trip || d.trip;
-        d.dayThemes = raw.dayThemes || d.dayThemes;
-        d.items = raw.items;
-        d.shops = raw.shops || d.shops;
-        d.flights = raw.flights || d.flights;
-        d.stays = raw.stays || d.stays;
-        d.books = raw.books || d.books;
-        d.packList = raw.packList && raw.packList.length && raw.packList[0].id
-          ? raw.packList : d.packList;
+      if (raw.v >= 2 && raw.trips && raw.trips.length){
+        this.data = {
+          v: DATA_V,
+          active: raw.active || raw.trips[0].id,
+          trips: raw.trips.map(function(t){ return Object.assign(newTrip(t), t); }),
+          attach: raw.attach || {}
+        };
         return;
       }
 
-      if (raw.edits || raw.added || raw.removed){
-        var removed = raw.removed || {};
-        var edits = raw.edits || {};
-        d.items = d.items.filter(function(it){ return !removed[it.id]; }).map(function(it){
-          var p = edits[it.id];
-          if (!p) return it;
-          return Object.assign({}, it, {
-            dayDate: p.dayDate || it.dayDate, s: p.s || it.s, e: p.e === undefined ? it.e : p.e,
-            cat: p.cat || it.cat, meal: p.meal === undefined ? it.meal : p.meal,
-            title: p.title || it.title, emo: p.emo || it.emo,
-            places: p.place ? [p.place] : it.places,
-            lines: p.lines || it.lines
-          });
-        });
-        (raw.added || []).forEach(function(a){
-          if (removed[a.id]) return;
-          d.items.push({
-            id: a.id, dayDate: a.dayDate, s: a.s, e: a.e || null, cat: a.cat || "todo",
-            meal: a.meal || null, title: a.title, emo: a.emo || autoEmo(a.cat, a.meal),
-            tag: null, places: a.place ? [a.place] : [], lines: a.lines || []
-          });
+      var t = this.data.trips[0];
+      if (raw.attach) this.data.attach = raw.attach;
+      if (raw.trip && raw.trip.city){
+        t.city = raw.trip.city;
+        t.country = raw.trip.country || t.country;
+      }
+      if (raw.links && raw.links.length) t.links = raw.links;
+      if (raw.flights && raw.flights.length) t.flights = raw.flights;
+      if (raw.stays && raw.stays.length) t.stays = raw.stays;
+      if (raw.books && raw.books.length) t.books = raw.books;
+      if (raw.notes && raw.notes.length){
+        t.notes = raw.notes.map(function(n){
+          return typeof n === "string" ? { id: uid("n"), text: n } : n;
         });
       }
-
-      if (raw.packList && raw.packList.length && typeof raw.packList[0] === "string"){
-        d.packList = raw.packList.map(function(t){
-          return { id: uid("k"), text: t, on: !!(raw.pack && raw.pack[t]) };
+      if (raw.packList && raw.packList.length){
+        t.packList = raw.packList.map(function(k){
+          return typeof k === "string" ? { id: uid("k"), text: k, on: !!(raw.pack && raw.pack[k]) } : k;
         });
       }
-      if (raw.extra || raw.bought){
-        d.shops.forEach(function(sh){
-          (raw.extra && raw.extra[sh.id] || []).forEach(function(t){
-            sh.items.push({ id: uid("i"), text: t, got: false });
-          });
-          sh.items.forEach(function(i){
-            if (raw.bought && raw.bought[sh.id + "::" + i.text]) i.got = true;
-          });
-        });
+      if (raw.shops && raw.shops.length){
+        var kept = {};
+        raw.shops.forEach(function(s){ if (s.items && s.items.length) kept[s.name] = s.items; });
+        t.shops.forEach(function(s){ if (kept[s.name]) s.items = kept[s.name]; });
       }
     },
 
@@ -995,17 +1119,43 @@
       }, 400);
     },
 
-    /* generic list helpers — every section below is just a list of records */
-    listAdd(key, rec){ this.data[key].push(Object.assign({ id: uid("x") }, rec)); this.flush(); },
+    /* generic list helpers — every section below is just a list of records
+       belonging to the open trip */
+    listAdd(key, rec){ this.cur()[key].push(Object.assign({ id: uid("x") }, rec)); this.flush(); },
     listEdit(key, id, rec){
-      this.data[key] = this.data[key].map(function(x){ return x.id === id ? Object.assign({}, x, rec) : x; });
+      var c = this.cur();
+      c[key] = c[key].map(function(x){ return x.id === id ? Object.assign({}, x, rec) : x; });
       this.flush();
     },
     listRemove(key, id){
-      this.data[key] = this.data[key].filter(function(x){ return x.id !== id; });
+      var c = this.cur();
+      c[key] = c[key].filter(function(x){ return x.id !== id; });
       if (key === "items") delete this.data.attach[id];
       this.flush();
     },
+
+    /* trips */
+    addTrip(rec){
+      var t = newTrip(rec);
+      this.data.trips.push(t);
+      this.flush();
+      return t;
+    },
+    editTrip(id, rec){
+      this.data.trips.forEach(function(t){ if (t.id === id) Object.assign(t, rec); });
+      this.flush();
+    },
+    removeTrip(id){
+      var self = this;
+      this.data.trips.forEach(function(t){
+        if (t.id !== id) return;
+        t.items.forEach(function(it){ delete self.data.attach[it.id]; });
+      });
+      this.data.trips = this.data.trips.filter(function(t){ return t.id !== id; });
+      if (this.data.active === id) this.data.active = this.data.trips.length ? this.data.trips[0].id : null;
+      this.flush();
+    },
+    open(id){ this.data.active = id; this.flush(); },
 
     attachOf(id){ return this.data.attach[id] || []; },
     addAttach(id, att){
@@ -1091,25 +1241,42 @@
   }
 
   /* ================= derived ================= */
-  function trip(){ return Saved.data.trip; }
-  function tripDays(){
-    var t = trip(), out = [], guard = 0;
+  function trip(){ return Saved.cur(); }
+  function tripsSorted(){
+    return Saved.data.trips.slice().sort(function(a, b){ return a.start.localeCompare(b.start); });
+  }
+  function tripDaysOf(t){
+    var out = [], guard = 0;
     var d = new Date(t.start + "T00:00:00"), end = new Date(t.end + "T00:00:00");
     while (d <= end && guard++ < 60){
       var iso = isoOf(d);
-      out.push({ date: iso, dow: dowOf(iso), theme: Saved.data.dayThemes[iso] || "" });
+      out.push({ date: iso, dow: dowOf(iso), theme: t.dayThemes[iso] || "", route: t.dayRoutes[iso] || [] });
       d.setDate(d.getDate() + 1);
     }
-    if (!out.length) out.push({ date: t.start, dow: dowOf(t.start), theme: Saved.data.dayThemes[t.start] || "" });
+    if (!out.length){
+      out.push({ date: t.start, dow: dowOf(t.start), theme: t.dayThemes[t.start] || "", route: t.dayRoutes[t.start] || [] });
+    }
     return out;
   }
-  function nightsLabel(){
-    var n = dayDiff(trip().end, trip().start);
+  function tripDays(){ return tripDaysOf(trip()); }
+  function nightsOf(t){
+    var n = dayDiff(t.end, t.start);
     return n > 0 ? n + "박 " + (n + 1) + "일" : "당일";
   }
+  function nightsLabel(){ return nightsOf(trip()); }
+  /* D-7 / 여행 중 / 다녀옴 — one label, used by both the list and the header. */
+  function tripStatus(t){
+    var d = dayDiff(t.start, todayISO()), back = dayDiff(t.end, todayISO());
+    if (d > 0) return { kind:"soon", label:"D-" + d };
+    if (d === 0) return { kind:"live", label:"오늘 출발" };
+    if (back >= 0) return { kind:"live", label:"여행 중 " + (1 - d) + "일차" };
+    return { kind:"past", label:"다녀옴" };
+  }
+  /* An item shows an emoji only if one was actually set on it. */
+  function emoPrefix(it){ return it.emo ? it.emo + " " : ""; }
   function byStart(a, b){ return (mins(a.s) || 0) - (mins(b.s) || 0); }
   function itemsOn(date){
-    return Saved.data.items.filter(function(i){ return i.dayDate === date; }).sort(byStart);
+    return trip().items.filter(function(i){ return i.dayDate === date; }).sort(byStart);
   }
   function currentPair(){
     var days = tripDays(), today = todayISO(), di = -1;
@@ -1133,6 +1300,7 @@
 
   /* ================= routing ================= */
   var state = { view:"home", tab:"sched", day:0, meal:"all" };
+  /* home → trips(여행 목록) → trip(한 여행) */
   var view = document.getElementById("view");
   var overlay = document.getElementById("overlay");
   function go(next){ Object.assign(state, next); render(); }
@@ -1152,10 +1320,12 @@
 
   /* ================= home ================= */
   function renderHome(){
-    var days = tripDays();
-    var d = dayDiff(trip().start, todayISO());
-    var pair = currentPair();
-    var status = pair ? "여행 " + (pair.dayIndex + 1) + "일차" : (d > 0 ? "D-" + d : (d === 0 ? "오늘 출발" : "다녀옴"));
+    var trips = tripsSorted();
+    var next = null;
+    trips.forEach(function(t){ if (!next && dayDiff(t.end, todayISO()) >= 0) next = t; });
+    var desc = trips.length
+      ? "여행 " + trips.length + "개" + (next ? " · 다음 " + next.city + " " + tripStatus(next).label : " · 지난 여행만")
+      : "아직 등록된 여행이 없어요";
 
     var wrap = el(
       '<div class="pad">' +
@@ -1167,8 +1337,7 @@
             '<span class="lab-text">' +
               '<span class="lab-index mono">EXP 01</span>' +
               '<span class="lab-name">여행 계획</span>' +
-              '<span class="lab-desc">' + esc(trip().city) + ' ' + esc(nightsLabel()) + ' · ' +
-                fmtMD(trip().start) + '–' + fmtMD(trip().end) + ' · ' + esc(status) + '</span>' +
+              '<span class="lab-desc">' + esc(desc) + '</span>' +
             '</span>' + icon("go", "lab-go") +
           '</button>' +
           '<div class="lab-row vacant">' +
@@ -1184,14 +1353,87 @@
       '</div>'
     );
     wrap.querySelector(".wordmark-row").appendChild(themeButton());
-    tap(wrap.querySelector("#lab-travel"), function(){
-      var p = currentPair();
-      go({ view:"trip", day: p ? p.dayIndex : 0 });
-    });
+    tap(wrap.querySelector("#lab-travel"), function(){ go({ view:"trips" }); });
 
     view.innerHTML = "";
     view.appendChild(wrap);
     window.scrollTo(0, 0);
+  }
+
+  /* ================= trip list ================= */
+  /* 다가오는 여행이 위로, 지난 여행은 최근 것부터 아래로. */
+  function tripsForList(){
+    var today = todayISO();
+    var soon = [], past = [];
+    tripsSorted().forEach(function(t){ (dayDiff(t.end, today) >= 0 ? soon : past).push(t); });
+    return soon.concat(past.reverse());
+  }
+
+  function renderTrips(){
+    var wrap = el(
+      '<div class="pad">' +
+        '<div class="page-head">' +
+          '<button class="icon-btn back" type="button" aria-label="BEMLAB으로">' + icon("back") + '</button>' +
+          '<div class="page-title"><span class="page-kicker mono">EXP 01</span><h1>여행 계획</h1></div>' +
+        '</div>' +
+      '</div>'
+    );
+    wrap.querySelector(".page-head").appendChild(themeButton());
+    tap(wrap.querySelector(".back"), function(){ go({ view:"home" }); });
+
+    var list = tripsForList();
+    var box = el('<div class="trip-list"></div>');
+    if (!list.length){
+      box.appendChild(el('<div class="card dashed"><p class="card-empty">' +
+        '첫 여행을 만들어보세요. 날짜만 정하면 일정 · 음식 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p></div>'));
+    }
+    list.forEach(function(t){ box.appendChild(tripCard(t)); });
+
+    var add = el('<button class="addcard trip-add" type="button">' + icon("plus") + '여행 추가</button>');
+    tap(add, function(){ openTripEditor(null); });
+    box.appendChild(add);
+    wrap.appendChild(box);
+    wrap.appendChild(el('<p class="build-stamp mono">build ' + BUILD + '</p>'));
+
+    view.innerHTML = "";
+    view.appendChild(wrap);
+    window.scrollTo(0, 0);
+  }
+
+  function tripCard(t){
+    var st = tripStatus(t);
+    var days = tripDaysOf(t);
+    var packOn = t.packList.filter(function(k){ return k.on; }).length;
+    var theme = days.map(function(d){ return d.theme; }).filter(Boolean)[0] || "";
+
+    var card = el(
+      '<button class="trip-card ' + st.kind + '" type="button">' +
+        '<span class="trip-top">' +
+          '<span class="trip-flag">' + (t.emoji ? esc(t.emoji) : icon("pin")) + '</span>' +
+          '<span class="trip-id">' +
+            '<span class="trip-city">' + esc(t.city || "이름 없는 여행") + '</span>' +
+            (t.country ? '<span class="trip-country mono">' + esc(t.country) + '</span>' : '') +
+          '</span>' +
+          '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
+        '</span>' +
+        '<span class="trip-dates mono">' + esc(t.start.replace(/-/g, ".")) + ' (' + dowOf(t.start) + ')' +
+          ' – ' + esc(fmtMD(t.end)) + ' (' + dowOf(t.end) + ')' +
+          '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
+        (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
+        '<span class="trip-stats">' +
+          '<span class="trip-stat"><b class="mono">' + t.items.length + '</b>일정</span>' +
+          '<span class="trip-stat"><b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
+          '<span class="trip-stat"><b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
+          '<span class="trip-go">' + icon("go") + '</span>' +
+        '</span>' +
+      '</button>'
+    );
+    tap(card, function(){
+      Saved.open(t.id);
+      var p = currentPair();
+      go({ view:"trip", tab:"sched", meal:"all", day: p ? p.dayIndex : 0 });
+    });
+    return card;
   }
 
   /* ================= trip ================= */
@@ -1231,29 +1473,36 @@
 
     var hero = el(
       '<div class="hero">' +
-        '<div class="hero-top"><h1 class="hero-city">' + esc(t.city) + '</h1>' +
+        '<div class="hero-top">' +
+        '<button class="icon-btn hero-back" type="button" aria-label="여행 목록으로">' + icon("back") + '</button>' +
+        '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
+        esc(t.city) + '</h1>' +
         '<span class="hero-country mono">' + esc(t.country) + '</span></div>' +
       '</div>'
     );
     hero.querySelector(".hero-top").appendChild(themeButton());
+    tap(hero.querySelector(".hero-back"), function(){ go({ view:"trips" }); });
     var dates = el('<p class="hero-dates mono">' +
       fmtMD(t.start) + ' (' + dowOf(t.start) + ') – ' + fmtMD(t.end) + ' (' + dowOf(t.end) + ') · ' + esc(nightsLabel()) +
       '</p>');
     var pen = el('<button class="quietbtn" type="button" aria-label="여행 정보 수정">' + icon("edit") + '</button>');
-    tap(pen, openTripEditor);
+    tap(pen, function(){ openTripEditor(t); });
     dates.appendChild(pen);
     hero.appendChild(dates);
+    if (t.stays.length){
+      hero.appendChild(el('<p class="hero-stay">' + icon("bed") + '<span>' + esc(t.stays[0].name) + '</span></p>'));
+    }
 
     var box;
     if (pair){
       var cur = pair.current, nx = pair.next;
       box = el('<div class="now"></div>');
       box.appendChild(el('<div class="now-part"><span class="now-tag on">지금</span>' +
-        '<div><p class="now-title">' + (cur ? esc(cur.emo + " " + cur.title) : "일정 사이 — 여유 시간") + '</p>' +
+        '<div><p class="now-title">' + (cur ? esc(emoPrefix(cur) + cur.title) : "일정 사이 — 여유 시간") + '</p>' +
         '<p class="now-time mono">' + (cur ? esc(cur.s + (cur.e ? "–" + cur.e : "~")) : "") + '</p></div></div>'));
       if (nx){
         box.appendChild(el('<div class="now-part"><span class="now-tag next">다음</span>' +
-          '<div><p class="now-title">' + esc(nx.emo + " " + nx.title) + '</p>' +
+          '<div><p class="now-title">' + esc(emoPrefix(nx) + nx.title) + '</p>' +
           '<p class="now-time mono">' + esc(nx.s) + ' 시작</p></div></div>'));
       }
     } else {
@@ -1294,10 +1543,12 @@
     );
     tap(themeRow, function(){
       openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 하카타 → 나카스 → 텐진" },
-        function(v){ Saved.data.dayThemes[day.date] = v; Saved.flush(); render(); },
-        day.theme ? function(){ delete Saved.data.dayThemes[day.date]; Saved.flush(); render(); } : null);
+        function(v){ trip().dayThemes[day.date] = v; Saved.flush(); render(); },
+        day.theme ? function(){ delete trip().dayThemes[day.date]; Saved.flush(); render(); } : null);
     });
     root.appendChild(themeRow);
+
+    root.appendChild(routeRow(day));
 
     var attCount = list.reduce(function(n, it){ return n + Saved.attachOf(it.id).length; }, 0);
     root.appendChild(el('<p class="day-stat mono">' + list.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
@@ -1317,6 +1568,39 @@
     root.appendChild(tl);
   }
 
+  /* 그날의 동선 한 줄. 칩 하나가 한 곳, 화살표로 이어진다. */
+  function routeRow(day){
+    var stops = day.route || [];
+    var row = el('<button class="routerow" type="button" aria-label="이 날의 동선 수정"></button>');
+    var label = el('<span class="route-label mono">동선</span>');
+    row.appendChild(label);
+    if (stops.length){
+      var chain = el('<span class="route-chain"></span>');
+      /* the arrow travels with the stop before it, so a wrap never starts with → */
+      stops.forEach(function(stop, i){
+        chain.appendChild(el('<span class="route-seg"><span class="route-stop">' + esc(stop) + '</span>' +
+          (i < stops.length - 1 ? '<span class="route-arrow" aria-hidden="true">→</span>' : '') + '</span>'));
+      });
+      row.appendChild(chain);
+    } else {
+      row.appendChild(el('<span class="route-chain empty">이 날의 동선 적어두기</span>'));
+    }
+    row.appendChild(el(icon("edit", "route-pen")));
+    tap(row, function(){
+      openTextDialog({
+        title: fmtMD(day.date) + " 동선",
+        value: stops.join("\n"),
+        placeholder: "한 줄에 한 곳\n공항\n하카타\n호텔",
+        multiline: true
+      }, function(v){
+        var next = v.split(/[\n→>,]/).map(function(x){ return x.trim(); }).filter(Boolean);
+        trip().dayRoutes[day.date] = next;
+        Saved.flush(); render();
+      }, stops.length ? function(){ delete trip().dayRoutes[day.date]; Saved.flush(); render(); } : null);
+    });
+    return row;
+  }
+
   function timelineItem(it, pair){
     var cat = CAT[it.cat] || CAT.todo;
     var isCurrent = pair && pair.current && pair.current.id === it.id;
@@ -1327,7 +1611,8 @@
       '<div class="tl-item' + (isCurrent ? " current" : "") + '">' +
         '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) + '</small>' : '') + '</div>' +
         '<div class="tl-rail"><span class="tl-dot" style="border-color:' + cat.color + '"></span></div>' +
-        '<div class="tl-body"><p class="tl-title"><span class="emo">' + it.emo + '</span>' + titleHtml + '</p></div>' +
+        '<div class="tl-body"><p class="tl-title">' +
+          (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml + '</p></div>' +
       '</div>'
     );
     var body = row.querySelector(".tl-body");
@@ -1431,7 +1716,8 @@
     var card = el('<div class="card"></div>');
     card.appendChild(el('<p class="card-when mono">' + esc(it.s) + (it.e ? '–' + esc(it.e) : '') + ' · ' +
       esc(MEAL_LABEL[it.meal] || "") + '</p>'));
-    card.appendChild(el('<div class="card-top"><p class="card-name">' + it.emo + ' ' +
+    card.appendChild(el('<div class="card-top"><p class="card-name">' +
+      (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
       (places.length === 1 ? placeHtml(it.title, places[0]) : esc(it.title)) + '</p></div>'));
     (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
 
@@ -1461,7 +1747,7 @@
 
   /* ================= tab: shopping ================= */
   function renderShop(root, days){
-    var shops = Saved.data.shops.slice().sort(function(a, b){
+    var shops = trip().shops.slice().sort(function(a, b){
       return a.dayDate === b.dayDate ? (mins(a.time) || 0) - (mins(b.time) || 0) : a.dayDate.localeCompare(b.dayDate);
     });
     var total = 0, got = 0;
@@ -1597,7 +1883,7 @@
 
   /* One card shape for every editable list in 정보. */
   function sectionCard(o){
-    var list = Saved.data[o.key] || [];
+    var list = trip()[o.key] || [];
     var card = el('<div class="card"></div>');
     var head = el('<div class="card-head"><h3>' + esc(o.title) + (list.length ? ' · ' + list.length : '') + '</h3></div>');
     var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
@@ -1642,14 +1928,14 @@
   }
 
   function packCard(){
-    var list = Saved.data.packList;
+    var list = trip().packList;
     var done = list.filter(function(p){ return p.on; }).length;
     var card = el('<div class="card"></div>');
     var head = el('<div class="card-head"><h3>준비물 · ' + done + '/' + list.length + '</h3></div>');
     var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
     tap(add, function(){
       openTextDialog({ title:"준비물 추가", placeholder:"예: 멀티탭" }, function(v){
-        Saved.data.packList.push({ id: uid("k"), text: v, on: false });
+        trip().packList.push({ id: uid("k"), text: v, on: false });
         Saved.flush(); render();
       });
     });
@@ -1765,20 +2051,39 @@
     setTimeout(function(){ input.focus(); }, 60);
   }
 
-  function openTripEditor(){
-    var t = trip();
-    var sheet = sheetShell("여행 정보");
+  function openTripEditor(t){
+    var adding = !t;
+    var sheet = sheetShell(adding ? "여행 추가" : "여행 정보");
     var body = sheet.querySelector(".sheet-body");
+    var flagRow = el('<div class="fld"><div class="fld-row"></div></div>');
+    var inner = flagRow.querySelector(".fld-row");
+    inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
+      '<input id="t-emoji" type="text" maxlength="4" placeholder="🇯🇵" value="' + esc(t ? t.emoji : "") + '"></div>'));
+    inner.appendChild(el('<div class="fld-col"><label for="t-city">도시</label>' +
+      '<input id="t-city" type="text" placeholder="예: 후쿠오카" value="' + esc(t ? t.city : "") + '"></div>'));
+    body.appendChild(flagRow);
     body.appendChild(el(
-      '<div class="fld"><label for="t-city">도시</label><input id="t-city" type="text" value="' + esc(t.city) + '"></div>'
+      '<div class="fld"><label for="t-country">라벨</label><input id="t-country" type="text" value="' +
+      esc(t ? t.country : "") + '" placeholder="예: JAPAN"></div>'
     ));
-    body.appendChild(el(
-      '<div class="fld"><label for="t-country">라벨</label><input id="t-country" type="text" value="' + esc(t.country) + '" placeholder="예: JAPAN"></div>'
-    ));
-    body.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t.start }));
-    body.appendChild(pickerField({ type:"date", id:"t-end", label:"종료일", value: t.end }));
+    var dateRow = el('<div class="fld"><div class="fld-row"></div></div>');
+    var dr = dateRow.querySelector(".fld-row");
+    dr.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t ? t.start : "", col:true }));
+    dr.appendChild(pickerField({ type:"date", id:"t-end", label:"종료일", value: t ? t.end : "", col:true }));
+    body.appendChild(dateRow);
     body.appendChild(el('<p class="fld-hint">날짜를 줄이면 그 날에 있던 일정은 화면에서 빠집니다. 다시 늘리면 돌아옵니다.</p>'));
 
+    var foot = sheet.querySelector(".sheet-foot");
+    if (!adding){
+      var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+      tap(del, function(){
+        Saved.removeTrip(t.id);
+        closeOverlay();
+        toast("여행을 삭제했어요.");
+        go({ view:"trips" });
+      });
+      foot.appendChild(del);
+    }
     var save = el('<button class="btn btn-primary" type="button">저장</button>');
     tap(save, function(){
       var city = sheet.querySelector("#t-city").value.trim();
@@ -1787,14 +2092,26 @@
       if (!city){ toast("도시를 적어주세요."); return; }
       if (!start || !end){ toast("날짜를 골라주세요."); return; }
       if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
-      Saved.data.trip = { city: city, country: sheet.querySelector("#t-country").value.trim(), start: start, end: end };
-      Saved.flush();
-      state.day = 0;
+      var rec = {
+        emoji: sheet.querySelector("#t-emoji").value.trim(),
+        city: city,
+        country: sheet.querySelector("#t-country").value.trim(),
+        start: start, end: end
+      };
       closeOverlay();
+      if (adding){
+        var made = Saved.addTrip(rec);
+        Saved.open(made.id);
+        toast("여행을 만들었어요.");
+        go({ view:"trip", tab:"sched", meal:"all", day:0 });
+        return;
+      }
+      Saved.editTrip(t.id, rec);
+      state.day = 0;
       toast("수정했어요.");
       render();
     });
-    sheet.querySelector(".sheet-foot").appendChild(save);
+    foot.appendChild(save);
     overlay.appendChild(sheet);
   }
 
@@ -1900,8 +2217,15 @@
     var sheet = sheetShell(item ? "일정 수정" : "일정 추가");
     var body = sheet.querySelector(".sheet-body");
 
-    body.appendChild(el('<div class="fld"><label for="ed-title">이름</label>' +
+    var nameRow = el('<div class="fld"><div class="fld-row"></div></div>');
+    var nameInner = nameRow.querySelector(".fld-row");
+    nameInner.appendChild(el('<div class="fld-col flag-col"><label for="ed-emo">아이콘</label>' +
+      '<input id="ed-emo" type="text" maxlength="4" placeholder="없음" value="' +
+      esc(item && item.emo ? item.emo : "") + '"></div>'));
+    nameInner.appendChild(el('<div class="fld-col"><label for="ed-title">이름</label>' +
       '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(item ? item.title : "") + '"></div>'));
+    body.appendChild(nameRow);
+    body.appendChild(el('<p class="fld-hint">아이콘은 비워두는 게 기본입니다. 비행기 · 호텔처럼 한눈에 알아볼 것만 넣어주세요.</p>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
     var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
     var row = timeRow.querySelector(".fld-row");
@@ -1953,7 +2277,7 @@
         cat: cur.cat, meal: cur.meal || null, title: title,
         tag: sheet.querySelector("#ed-tag").value.trim() || null,
         places: lines("#ed-places"), lines: lines("#ed-lines"),
-        emo: item && item.cat === cur.cat && (item.meal || "") === cur.meal ? item.emo : autoEmo(cur.cat, cur.meal)
+        emo: sheet.querySelector("#ed-emo").value.trim()
       };
       if (item) Saved.listEdit("items", item.id, rec);
       else Saved.listAdd("items", rec);
@@ -2078,8 +2402,9 @@
 
   /* ================= render ================= */
   function render(){
-    if (state.view === "home") renderHome();
-    else renderTrip();
+    if (state.view === "home") return renderHome();
+    if (state.view === "trip" && Saved.cur()) return renderTrip();
+    renderTrips();
   }
 
   (async function boot(){
