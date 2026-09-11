@@ -493,13 +493,18 @@
     border: 1px solid var(--line-strong); border-radius: 12px;
     padding: 12px 13px; font-family: inherit; font-size: 16px;
     background: var(--surface); color: var(--ink);
+    /* iOS gives date/time inputs an intrinsic width that ignores width:100%
+       and spills out of the field. Dropping the native chrome lets the box
+       honour its container. */
+    -webkit-appearance: none;
+    appearance: none;
   }
+  .fld input[type=time], .fld input[type=date]{ text-align: left; }
   .fld textarea{ resize: vertical; min-height: 66px; line-height: 1.5; }
   .fld input:focus, .fld textarea:focus{ outline: none; border-color: var(--signal); }
   .fld-hint{ font-size: 11.5px; color: var(--ink-faint); margin: 6px 0 0; }
-  /* two fields side by side without either one forcing the row wider */
-  .fld-row{ display: flex; gap: 10px; }
-  .fld-row > .fld{ flex: 1 1 0; min-width: 0; }
+  /* Fields are always full width and stacked. Two controls on one row is
+     what put a time input off the edge of the screen on iOS. */
 
   .pickrow{ display: flex; gap: 6px; flex-wrap: wrap; }
   .pick{
@@ -1781,10 +1786,10 @@
     body.appendChild(el('<div class="fld"><label for="sh-name">이름</label>' +
       '<input id="sh-name" type="text" placeholder="예: 빔스" value="' + esc(shop ? shop.name : "") + '"></div>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="sh-day"></div></div>'));
-    body.appendChild(el('<div class="fld-row">' +
-      '<div class="fld"><label for="sh-time">시간</label><input id="sh-time" type="time" value="' + esc(shop ? shop.time : "") + '"></div>' +
-      '<div class="fld"><label for="sh-area">지역</label><input id="sh-area" type="text" placeholder="예: 텐진" value="' + esc(shop ? shop.area : "") + '"></div>' +
-      '</div>'));
+    body.appendChild(el('<div class="fld"><label for="sh-time">시간</label>' +
+      '<input id="sh-time" type="time" value="' + esc(shop ? shop.time : "") + '"></div>'));
+    body.appendChild(el('<div class="fld"><label for="sh-area">지역</label>' +
+      '<input id="sh-area" type="text" placeholder="예: 텐진" value="' + esc(shop ? shop.area : "") + '"></div>'));
     body.appendChild(el('<div class="fld"><label for="sh-map">지도 검색어</label>' +
       '<input id="sh-map" type="text" placeholder="비우면 이름으로 검색" value="' + esc(shop && shop.map ? shop.map : "") + '"></div>'));
 
@@ -1847,10 +1852,11 @@
     body.appendChild(el('<div class="fld"><label for="ed-title">이름</label>' +
       '<input id="ed-title" type="text" placeholder="예: 나카스 야타이" value="' + esc(item ? item.title : "") + '"></div>'));
     body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
-    body.appendChild(el('<div class="fld-row">' +
-      '<div class="fld"><label for="ed-s">시작</label><input id="ed-s" type="time" value="' + esc(item ? item.s : "") + '"></div>' +
-      '<div class="fld"><label for="ed-e">종료</label><input id="ed-e" type="time" value="' + esc(item && item.e ? item.e : "") + '"></div>' +
-      '</div>'));
+    body.appendChild(el('<div class="fld"><label for="ed-s">시작 시간</label>' +
+      '<input id="ed-s" type="time" value="' + esc(item ? item.s : "") + '"></div>'));
+    body.appendChild(el('<div class="fld"><label for="ed-e">종료 시간</label>' +
+      '<input id="ed-e" type="time" value="' + esc(item && item.e ? item.e : "") + '">' +
+      '<p class="fld-hint">비워두면 시작 시간만 표시됩니다.</p></div>'));
     body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
     body.appendChild(el('<div class="fld"><label>음식 종류</label><div class="pickrow" id="ed-meal"></div>' +
       '<p class="fld-hint">선택하면 음식 탭에도 함께 표시됩니다.</p></div>'));
