@@ -7,7 +7,8 @@
  *   GET  /api/plan?path=p     -> { ok, doc }            one document (photos)
  *   POST /api/plan            { writes: { path: body|null } } -> { ok, rev }
  */
-const lib = require("./_lib.js");
+const lib = require("./_core.js");
+const exp = require("./_travel.js");
 
 module.exports = async function handler(req, res) {
   const cfg = lib.env();
@@ -27,17 +28,17 @@ module.exports = async function handler(req, res) {
       const url = new URL(req.url, "http://x");
       const one = url.searchParams.get("path");
       if (one) {
-        if (!lib.PATH_OK.test(one) || one.indexOf("photos/") !== 0) {
+        if (!exp.PATH_OK.test(one) || one.indexOf("blobs/") !== 0) {
           return lib.json(res, 400, { ok: false, error: "path" });
         }
-        const rows = await store.select("photos", "select=data&id=eq." + encodeURIComponent(one.slice(7)));
+        const rows = await store.select("photos", "select=data&id=eq." + encodeURIComponent(one.slice(6)));
         return lib.json(res, 200, { ok: true, doc: rows && rows.length ? { data: rows[0].data } : null });
       }
 
       const rev = await store.rev();
       const since = Number(url.searchParams.get("rev") || 0);
       if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me });
-      return lib.json(res, 200, { ok: true, rev, docs: await lib.readPlan(store), me });
+      return lib.json(res, 200, { ok: true, rev, docs: await exp.readPlan(store), me });
     }
 
     if (req.method === "POST") {
@@ -52,12 +53,12 @@ module.exports = async function handler(req, res) {
       /* group first, so one import is a handful of statements, not hundreds */
       const puts = {}, dels = {};
       for (const path of paths) {
-        if (!lib.PATH_OK.test(path)) return lib.json(res, 400, { ok: false, error: "path", path });
+        if (!exp.PATH_OK.test(path)) return lib.json(res, 400, { ok: false, error: "path", path });
         const value = writes[path];
         if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
           return lib.json(res, 400, { ok: false, error: "body", path });
         }
-        const mapped = lib.toRow(path, value || {});
+        const mapped = exp.toRow(path, value || {});
         if (!mapped) return lib.json(res, 400, { ok: false, error: "path", path });
         if (value === null) (dels[mapped.table] = dels[mapped.table] || []).push(mapped.key);
         else (puts[mapped.table] = puts[mapped.table] || []).push(mapped.row);

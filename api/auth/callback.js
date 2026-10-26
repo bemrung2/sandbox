@@ -1,6 +1,6 @@
 /* Kakao sends the browser back here with a code. Trade it for a token, ask who
    it belongs to, write the session cookie, and return to the page. */
-const lib = require("../_lib.js");
+const lib = require("../_core.js");
 
 const KAKAO_TOKEN = process.env.KAKAO_TOKEN_URL || "https://kauth.kakao.com/oauth/token";
 const KAKAO_ME = process.env.KAKAO_ME_URL || "https://kapi.kakao.com/v2/user/me";

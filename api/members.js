@@ -7,7 +7,7 @@
  * The owner can never be demoted here — there would be nobody left to let
  * anyone back in.
  */
-const lib = require("./_lib.js");
+const lib = require("./_core.js");
 
 module.exports = async function handler(req, res) {
   const cfg = lib.env();

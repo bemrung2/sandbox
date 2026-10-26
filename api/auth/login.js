@@ -1,6 +1,6 @@
 /* Send the browser to Kakao. The `state` carries a signed nonce and where to
    come back to, so a stray callback cannot be replayed at us. */
-const lib = require("../_lib.js");
+const lib = require("../_core.js");
 
 const KAKAO_AUTH = process.env.KAKAO_AUTH_URL || "https://kauth.kakao.com/oauth/authorize";
 

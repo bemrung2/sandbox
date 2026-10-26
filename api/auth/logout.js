@@ -1,4 +1,4 @@
-const lib = require("../_lib.js");
+const lib = require("../_core.js");
 
 module.exports = async function handler(req, res) {
   lib.clearSession(res);

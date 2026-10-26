@@ -1,5 +1,5 @@
 /* Who is looking, and what are they allowed to do. */
-const lib = require("../_lib.js");
+const lib = require("../_core.js");
 
 module.exports = async function handler(req, res) {
   const cfg = lib.env();

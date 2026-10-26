@@ -1,110 +1,70 @@
-# 나의 실험실
+# BEMLAB
 
-실험을 하나씩 만들어 모아두는 개인 프로젝트. 홈에서 실험 목록을 보고, 각 실험으로 들어가는 구조.
+실험을 하나씩 만들어 모아두는 사이트. 홈에 실험 목록이 있고, 하나를 고르면 그 실험으로 들어간다.
 
-- EXP 01 — 여행 계획 (여행 목록 → 한 여행의 일정 · 음식 · 쇼핑 · 정보)
+- EXP 01 — 여행 계획
 
 ## 파일 구조
 
-| 파일 | 역할 |
-| --- | --- |
-| `src/app.html` | **소스.** 여기만 수정한다. |
-| `api/` | 서버리스 함수. 의존성 없음 (`_lib.js`는 공통, 나머지가 엔드포인트) |
-| `db/schema.sql` | Supabase에 한 번 붙여넣는 스키마 |
-| `SETUP.md` | 데이터베이스와 카카오 로그인 설정 절차 |
-| `build.js` | `src/app.html`을 완전한 HTML 문서로 감싸 `index.html` 생성 |
-| `index.html` | **생성물.** 직접 수정 금지. 정적 호스팅(Vercel)이 서빙하는 파일 |
-| `vercel.json` | HTML 캐시 방지 헤더 |
+```
+src/core/          사이트. 어떤 실험에도 쓰이고, 실험 이름은 모른다
+src/exp/travel/    실험 하나 — 화면 · CSS · 저장 경로를 스스로 가진다
+src/app.js         둘을 아는 유일한 곳
+src/app.html       문서 껍데기
+api/_core.js       로그인 · 저장소 · 멤버
+api/_travel.js     travel의 문서 ↔ 표 변환
+db/schema.sql      Supabase에 한 번 붙여넣는 스키마
+build.js           src/ → index.html + 모듈 복사
+```
+
+실험을 더하는 건 `src/exp/<이름>/`을 만들고 `src/app.js`에 한 줄 더하는 것이다.
+지우는 것도 그 반대로, 폴더와 한 줄. 자세한 규칙은 [CLAUDE.md](CLAUDE.md).
 
 ## 수정하는 법
 
 ```bash
-# src/app.html 수정 후
 node build.js
 ```
+
+`index.html`과 그 옆의 모듈들은 생성물이다. `src/`만 고친다.
 
 ## 왜 빌드가 필요한가
 
 같은 페이지를 두 곳에 올린다.
 
-1. **Claude 아티팩트** — `src/app.html`을 그대로 게시한다. 플랫폼이 `<head>`(뷰포트 메타 포함)를 알아서 씌워준다.
-2. **정적 호스팅** — 씌워주는 게 없다. 그래서 `build.js`가 문서 껍데기를 만들어준다.
+1. **Claude 아티팩트** — `src/app.html`과 모듈을 함께 게시한다. 플랫폼이 `<head>`를 씌워준다.
+2. **정적 호스팅** — 씌워주는 게 없다. 그래서 `build.js`가 문서 껍데기를 만들고 모듈을 옆에 둔다.
 
-`src/app.html`을 그대로 정적 호스팅에 올리면 뷰포트 메타가 없어서, 휴대폰이 페이지를 980px 폭으로 그린 뒤 화면에 맞게 축소한다. 화면이 "멀리서 보이는" 증상이 정확히 이것이었다. `build.js`는 출력물에 뷰포트 메타가 없으면 실패하도록 되어 있다.
-
-## 데이터
-
-화면에 보이는 것은 전부 앱 안에서 고치고 지울 수 있다. 하드코딩된 문구는 첫 방문 때 한 번 깔리는
-씨앗(`SEED_*`)뿐이고, 그 뒤로는 저장소의 내용이 곧 화면이다.
-
-아티팩트에서는 여러 명이 같은 계획을 동시에 연다. 그래서 계획 전체를 한 문서에 담지 않고,
-레코드 하나가 문서 하나다. 한 번의 편집은 그 문서 하나만 건드린다.
-
-```
-meta/store                         { v, seeded }
-meta/backup_v2                     { at, plan }      옛 통짜 문서 백업
-trips/<여행id>                      { emoji, city, country, start, end }
-trips/<여행id>/days/<YYYY-MM-DD>    { theme, route[] }
-trips/<여행id>/items/<id>           일정 하나
-trips/<여행id>/shops/<id>           가게 하나 (살 것 목록 포함)
-trips/<여행id>/flights|stays|books|links|packList|notes/<id>
-trips/<여행id>/attach/<id>          { itemId, type, ... }
-photos/<id>                        { data }          사진 한 장
-```
-
-각 컬렉션을 구독하기 때문에, 다른 사람이 고친 내용이 새로고침 없이 들어온다.
-들어온 변경으로 다시 그릴 때는 스크롤을 건드리지 않는다.
-
-**지금 무엇을 열어보고 있는지는 공유하지 않는다.** 어떤 여행을 열었는지는 브라우저에만
-남는다(`lab.trip`, `lab.route`). 공유했다면 한 사람이 화면을 옮길 때 모두가 끌려간다.
-
-`v`가 올라가면 `Saved.moveIn()`(아티팩트) / `legacyTrips()`(그 외)이 옛 저장본을 지금 모양으로
-옮긴다. 옮기기 전 통짜 문서는 `meta/backup_v2`에 남겨둔다.
-
-## 주소
-
-화면마다 주소가 있다.
-
-| 주소 | 화면 |
-| --- | --- |
-| `#/` | BEMLAB 홈 |
-| `#/trips` | 여행 목록 |
-| `#/t/<여행id>/<탭>/<날짜index>` | 한 여행. 음식 탭은 뒤에 `/<끼니>`가 더 붙는다 |
-
-새로고침하면 보던 화면으로 돌아오고, 뒤로가기는 지나온 화면을 거슬러 간다.
-주소가 통째로 없어지는 환경(아티팩트 프레임이 페이지를 새로 여는 경우)에서는
-마지막 주소를 localStorage(`lab.route`)에서 꺼내 복원한다. 주소가 가리키는 여행이
-이미 지워졌으면 목록으로 보내고 주소도 거기에 맞춰 고친다.
+뷰포트 메타가 없으면 휴대폰이 980px로 그린 뒤 축소한다. `build.js`는 출력물에 그게 없으면 실패한다.
 
 ## 저장 방식
 
-계획은 **한 곳**에 있다. Supabase(Postgres)이고, `bemlab.vercel.app`이 그 앞이다.
+계획은 **Supabase(Postgres) 한 곳**에 있고, `bemlab.vercel.app`이 그 앞이다.
+들어가려면 카카오 로그인이 필요하고, 고치려면 주인이 열어줘야 한다.
 
-| 어디서 열었나 | 저장소 | 누가 |
-| --- | --- | --- |
-| `bemlab.vercel.app` | Supabase Postgres | 카카오로 로그인한 사람이 보고, 주인이 허락한 사람이 고친다 |
-| 아티팩트 | 아티팩트 저장소 | 나 혼자 보는 사본 (바깥 네트워크를 못 써서 위 DB에 닿지 못한다) |
-| 그 외 | 이 브라우저의 localStorage | 나 혼자 |
+| 어디서 열었나 | 저장소 |
+| --- | --- |
+| `bemlab.vercel.app` | Supabase Postgres |
+| 그 외 (아티팩트 등) | 그 브라우저의 localStorage — 혼자 보는 사본 |
 
-지금 어느 쪽인지는 화면 맨 아래에 적힌다. 사본 사이를 옮기는 건 여행 목록 맨 아래
-**내보내기 / 가져오기**. 설정은 [SETUP.md](SETUP.md).
+지금 어느 쪽인지는 홈 맨 아래에 적힌다. 설정은 [SETUP.md](SETUP.md).
 
 ### 안에서는 한 가지 모양
 
-저장소가 어디든 클라이언트는 한 가지만 안다 — **경로 하나에 문서 하나**.
+저장소가 어디든 앱은 한 가지만 안다 — **경로 하나에 문서 하나**. 실험마다 자기 접두사를 쓴다.
 
 ```
-trips/<여행id>                     여행
-trips/<여행id>/days/<YYYY-MM-DD>   그날 요약 + 동선
-trips/<여행id>/items/<id>          일정 하나
-trips/<여행id>/<목록>/<id>          가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
-trips/<여행id>/attach/<id>         일정에 붙인 자료
-photos/<id>                       사진 한 장 (목록 동기화에서 제외)
+travel/trips/<여행id>                     여행
+travel/trips/<여행id>/days/<YYYY-MM-DD>   그날 요약 + 동선
+travel/trips/<여행id>/items/<id>          일정 하나
+travel/trips/<여행id>/<목록>/<id>          가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
+travel/trips/<여행id>/attach/<id>         일정에 붙인 자료
+blobs/<id>                               사진 한 장 (목록 동기화에서 제외)
 ```
 
 레코드 하나가 문서 하나라서, 두 사람이 서로 다른 걸 고쳐도 덮어쓰지 않는다.
-`api/_lib.js`가 이 경로를 진짜 표의 행으로 옮긴다 — 그래서 Supabase 화면에서는
-`items`, `shops`, `entries` 같은 **읽을 수 있는 표**로 보이고, 앱은 그 사실을 몰라도 된다.
+`api/_travel.js`가 이 경로를 진짜 표의 행으로 옮긴다 — Supabase 화면에서는 `items`, `shops`,
+`entries` 같은 **읽을 수 있는 표**로 보이고, 앱은 그 사실을 몰라도 된다.
 
 열어둔 화면은 4초마다 "바뀐 게 있나(rev)"만 묻고, 없으면 서버가 아무것도 보내지 않는다.
 **내가 어느 여행을 열어뒀는지는 공유하지 않는다** — 브라우저에만 남는다.
@@ -112,7 +72,7 @@ photos/<id>                       사진 한 장 (목록 동기화에서 제외)
 ### 들어오는 문
 
 ```
-GET  /api/auth/login     카카오로 보냄 (state에 서명)
+GET  /api/auth/login      카카오로 보냄 (state에 서명)
 GET  /api/auth/callback   코드 → 토큰 → 프로필 → 서명된 세션 쿠키
 GET  /api/auth/me         지금 누구인지, 고칠 수 있는지
 GET  /api/auth/logout     쿠키 삭제
