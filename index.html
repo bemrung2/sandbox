@@ -185,6 +185,24 @@
   .lab-row.vacant .lab-mark{ background: var(--surface-2); color: var(--ink-faint); }
   .build-stamp{ margin: 18px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
   .moverow{ display: flex; justify-content: center; gap: 4px; margin-top: 22px; flex-wrap: wrap; }
+
+  /* ---------- signing in ---------- */
+  /* nothing else on the screen, so the one thing to do sits in the middle */
+  .signin{ display: flex; flex-direction: column; justify-content: center; min-height: 86vh; }
+  /* the wordmark grows to fill the home screen's title row; here it must not */
+  .signin .wordmark{ flex: 0 0 auto; margin: 0 0 4px; }
+  .signin-box{ margin-top: 34px; }
+  .kakao{
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 15px 20px;
+    background: #FEE500; color: rgba(0, 0, 0, 0.85);
+    border: none; border-radius: 14px;
+    font: inherit; font-size: 15.5px; font-weight: 700; cursor: pointer;
+  }
+  .kakao .icon{ width: 20px; height: 20px; }
+  .kakao:hover, .kakao.tapped{ filter: brightness(0.96); }
+  .kakao:focus-visible{ outline: 2px solid var(--ink); outline-offset: 2px; }
+  .signin-note{ font-size: 11.5px; color: var(--ink-faint); margin: 12px 0 0; word-break: keep-all; }
   .linkbtn{
     display: inline-flex; align-items: center; gap: 5px;
     border: none; background: transparent; color: var(--ink-faint);
@@ -785,7 +803,7 @@
 (function(){
   "use strict";
 
-  var BUILD = "2026.09.11 · r13";
+  var BUILD = "2026.10.26 · r14";
 
   /* ================= helpers ================= */
   function el(html){
@@ -1376,40 +1394,38 @@
     this.db.doc("photos/" + pid).delete().catch(function(){});
   };
 
-  /* ---------- store: a plan anyone with the link can edit ---------- */
-  /* Talks to /api/plan on the same origin. The whole plan is small, so a poll
-     asks "anything new since rev N?" and the server answers with the lot or
-     with nothing at all. Photos never ride along — they are fetched by id. */
+  /* ---------- store: the shared plan, behind a sign-in ---------- */
+  /* Talks to /api/plan on the same origin, which keeps the plan in one
+     database. The whole plan is small, so a poll asks "anything new since rev
+     N?" and the server answers with the lot or with nothing at all. Photos
+     never ride along — they are fetched by id. */
   function RemoteStore(){
     this.kind = "remote";
     this.shared = true;
     this.label = "함께 쓰는 저장소";
     this.map = {};
     this.rev = 0;
+    this.me = null;
     this.cb = null;
     this.pending = {};
     this._t = null;
     this._poll = null;
-    this.key = "";
-    try{ this.key = localStorage.getItem("lab.key") || ""; }catch(e){ this.key = ""; }
   }
-  RemoteStore.prototype.headers = function(){
-    var h = { "content-type": "application/json" };
-    if (this.key) h["x-lab-key"] = this.key;
-    return h;
-  };
-  RemoteStore.prototype.open = async function(){
-    var res = await fetch(API, { headers: this.headers(), cache: "no-store" });
-    if (!res.ok) throw new Error("plan " + res.status);
-    var data = await res.json();
-    if (!data || !data.ok) throw new Error("plan not ready");
+  /* "ok" — signed in, plan loaded · "signin" — there, but nobody is signed in
+     · "none" — no backend here at all (the artifact, or a plain deploy) */
+  RemoteStore.prototype.probe = async function(){
+    var res;
+    try{ res = await fetch(API, { cache: "no-store" }); }
+    catch(e){ return "none"; }
+    if (res.status === 401) return "signin";
+    if (!res.ok) return "none";
+    var data = null;
+    try{ data = await res.json(); }catch(e){ return "none"; }
+    if (!data || !data.ok) return "none";
     this.map = data.docs || {};
     this.rev = data.rev || 0;
-    if (data.locked){
-      /* the server has no passcode set, so nobody can write yet */
-      this.locked = true;
-      this.label = "함께 쓰는 저장소 (읽기 전용)";
-    }
+    this.me = data.me || null;
+    return "ok";
   };
   RemoteStore.prototype.write = function(path, body){
     if (body === null) delete this.map[path]; else this.map[path] = body;
@@ -1423,8 +1439,8 @@
   };
   RemoteStore.prototype.flush = async function(){
     var all = Object.keys(this.pending);
-    if (this.locked || !all.length) return;
-    /* the endpoint takes 200 paths at a time; an import can be bigger */
+    if (!all.length) return;
+    /* an import can be bigger than one request should carry */
     var writes = {}, self = this;
     all.slice(0, 150).forEach(function(path){
       writes[path] = self.pending[path];
@@ -1433,21 +1449,12 @@
     if (Object.keys(this.pending).length) setTimeout(function(){ self.flush(); }, 60);
     try{
       var res = await fetch(API, {
-        method: "POST", headers: this.headers(),
+        method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ writes: writes })
       });
-      if (res.status === 401){
-        /* put them back; they go out once a key is entered */
-        Object.assign(this.pending, writes);
-        Saved.askKey();
-        return;
-      }
+      if (res.status === 401){ Saved.signedOut(); return; }
       if (res.status === 403){
-        /* editing is not turned on at all — retrying cannot help */
-        Object.assign(this.pending, writes);
-        this.locked = true;
-        this.label = "함께 쓰는 저장소 (읽기 전용)";
-        Saved.refuse();
+        Saved.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요.");
         return;
       }
       if (!res.ok) throw new Error("write " + res.status);
@@ -1456,8 +1463,8 @@
     }catch(e){
       Object.assign(this.pending, writes);
       Saved.failed();
-      var self = this;
-      setTimeout(function(){ self.send(); }, 4000);
+      var retry = this;
+      setTimeout(function(){ retry.send(); }, 4000);
     }
   };
   RemoteStore.prototype.watch = function(cb){
@@ -1466,10 +1473,13 @@
     var tick = async function(){
       if (document.hidden) return;
       try{
-        var res = await fetch(API + "?rev=" + self.rev, { headers: self.headers(), cache: "no-store" });
+        var res = await fetch(API + "?rev=" + self.rev, { cache: "no-store" });
+        if (res.status === 401){ Saved.signedOut(); return; }
         if (!res.ok) return;
         var data = await res.json();
-        if (!data.ok || data.unchanged) return;
+        if (!data.ok) return;
+        if (data.me) self.me = data.me;
+        if (data.unchanged) return;
         self.map = data.docs || {};
         self.rev = data.rev || self.rev;
         cb();
@@ -1478,30 +1488,21 @@
     this._poll = setInterval(tick, 4000);
     document.addEventListener("visibilitychange", function(){ if (!document.hidden) tick(); });
   };
-  RemoteStore.prototype.setKey = function(key){
-    this.key = key;
-    this.locked = false;
-    this.label = "함께 쓰는 저장소";
-    try{ localStorage.setItem("lab.key", key); }catch(e){ /* private mode */ }
-    this.flush();
-  };
   RemoteStore.prototype.blobPut = async function(pid, data){
     await fetch(API, {
-      method: "POST", headers: this.headers(),
+      method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ writes: { ["photos/" + pid]: { data: data } } })
     });
   };
   RemoteStore.prototype.blobGet = async function(pid){
-    var res = await fetch(API + "?path=" + encodeURIComponent("photos/" + pid), {
-      headers: this.headers(), cache: "no-store"
-    });
+    var res = await fetch(API + "?path=" + encodeURIComponent("photos/" + pid), { cache: "no-store" });
     if (!res.ok) return null;
     var data = await res.json();
     return data.doc ? data.doc.data : null;
   };
   RemoteStore.prototype.blobDrop = function(pid){
     fetch(API, {
-      method: "POST", headers: this.headers(),
+      method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ writes: { ["photos/" + pid]: null } })
     }).catch(function(){});
   };
@@ -1513,6 +1514,8 @@
     shared: false,
     data: null,
     active: null,
+    me: null,
+    needSignIn: false,
     onRemote: null,
     _r: null,
     _warned: false,
@@ -1521,6 +1524,10 @@
       this.store = await this.pick();
       this.backend = this.store.kind;
       this.shared = this.store.shared;
+      this.me = this.store.me || null;
+
+      /* the plan is behind a sign-in and nobody is signed in yet */
+      if (this.needSignIn){ this.data = { trips: [] }; return; }
 
       await this.moveIn();
       this.reread();
@@ -1538,21 +1545,42 @@
     },
 
     async pick(){
+      if (location.protocol === "http:" || location.protocol === "https:"){
+        var remote = new RemoteStore();
+        var state = await remote.probe();
+        if (state === "ok") return remote;
+        if (state === "signin"){ this.needSignIn = true; return remote; }
+      }
+      /* No backend here — the artifact, or a deploy without one. Then this is
+         a private copy: the artifact keeps its own store, anything else keeps
+         the plan in this browser. */
       var db = null;
       try{
         if (window.claude && typeof window.claude.use === "function") db = await window.claude.use("db");
       }catch(e){ db = null; }
       if (db){
         var artifact = new ArtifactStore(db);
-        try{ await artifact.open(); return artifact; }catch(e){ /* fall through */ }
-      }
-      if (location.protocol === "http:" || location.protocol === "https:"){
-        var remote = new RemoteStore();
-        try{ await remote.open(); return remote; }catch(e){ /* no backend deployed */ }
+        try{
+          await artifact.open();
+          artifact.label = "이 아티팩트에만 저장";
+          return artifact;
+        }catch(e){ /* fall through */ }
       }
       var local = new LocalStore();
       await local.open();
       return local;
+    },
+
+    /* Signing in is what the remote copy asks for; everywhere else there is
+       nobody to be, and everything is editable. */
+    canEdit(){
+      if (this.store.kind !== "remote") return true;
+      return !!(this.me && this.me.canEdit);
+    },
+    signedOut(){
+      this.needSignIn = true;
+      this.me = null;
+      render();
     },
 
     seeded(){
@@ -1609,21 +1637,6 @@
       toast("저장하지 못했어요. 연결을 확인해주세요.");
       setTimeout(function(){ Saved._warned = false; }, 8000);
     },
-    askKey(){
-      if (this._asking) return;
-      this._asking = true;
-      var self = this;
-      openTextDialog({
-        title: "편집 암호",
-        placeholder: "계획을 함께 쓰는 사람에게 받은 암호",
-        hint: "이 기기에 저장되고, 보는 건 암호 없이도 됩니다."
-      }, function(v){
-        self._asking = false;
-        self.store.setKey(v);
-        toast("암호를 저장했어요.");
-      }, null, function(){ self._asking = false; });
-    },
-
     /* ---------- moving a plan between copies ---------- */
     /* An artifact cannot reach the outside network, so the two copies can
        never sync themselves. Text is the bridge. */
@@ -1652,14 +1665,17 @@
        model is read back from the store, and the screen returns to what is
        actually stored. */
     write(path, body){
-      if (this.store.locked){ this.refuse(); return; }
+      if (!this.canEdit()){
+        this.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요.");
+        return;
+      }
       this.store.write(path, body);
     },
-    refuse(){
+    refuse(why){
       var self = this;
       clearTimeout(this._back);
       this._back = setTimeout(function(){
-        toast("이 주소에서는 편집이 잠겨 있어요.", true);
+        toast(why || "지금은 편집할 수 없어요.", true);
         self.reread();
         if (self.onRemote) self.onRemote();
       }, 120);
@@ -2116,12 +2132,88 @@
     });
     row.appendChild(into);
 
-    if (Saved.store && Saved.store.kind === "remote"){
-      var key = el('<button class="linkbtn" type="button">' + icon("edit") + '편집 암호</button>');
-      tap(key, function(){ Saved.askKey(); });
-      row.appendChild(key);
+    if (Saved.me){
+      if (Saved.me.isOwner){
+        var who = el('<button class="linkbtn" type="button">' + icon("star") + '멤버</button>');
+        tap(who, openMembers);
+        row.appendChild(who);
+      }
+      var out2 = el('<button class="linkbtn" type="button">' + esc(Saved.me.name || "나") + ' · 로그아웃</button>');
+      tap(out2, function(){ location.href = "api/auth/logout"; });
+      row.appendChild(out2);
     }
     return row;
+  }
+
+  /* ================= who is allowed in ================= */
+  function kakaoMark(){
+    return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path fill="currentColor" d="M12 3.6c-4.7 0-8.5 2.96-8.5 6.6 0 2.33 1.56 4.37 3.9 5.54l-.93 3.43a.3.3 0 0 0 .45.33l4.1-2.7c.32.03.65.04.98.04 4.7 0 8.5-2.95 8.5-6.6S16.7 3.6 12 3.6z"/>' +
+      '</svg>';
+  }
+
+  function renderSignIn(){
+    var wrap = el(
+      '<div class="pad signin">' +
+        '<h1 class="wordmark">BEMLAB</h1>' +
+        '<p class="wordmark-sub">여행 계획을 같이 보고 같이 고치는 곳</p>' +
+        '<div class="signin-box">' +
+          '<button class="kakao" type="button">' + kakaoMark() + '카카오로 로그인</button>' +
+          '<p class="signin-note">처음 로그인하면 보기만 됩니다. 편집은 계획 주인이 열어줘요.</p>' +
+        '</div>' +
+      '</div>'
+    );
+    tap(wrap.querySelector(".kakao"), function(){
+      location.href = "api/auth/login?next=" + encodeURIComponent(location.hash || "");
+    });
+    view.innerHTML = "";
+    view.appendChild(wrap);
+    window.scrollTo(0, 0);
+  }
+
+  function openMembers(){
+    var sheet = sheetShell("멤버", "카카오로 로그인한 사람들");
+    var body = sheet.querySelector(".sheet-body");
+    sheet.querySelector(".sheet-foot").remove();
+    body.appendChild(el('<p class="card-empty">불러오는 중…</p>'));
+
+    fetch("api/members", { cache: "no-store" }).then(function(res){ return res.json(); }).then(function(data){
+      body.innerHTML = "";
+      if (!data || !data.ok || !data.members.length){
+        body.appendChild(el('<p class="card-empty">아직 아무도 로그인하지 않았어요.</p>'));
+        return;
+      }
+      data.members.forEach(function(m){
+        var row = el('<div class="rowline"><span class="rowbody"><b>' + esc(m.name || m.id) +
+          (m.you ? ' <span class="badge">나</span>' : '') +
+          (m.isOwner ? ' <span class="badge tag">주인</span>' : '') + '</b>' +
+          '<small>' + (m.canEdit ? "편집 가능" : "보기만") + '</small></span></div>');
+        if (!m.isOwner){
+          var tog = el('<button class="check" type="button" aria-pressed="' + m.canEdit +
+            '" aria-label="편집 허용">' + icon("check") + '</button>');
+          tap(tog, function(){
+            var next = !m.canEdit;
+            fetch("api/members", {
+              method: "POST", headers: { "content-type": "application/json" },
+              body: JSON.stringify({ id: m.id, canEdit: next })
+            }).then(function(res){ return res.json(); }).then(function(out){
+              if (!out || !out.ok){ toast("바꾸지 못했어요."); return; }
+              m.canEdit = next;
+              tog.setAttribute("aria-pressed", String(next));
+              row.querySelector("small").textContent = next ? "편집 가능" : "보기만";
+              toast(esc(m.name || "") + (next ? " 편집 허용" : " 보기만"));
+            }).catch(function(){ toast("바꾸지 못했어요."); });
+          });
+          row.insertBefore(tog, row.firstChild);
+        }
+        body.appendChild(row);
+      });
+    }).catch(function(){
+      body.innerHTML = "";
+      body.appendChild(el('<p class="card-empty">멤버를 불러오지 못했어요.</p>'));
+    });
+
+    overlay.appendChild(sheet);
   }
 
   function tripCard(t){
@@ -3175,6 +3267,7 @@
 
   /* ================= render ================= */
   function render(keepScroll){
+    if (Saved.needSignIn) return renderSignIn();
     if (state.view === "home") return renderHome(keepScroll);
     if (state.view === "trip" && Saved.cur()) return renderTrip(keepScroll);
     if (state.view !== "trips"){ state.view = "trips"; Route.push(true); }

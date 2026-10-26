@@ -9,8 +9,9 @@
 | 파일 | 역할 |
 | --- | --- |
 | `src/app.html` | **소스.** 여기만 수정한다. |
-| `api/plan.js` | 정적 호스팅 사본이 쓰는 공유 저장소 API (의존성 없음) |
-| `SETUP.md` | 친구와 같이 쓰기 위한 설정 절차 |
+| `api/` | 서버리스 함수. 의존성 없음 (`_lib.js`는 공통, 나머지가 엔드포인트) |
+| `db/schema.sql` | Supabase에 한 번 붙여넣는 스키마 |
+| `SETUP.md` | 데이터베이스와 카카오 로그인 설정 절차 |
 | `build.js` | `src/app.html`을 완전한 HTML 문서로 감싸 `index.html` 생성 |
 | `index.html` | **생성물.** 직접 수정 금지. 정적 호스팅(Vercel)이 서빙하는 파일 |
 | `vercel.json` | HTML 캐시 방지 헤더 |
@@ -77,34 +78,49 @@ photos/<id>                        { data }          사진 한 장
 
 ## 저장 방식
 
-세 곳 중 하나에 저장되고, **셋 다 같은 모양**(경로 → 문서)을 쓴다. 그래서 앱 코드는 어디서 열리든 같다.
+계획은 **한 곳**에 있다. Supabase(Postgres)이고, `bemlab.vercel.app`이 그 앞이다.
 
-| 어디서 열었나 | 저장소 | 누가 고칠 수 있나 |
+| 어디서 열었나 | 저장소 | 누가 |
 | --- | --- | --- |
-| 아티팩트 | 아티팩트 저장소 | 아티팩트를 공유받은 사람 (조직 내부로 제한) |
-| `bemlab.vercel.app` | `/api/plan` → Upstash 또는 Supabase | 링크를 아는 사람은 읽기, 암호를 아는 사람은 편집 |
-| 그 외 / 백엔드 미설정 | 이 브라우저의 localStorage | 나만 |
+| `bemlab.vercel.app` | Supabase Postgres | 카카오로 로그인한 사람이 보고, 주인이 허락한 사람이 고친다 |
+| 아티팩트 | 아티팩트 저장소 | 나 혼자 보는 사본 (바깥 네트워크를 못 써서 위 DB에 닿지 못한다) |
+| 그 외 | 이 브라우저의 localStorage | 나 혼자 |
 
-지금 어느 쪽인지는 홈과 여행 목록 맨 아래에 적힌다
-(`함께 쓰는 저장소` / `함께 쓰는 저장소 (읽기 전용)` / `이 기기에만 저장`).
+지금 어느 쪽인지는 화면 맨 아래에 적힌다. 사본 사이를 옮기는 건 여행 목록 맨 아래
+**내보내기 / 가져오기**. 설정은 [SETUP.md](SETUP.md).
 
-### 두 사본은 서로 동기화되지 않는다
+### 안에서는 한 가지 모양
 
-아티팩트는 바깥으로 네트워크 요청을 할 수 없다(CSP). 그래서 아티팩트 사본이
-`bemlab.vercel.app`의 저장소를 읽을 방법이 없다. 옮기는 건 사람 손으로 한다 —
-여행 목록 맨 아래 **내보내기 / 가져오기**. 같이 쓸 거면 한쪽을 정해서 그쪽만 쓰는 게 좋다.
-
-설정 절차는 [SETUP.md](SETUP.md).
-
-### /api/plan
+저장소가 어디든 클라이언트는 한 가지만 안다 — **경로 하나에 문서 하나**.
 
 ```
-GET  /api/plan          → { ok, rev, docs, locked }
-GET  /api/plan?rev=N    → { ok, unchanged: true }      바뀐 게 없으면
-GET  /api/plan?path=p   → { ok, doc }                  사진 한 장
-POST /api/plan          { writes: { 경로: 본문|null } } → { ok, rev }
+trips/<여행id>                     여행
+trips/<여행id>/days/<YYYY-MM-DD>   그날 요약 + 동선
+trips/<여행id>/items/<id>          일정 하나
+trips/<여행id>/<목록>/<id>          가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
+trips/<여행id>/attach/<id>         일정에 붙인 자료
+photos/<id>                       사진 한 장 (목록 동기화에서 제외)
 ```
 
-읽기는 누구나, 쓰기는 `x-lab-key` 헤더가 `LAB_PASSCODE`와 같아야 한다.
-`LAB_PASSCODE`가 없으면 아무도 못 쓴다 — 설정이 덜 된 상태에서는 잠기는 쪽이 안전하다.
-사진(`photos/*`)은 목록 동기화에서 빠지고 id로 따로 가져온다.
+레코드 하나가 문서 하나라서, 두 사람이 서로 다른 걸 고쳐도 덮어쓰지 않는다.
+`api/_lib.js`가 이 경로를 진짜 표의 행으로 옮긴다 — 그래서 Supabase 화면에서는
+`items`, `shops`, `entries` 같은 **읽을 수 있는 표**로 보이고, 앱은 그 사실을 몰라도 된다.
+
+열어둔 화면은 4초마다 "바뀐 게 있나(rev)"만 묻고, 없으면 서버가 아무것도 보내지 않는다.
+**내가 어느 여행을 열어뒀는지는 공유하지 않는다** — 브라우저에만 남는다.
+
+### 들어오는 문
+
+```
+GET  /api/auth/login     카카오로 보냄 (state에 서명)
+GET  /api/auth/callback   코드 → 토큰 → 프로필 → 서명된 세션 쿠키
+GET  /api/auth/me         지금 누구인지, 고칠 수 있는지
+GET  /api/auth/logout     쿠키 삭제
+GET  /api/plan            로그인 필요. { rev, docs, me }
+POST /api/plan            편집 권한 필요. { writes: { 경로: 본문|null } }
+GET  /api/members         로그인한 사람들
+POST /api/members         주인만. 편집 허용/해제
+```
+
+세션은 `SESSION_SECRET`으로 HMAC 서명한 httpOnly 쿠키다. 토큰은 브라우저에 남지 않는다.
+**가장 먼저 로그인한 사람이 주인**이 되고, 그 뒤 로그인한 사람은 주인이 열어줄 때까지 보기만 된다.
