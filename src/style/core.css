@@ -371,7 +371,7 @@
     transform: translateX(-50%) translateY(8px);
     background: var(--ink); color: var(--paper);
     padding: 13px 20px; border-radius: 999px;
-    font-size: 13px; font-weight: 500;
+    font-size: 13px; font-weight: 600;
     z-index: 90; opacity: 0; pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
     max-width: 88%; text-align: center;
@@ -535,6 +535,23 @@
   .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .quietbtn.has{ color: var(--signal); }
 
+
+  /* ---------- waiting ---------- */
+  /* Shaped like what is coming, so the page does not jump when it arrives. */
+  .lab-row.ghost{ cursor: default; pointer-events: none; }
+  .lab-row.ghost .lab-mark{ background: var(--surface-2); }
+  .bar{
+    display: block; height: 10px; border-radius: 5px;
+    background: var(--surface-2);
+    animation: breathe 1.4s ease-in-out infinite;
+  }
+  .bar-s{ width: 44px; height: 8px; }
+  .bar-m{ width: 42%; margin-top: 7px; height: 13px; }
+  .bar-l{ width: 68%; margin-top: 7px; }
+  .lab-row.ghost .bar-m{ animation-delay: 0.1s; }
+  .lab-row.ghost .bar-l{ animation-delay: 0.2s; }
+  @keyframes breathe{ 0%, 100%{ opacity: 1; } 50%{ opacity: 0.45; } }
+  @media (prefers-reduced-motion: reduce){ .bar{ animation: none; } }
 
   /* ---------- the door ---------- */
   .signin{

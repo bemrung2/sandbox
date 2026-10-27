@@ -167,9 +167,12 @@ function toDocs(tables) {
 
 const PLAN_TABLES = ["trips", "days", "items", "shops", "entries", "attachments"];
 
+/* Six tables, asked for at once. In a row they cost six round trips to a
+   database that may be a continent away, and the page waits for all of them. */
 async function readPlan(store) {
+  const got = await Promise.all(PLAN_TABLES.map((table) => store.select(table)));
   const tables = {};
-  for (const table of PLAN_TABLES) tables[table] = (await store.select(table)) || [];
+  PLAN_TABLES.forEach((table, i) => { tables[table] = got[i] || []; });
   return toDocs(tables);
 }
 

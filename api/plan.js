@@ -21,7 +21,17 @@ module.exports = async function handler(req, res) {
   const store = lib.db(cfg);
 
   try {
-    const row = who ? await lib.member(store, who.id) : null;
+    const url = new URL(req.url, "http://x");
+    const since = req.method === "GET" ? Number(url.searchParams.get("rev") || 0) : 0;
+    const onePath = req.method === "GET" ? url.searchParams.get("path") : null;
+
+    /* Everything this request needs, asked for at the same time. A poll says
+       which revision it has, so it only needs the number back. */
+    const [row, rev, docs] = await Promise.all([
+      who ? lib.member(store, who.id) : null,
+      req.method === "GET" && !onePath ? store.rev() : null,
+      req.method === "GET" && !onePath && !since ? exp.readPlan(store) : null
+    ]);
     if (!row && gated) return lib.json(res, 401, { ok: false, error: "signin" });
 
     /* With the door open there is nobody to be: everyone reads and writes. */
@@ -31,8 +41,7 @@ module.exports = async function handler(req, res) {
       : null;
 
     if (req.method === "GET") {
-      const url = new URL(req.url, "http://x");
-      const one = url.searchParams.get("path");
+      const one = onePath;
       if (one) {
         if (!exp.PATH_OK.test(one) || one.indexOf("blobs/") !== 0) {
           return lib.json(res, 400, { ok: false, error: "path" });
@@ -41,10 +50,11 @@ module.exports = async function handler(req, res) {
         return lib.json(res, 200, { ok: true, doc: rows && rows.length ? { data: rows[0].data } : null });
       }
 
-      const rev = await store.rev();
-      const since = Number(url.searchParams.get("rev") || 0);
       if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me, open });
-      return lib.json(res, 200, { ok: true, rev, docs: await exp.readPlan(store), me, open });
+      return lib.json(res, 200, {
+        ok: true, rev, me, open,
+        docs: docs || (await exp.readPlan(store))
+      });
     }
 
     if (req.method === "POST") {
@@ -70,10 +80,10 @@ module.exports = async function handler(req, res) {
         else (puts[mapped.table] = puts[mapped.table] || []).push(mapped.row);
       }
 
-      for (const table of Object.keys(puts)) await store.upsert(table, puts[table]);
-      for (const table of Object.keys(dels)) {
-        for (const key of dels[table]) await store.remove(table, key);
-      }
+      await Promise.all(Object.keys(puts).map((table) => store.upsert(table, puts[table])));
+      await Promise.all(
+        Object.keys(dels).flatMap((table) => dels[table].map((key) => store.remove(table, key)))
+      );
 
       return lib.json(res, 200, { ok: true, rev: await store.bumpRev() });
     }

@@ -6,7 +6,7 @@ import { Theme, themeButton } from "./theme.js";
 import { Router } from "./router.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-var BUILD = "2026.10.27 · r17";
+var BUILD = "2026.10.27 · r18";
 var view = null;
 var list = [];
 
@@ -24,6 +24,8 @@ export var Lab = {
       document.head.appendChild(link);
     });
 
+    /* The waiting state is already on screen — src/app.html carries it, so it
+       paints before any module arrives. Nothing to draw here; just ask. */
     await Store.open();
     Store.onChange = function(){
       if (Store.needSignIn) return paintSignIn();

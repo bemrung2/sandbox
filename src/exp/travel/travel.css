@@ -104,7 +104,7 @@
     font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
     margin: 7px 0 0; word-break: keep-all;
   }
-  .pulse-title.muted{ font-size: 14.5px; font-weight: 500; color: var(--ink-faint); }
+  .pulse-title.muted{ font-size: 14.5px; font-weight: 600; color: var(--ink-faint); }
   .pulse-bar{
     height: 3px; border-radius: 2px; margin-top: 11px;
     background: var(--surface-2); overflow: hidden;
