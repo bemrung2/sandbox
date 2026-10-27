@@ -6,7 +6,7 @@ import { Theme, themeButton } from "./theme.js";
 import { Router } from "./router.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-var BUILD = "2026.10.26 · r16";
+var BUILD = "2026.10.27 · r17";
 var view = null;
 var list = [];
 
@@ -128,7 +128,8 @@ function paintHome(){
   ));
 
   wrap.appendChild(accountRow());
-  wrap.appendChild(el('<p class="build-stamp mono">build ' + BUILD + ' · ' + esc(Store.label) + '</p>'));
+  wrap.appendChild(el('<p class="build-stamp mono">build ' + BUILD + ' · ' + esc(Store.label) +
+    (Store.ungated ? ' · 로그인 없이 열림' : '') + '</p>'));
 
   view.innerHTML = "";
   view.appendChild(wrap);

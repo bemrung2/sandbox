@@ -49,6 +49,7 @@ function RemoteStore(){
   this.map = {};
   this.rev = 0;
   this.me = null;
+  this.ungated = false;   /* the server is not asking anyone to sign in */
   this.pending = {};
   this._t = null;
 }
@@ -66,6 +67,7 @@ RemoteStore.prototype.probe = async function(){
   this.map = data.docs || {};
   this.rev = data.rev || 0;
   this.me = data.me || null;
+  this.ungated = !!data.open;
   return "ok";
 };
 RemoteStore.prototype.write = function(path, body){
@@ -115,6 +117,7 @@ RemoteStore.prototype.watch = function(cb){
       var data = await res.json();
       if (!data.ok) return;
       if (data.me) self.me = data.me;
+      self.ungated = !!data.open;
       if (data.unchanged) return;
       self.map = data.docs || {};
       self.rev = data.rev || self.rev;
@@ -161,6 +164,8 @@ export var Store = {
   },
 
   get kind(){ return this.backend ? this.backend.kind : "local"; },
+  /* nobody was asked to sign in, so nobody is held back */
+  get ungated(){ return !!(this.backend && this.backend.ungated); },
   get label(){ return this.backend ? this.backend.label : ""; },
   get map(){ return this.backend ? this.backend.map : {}; },
 
@@ -168,6 +173,7 @@ export var Store = {
      nobody to be, and everything is editable. */
   canEdit(){
     if (this.kind !== "remote") return true;
+    if (this.ungated) return true;
     return !!(this.me && this.me.canEdit);
   },
 

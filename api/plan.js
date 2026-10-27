@@ -14,15 +14,21 @@ module.exports = async function handler(req, res) {
   const cfg = lib.env();
   if (cfg.missing.length) return lib.setupError(res, cfg.missing);
 
+  const gated = lib.loginRequired();
   const who = lib.session(req, cfg.secret);
-  if (!who) return lib.json(res, 401, { ok: false, error: "signin" });
+  if (!who && gated) return lib.json(res, 401, { ok: false, error: "signin" });
 
   const store = lib.db(cfg);
 
   try {
-    const row = await lib.member(store, who.id);
-    if (!row) return lib.json(res, 401, { ok: false, error: "signin" });
-    const me = { name: row.name, avatar: row.avatar, canEdit: !!row.can_edit, isOwner: !!row.is_owner };
+    const row = who ? await lib.member(store, who.id) : null;
+    if (!row && gated) return lib.json(res, 401, { ok: false, error: "signin" });
+
+    /* With the door open there is nobody to be: everyone reads and writes. */
+    const open = !gated && !row;
+    const me = row
+      ? { name: row.name, avatar: row.avatar, canEdit: !!row.can_edit, isOwner: !!row.is_owner }
+      : null;
 
     if (req.method === "GET") {
       const url = new URL(req.url, "http://x");
@@ -37,12 +43,12 @@ module.exports = async function handler(req, res) {
 
       const rev = await store.rev();
       const since = Number(url.searchParams.get("rev") || 0);
-      if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me });
-      return lib.json(res, 200, { ok: true, rev, docs: await exp.readPlan(store), me });
+      if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me, open });
+      return lib.json(res, 200, { ok: true, rev, docs: await exp.readPlan(store), me, open });
     }
 
     if (req.method === "POST") {
-      if (!row.can_edit) return lib.json(res, 403, { ok: false, error: "readonly" });
+      if (!open && !row.can_edit) return lib.json(res, 403, { ok: false, error: "readonly" });
 
       const body = await lib.readBody(req);
       const writes = (body && body.writes) || {};

@@ -11,6 +11,24 @@ const crypto = require("crypto");
 const COOKIE = "bemlab_s";
 const SESSION_DAYS = 30;
 
+/*
+ * The door.
+ *
+ * Off: no sign-in screen, and anyone who has the address can read and write.
+ * On: Kakao sign-in is required to read, and editing is granted per person.
+ *
+ * The whole sign-in path — /api/auth/*, the members table, the screen — is
+ * still here and still works; this only decides whether anyone is stopped at
+ * it. Turn it back on with LOGIN_REQUIRED=1 in the host's environment, or by
+ * flipping the default below.
+ */
+function loginRequired() {
+  const want = String(process.env.LOGIN_REQUIRED || "").toLowerCase();
+  if (want === "1" || want === "true" || want === "on") return true;
+  if (want === "0" || want === "false" || want === "off") return false;
+  return false;   /* 지금은 닫혀 있다 */
+}
+
 /* ---------------- environment ---------------- */
 
 function env() {
@@ -200,6 +218,7 @@ function origin(req) {
 
 module.exports = {
   COOKIE,
-  env, json, setupError, sign, unsign, readCookie, setSession, clearSession, session,
+  env, json, setupError, loginRequired,
+  sign, unsign, readCookie, setSession, clearSession, session,
   db, touchMember, member, readBody, origin
 };

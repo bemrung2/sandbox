@@ -6,13 +6,13 @@ module.exports = async function handler(req, res) {
   if (cfg.missing.length) return lib.setupError(res, cfg.missing);
 
   const who = lib.session(req, cfg.secret);
-  if (!who) return lib.json(res, 200, { ok: true, signedIn: false });
+  if (!who) return lib.json(res, 200, { ok: true, signedIn: false, loginRequired: lib.loginRequired() });
 
   try {
     const row = await lib.member(lib.db(cfg), who.id);
-    if (!row) return lib.json(res, 200, { ok: true, signedIn: false });
+    if (!row) return lib.json(res, 200, { ok: true, signedIn: false, loginRequired: lib.loginRequired() });
     return lib.json(res, 200, {
-      ok: true, signedIn: true,
+      ok: true, signedIn: true, loginRequired: lib.loginRequired(),
       me: { id: row.kakao_id, name: row.name, avatar: row.avatar, canEdit: !!row.can_edit, isOwner: !!row.is_owner }
     });
   } catch (e) {
