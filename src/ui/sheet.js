@@ -1,5 +1,5 @@
 /* Sheets, dialogs and the form controls they are made of. */
-import { el, esc, icon, ripple, safeUrl, toast } from "./dom.js";
+import { el, esc, icon, ripple, safeUrl, toast, toastUndo } from "./dom.js";
 import { Store } from "./store.js";
 
 /* 고치는 창은 고칠 수 있는 사람에게만 열린다. 열어놓고 저장할 때 막으면
@@ -60,7 +60,11 @@ export function openFormSheet(opts, rec, onSave, onDelete){
 
   if (onDelete){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
-    ripple(del, function(){ closeOverlay(); onDelete(); toast("삭제했어요."); });
+    ripple(del, function(){
+      closeOverlay();
+      var undo = onDelete();
+      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+    });
     foot.appendChild(del);
   }
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
@@ -105,7 +109,11 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   scrim.addEventListener("click", function(e){ if (e.target === scrim) give(); });
   var input = scrim.querySelector("#dlg-v");
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
-  if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){ closeOverlay(); onDelete(); });
+  if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
+    closeOverlay();
+    var undo = onDelete();
+    if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+  });
   scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
     var v = input.value.trim();
     if (!v){ input.focus(); return; }
@@ -158,7 +166,8 @@ export function pickerField(o){
       '<label for="' + o.id + '">' + esc(o.label) + '</label>' +
       '<div class="pickbox' + (o.value ? "" : " blank") + '">' +
         '<span class="pickval">' + esc(show(o.value)) + '</span>' +
-        '<input id="' + o.id + '" type="' + o.type + '" value="' + esc(o.value || "") + '">' +
+        '<input id="' + o.id + '" type="' + o.type + '"' +
+          (o.type === "time" ? ' step="300"' : '') + ' value="' + esc(o.value || "") + '">' +
       '</div>' +
     '</div>'
   );

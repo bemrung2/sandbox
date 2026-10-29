@@ -92,12 +92,35 @@ export function toast(msg, hold){
   var now = Date.now();
   if (!hold && now < toastHold) return;
   toastHold = hold ? now + 2600 : 0;
+  show(msg, null, null, 2600);
+}
+
+/* 지운 직후의 몇 초. 그 사이에 누르면 지우기 전으로 돌아간다 —
+   "정말 지울까요"를 먼저 묻는 것보다 이쪽이 손이 덜 간다. */
+export function toastUndo(msg, undo){
+  toastHold = 0;
+  show(msg, "되돌리기", undo, 4000);
+}
+
+function show(msg, label, run, ms){
   var t = document.getElementById("toast");
   if (!t) return;
-  t.textContent = msg;
+  t.innerHTML = "";
+  t.classList.toggle("plain", !label);
+  t.appendChild(el('<span class="toast-msg"></span>')).textContent = msg;
+  if (label){
+    var b = el('<button class="toast-do" type="button"></button>');
+    b.textContent = label;
+    b.addEventListener("click", function(){
+      t.classList.remove("show");
+      clearTimeout(toastTimer);
+      if (run) run();
+    });
+    t.appendChild(b);
+  }
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, ms);
 }
 
 /* Only http(s) gets through — a stored "javascript:" would run on tap. */

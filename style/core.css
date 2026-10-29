@@ -356,13 +356,27 @@
   .toast{
     position: fixed; left: 50%; bottom: calc(26px + var(--safe-b));
     transform: translateX(-50%) translateY(8px);
+    display: flex; align-items: center; gap: 4px;
     background: var(--ink); color: var(--paper);
-    padding: 13px 20px; border-radius: 999px;
+    padding: 11px 12px 11px 20px; border-radius: 999px;
     font-size: 13px; font-weight: 600;
     z-index: 90; opacity: 0; pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
     max-width: 88%; text-align: center;
   }
+  /* 토스트 자체는 끝까지 손가락을 막지 않는다. 받는 것은 떠 있는 동안의
+     되돌리기 단추 하나뿐이다 — 사라진 뒤에도 남아 있으면 그 아래가 눌리지 않는다. */
+  .toast .toast-msg{ padding: 2px 0; }
+  .toast .toast-do{ pointer-events: none; }
+  .toast.show .toast-do{ pointer-events: auto; }
+  .toast .toast-do{
+    flex-shrink: 0; border: none; border-radius: 999px; cursor: pointer;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.14); color: var(--paper);
+    font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 13px;
+  }
+  .toast .toast-do:hover{ background: rgba(255, 255, 255, 0.24); }
+  .toast.plain{ padding: 13px 20px; justify-content: center; }
   .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
@@ -502,19 +516,6 @@
 
 
 /* ---------- add affordances ---------- */
-  .tl-add{ display: flex; gap: 11px; align-items: stretch; }
-  .tl-add .tl-time{ color: transparent; }
-  .tl-add .tl-rail::before{ bottom: calc(100% - 17px); }
-  .tl-add .tl-dot{ border-style: dashed; border-color: var(--line-strong); }
-  .addrow{
-    flex: 1; display: flex; align-items: center; gap: 7px;
-    border: none; background: transparent; color: var(--ink-faint);
-    font: inherit; font-size: 13px; font-weight: 600;
-    padding: 12px 0; cursor: pointer; text-align: left;
-  }
-  .addrow .icon{ width: 16px; height: 16px; }
-  .addrow:hover{ color: var(--signal); }
-
   .addcard{
     display: flex; align-items: center; justify-content: center; gap: 7px;
     width: calc(100% - 36px); margin: 6px 18px 0;

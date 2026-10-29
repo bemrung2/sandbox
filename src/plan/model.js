@@ -185,6 +185,16 @@ export function mins(hhmm){
   var p = String(hhmm).split(":");
   return (+p[0]) * 60 + (+p[1]);
 }
+/* 시계는 5분 단위로 돌린다. 1분을 고르게 하면 아무도 고르지 않고, 적어둔 시간도
+   10:07처럼 쓸데없이 정확해진다. */
+export function hhmm(m){
+  m = Math.max(0, Math.min(24 * 60 - 5, Math.round(m)));
+  return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+}
+export function step5(v){
+  var m = mins(v);
+  return m === null ? "" : hhmm(Math.round(m / 5) * 5);
+}
 export function isoOf(d){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
@@ -366,14 +376,24 @@ export var Plan = {
     });
     if (next) this.write(this.path(key) + "/" + id, bodyOf(next));
   },
+  /* 지운 것들은 되살릴 수 있게 돌려준다: 부른 쪽이 그 함수를 쥐고 있다가
+     "되돌리기"를 누르면 지우기 전 모습 그대로 다시 쓴다. */
   listRemove(key, id){
-    var self = this, c = this.cur();
-    c[key] = c[key].filter(function(x){ return x.id !== id; });
-    this.write(this.path(key) + "/" + id, null);
-    if (key === "items"){
-      (c.attach[id] || []).forEach(function(a){ self.write(self.path("attach") + "/" + a.id, null); });
-      delete c.attach[id];
-    }
+    var self = this, c = this.cur(), rec = null;
+    c[key] = c[key].filter(function(x){
+      if (x.id !== id) return true;
+      rec = x; return false;
+    });
+    if (!rec) return null;
+    var atts = key === "items" ? (c.attach[id] || []).slice() : [];
+    var here = this.path(key), attHere = this.path("attach");
+    this.write(here + "/" + id, null);
+    atts.forEach(function(a){ self.write(attHere + "/" + a.id, null); });
+    if (key === "items") delete c.attach[id];
+    return function(){
+      self.write(here + "/" + id, bodyOf(rec));
+      atts.forEach(function(a){ self.write(attHere + "/" + a.id, Object.assign(bodyOf(a), { itemId: id })); });
+    };
   },
 
   setDay(date, patch){
@@ -401,9 +421,15 @@ export var Plan = {
     this.write(this.path("attach") + "/" + full.id, bodyOf(full));
   },
   removeAttach(itemId, attId){
-    var t = this.cur();
-    t.attach[itemId] = this.attachOf(itemId).filter(function(a){ return a.id !== attId; });
-    this.write(this.path("attach") + "/" + attId, null);
+    var self = this, t = this.cur(), gone = null;
+    t.attach[itemId] = this.attachOf(itemId).filter(function(a){
+      if (a.id !== attId) return true;
+      gone = a; return false;
+    });
+    var here = this.path("attach");
+    this.write(here + "/" + attId, null);
+    if (!gone) return null;
+    return function(){ self.write(here + "/" + attId, Object.assign(bodyOf(gone), { itemId: itemId })); };
   },
 
   addTrip(rec){
@@ -446,7 +472,9 @@ export var Plan = {
 
   removeTrip(id){
     var self = this, t = this.tripById(id);
-    if (!t) return;
+    if (!t) return null;
+    /* 여행 하나는 문서 수십 개다. 지우기 전의 전부를 그대로 떠둔다. */
+    var was = tripToMap(t, {});
     this.trips = this.trips.filter(function(x){ return x.id !== id; });
     if (this.active === id) this.active = this.trips.length ? this.trips[0].id : null;
     var base = ROOT + "/" + id + "/";
@@ -460,6 +488,9 @@ export var Plan = {
       (t.attach[itemId] || []).forEach(function(a){ self.write(base + "attach/" + a.id, null); });
     });
     this.write(ROOT + "/" + id, null);
+    return function(){
+      Object.keys(was).forEach(function(path){ self.write(path, was[path]); });
+    };
   },
 
   /* A brand new trip, laid out the way the seed is, so "처음부터 만들기" and

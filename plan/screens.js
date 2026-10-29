@@ -1,5 +1,5 @@
 /* 여행 계획 — every screen of it. */
-import { el, esc, icon, ripple, tap, toast, safeUrl, hostOf } from "../ui/dom.js";
+import { el, esc, icon, ripple, tap, toast, toastUndo, safeUrl, hostOf } from "../ui/dom.js";
 import { Store } from "../ui/store.js";
 import { themeButton } from "../ui/theme.js";
 import {
@@ -11,7 +11,7 @@ import { reorder } from "../ui/reorder.js";
 import { accountFooter } from "../ui/shell.js";
 import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
-  mins, fmtMD, dowOf, todayISO, dayDiff,
+  mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
@@ -23,6 +23,11 @@ function mayEdit(){
   if (Store.canEdit()) return true;
   Store.deny();
   return false;
+}
+/* 지운 뒤 몇 초 동안 되돌릴 수 있게. 되살리고 나면 화면도 다시 그린다. */
+function undoOf(restore){
+  if (!restore) return null;
+  return function(){ restore(); repaint(); toast("되살렸어요."); };
 }
 function editing(fn){
   return function(){
@@ -171,14 +176,20 @@ function tripCard(t, box){
           '</span>' +
           '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
         '</span>' +
-        '<span class="trip-dates mono">' + esc(t.start.replace(/-/g, ".")) + ' (' + dowOf(t.start) + ')' +
-          ' – ' + esc(fmtMD(t.end)) + ' (' + dowOf(t.end) + ')' +
+        '<span class="trip-dates">' +
+          '<span class="td-day mono">' + esc(fmtMD(t.start)) + '<small>' + dowOf(t.start) + '</small></span>' +
+          '<span class="td-wave">~</span>' +
+          '<span class="td-day mono">' + esc(fmtMD(t.end)) + '<small>' + dowOf(t.end) + '</small></span>' +
           '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
         (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
         '<span class="trip-stats">' +
-          '<span class="trip-stat"><b class="mono">' + t.items.length + '</b>일정</span>' +
-          '<span class="trip-stat"><b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
-          '<span class="trip-stat"><b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
+          /* 비어 있는 숫자까지 색을 달면 없는 것이 먼저 보인다 */
+          '<span class="trip-stat t-sched' + (t.items.length ? '' : ' none') + '">' +
+            '<b class="mono">' + t.items.length + '</b>일정</span>' +
+          '<span class="trip-stat t-shop' + (t.shops.length ? '' : ' none') + '">' +
+            '<b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
+          '<span class="trip-stat t-pack' + (t.packList.length ? '' : ' none') + '">' +
+            '<b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
         '</span>' +
       '</button>' +
       '<div class="trip-acts"></div>' +
@@ -267,7 +278,7 @@ function renderHero(){
   var dates = el(
     '<p class="hero-dates">' +
       '<span class="hd-day mono">' + fmtMD(t.start) + '<small>' + dowOf(t.start) + '</small></span>' +
-      '<span class="hd-arrow">→</span>' +
+      '<span class="hd-arrow">~</span>' +
       '<span class="hd-day mono">' + fmtMD(t.end) + '<small>' + dowOf(t.end) + '</small></span>' +
       '<span class="hd-nights">' + esc(nightsLabel()) + '</span>' +
     '</p>'
@@ -387,14 +398,17 @@ function renderSchedule(root, days){
   var attCount = list.reduce(function(n, it){ return n + Plan.attachOf(it.id).length; }, 0);
   root.appendChild(el('<p class="day-stat mono">' + list.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
 
-  var tl = el('<div class="tl"></div>');
-  list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
-  var add = el('<div class="tl-add"><div class="tl-time mono">+</div>' +
-    '<div class="tl-rail"><span class="tl-dot"></span></div>' +
-    '<button class="addrow" type="button">' + icon("plus") + '일정 추가</button></div>');
-  ripple(add.querySelector(".addrow"), function(){ openItemEditor(null, day.date); });
-  tl.appendChild(add);
-  root.appendChild(tl);
+  if (list.length){
+    var tl = el('<div class="tl"></div>');
+    list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
+    root.appendChild(tl);
+  } else {
+    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없어요.</p></div>'));
+  }
+  /* 더하는 자리는 어느 탭에서나 같은 모양이다 — 시간표의 레일에 매달지 않는다. */
+  var add = el('<button class="addcard" type="button">' + icon("plus") + '일정 추가</button>');
+  ripple(add, function(){ openItemEditor(null, day.date); });
+  root.appendChild(add);
 }
 
 /* 그날의 동선 한 줄. 칩 하나가 한 곳, 화살표로 이어진다. */
@@ -634,9 +648,11 @@ function shopCard(s){
       openTextDialog({ title:"살 것 수정", value:i.text },
         function(v){ i.text = v; Plan.listEdit("shops", s.id, { items: s.items }); repaint(); },
         function(){
+          var was = s.items.slice();
           s.items = s.items.filter(function(x){ return x.id !== i.id; });
           Plan.listEdit("shops", s.id, { items: s.items });
           repaint();
+          return undoOf(function(){ s.items = was; Plan.listEdit("shops", s.id, { items: was }); });
         });
     });
     row.appendChild(btn);
@@ -776,7 +792,11 @@ function sectionCard(o){
 function editRec(o, rec){
   openFormSheet({ title: o.title + " 수정", fields: o.fields }, rec,
     function(v){ Plan.listEdit(o.key, rec.id, v); repaint(); },
-    function(){ Plan.listRemove(o.key, rec.id); repaint(); });
+    function(){
+      var undo = undoOf(Plan.listRemove(o.key, rec.id));
+      repaint();
+      return undo;
+    });
 }
 
 function packCard(){
@@ -806,7 +826,11 @@ function packCard(){
     ripple(btn, function(){
       openTextDialog({ title:"준비물 수정", value:p.text },
         function(v){ Plan.listEdit("packList", p.id, { text: v }); repaint(); },
-        function(){ Plan.listRemove("packList", p.id); repaint(); });
+        function(){
+          var undo = undoOf(Plan.listRemove("packList", p.id));
+          repaint();
+          return undo;
+        });
     });
     row.appendChild(btn);
     card.appendChild(row);
@@ -829,9 +853,9 @@ function dangerCard(){
       phrase: "삭제하기",
       okLabel: "삭제하기"
     }, function(){
-      Plan.removeTrip(t.id);
-      toast("'" + (t.city || "여행") + "'을 삭제했어요.");
+      var undo = undoOf(Plan.removeTrip(t.id));
       go({ screen:"list", tripId: null });
+      if (undo) toastUndo("'" + (t.city || "여행") + "'을 삭제했어요.", undo);
     });
   });
   box.appendChild(btn);
@@ -921,8 +945,9 @@ export function openShopEditor(shop, defaultDate){
   if (shop){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
     ripple(del, function(){
-      Plan.listRemove("shops", shop.id);
-      closeOverlay(); toast("삭제했어요."); repaint();
+      var undo = undoOf(Plan.listRemove("shops", shop.id));
+      closeOverlay(); repaint();
+      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
     });
     foot.appendChild(del);
   }
@@ -932,7 +957,7 @@ export function openShopEditor(shop, defaultDate){
     if (!name){ toast("이름을 적어주세요."); return; }
     var rec = {
       name: name, dayDate: cur.dayDate,
-      time: sheet.querySelector("#sh-time").value || "",
+      time: step5(sheet.querySelector("#sh-time").value) || "",
       area: sheet.querySelector("#sh-area").value.trim(),
       map: sheet.querySelector("#sh-map").value.trim() || name
     };
@@ -948,6 +973,15 @@ export function openShopEditor(shop, defaultDate){
    and the native input sits invisible over it. */
 
 /* ---------- item editor ---------- */
+/* 새 일정은 그날 마지막 일정이 끝난 시각에서 시작한다 — 끝 시각이 없으면
+   시작 시각을. 하루를 채워 넣을 때 시계를 매번 처음부터 돌리지 않게. */
+function afterLast(date){
+  var list = timedOn(date);
+  if (!list.length) return "";
+  var last = list[list.length - 1];
+  return step5(last.e || last.s);
+}
+
 function openItemEditor(item, defaultDate, presets){
   if (!mayEdit()) return;
   var days = tripDays();
@@ -956,6 +990,9 @@ function openItemEditor(item, defaultDate, presets){
     cat: item ? item.cat : ((presets && presets.cat) || "food"),
     meal: item ? (item.meal || "") : ((presets && presets.meal) || "")
   };
+  /* 일정 탭에서 더할 때만 앞 일정에 이어 붙인다. 식사는 시간을 비워두는 것이
+     흔한 일이라, 채워두면 오히려 지워야 한다. */
+  var startAt = item ? item.s : (!presets && defaultDate ? afterLast(defaultDate) : "");
   var sheet = sheetShell(item ? "일정 수정" : "일정 추가");
   var body = sheet.querySelector(".sheet-body");
 
@@ -970,7 +1007,7 @@ function openItemEditor(item, defaultDate, presets){
   body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
   var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = timeRow.querySelector(".fld-row");
-  row.appendChild(pickerField({ type:"time", id:"ed-s", label:"시작", value: item ? item.s : "", col:true }));
+  row.appendChild(pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true }));
   row.appendChild(pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true }));
   body.appendChild(timeRow);
   body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
@@ -1014,8 +1051,9 @@ function openItemEditor(item, defaultDate, presets){
   if (item){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
     ripple(del, function(){
-      Plan.listRemove("items", item.id);
-      closeOverlay(); toast("삭제했어요."); repaint();
+      var undo = undoOf(Plan.listRemove("items", item.id));
+      closeOverlay(); repaint();
+      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
     });
     foot.appendChild(del);
   }
@@ -1035,7 +1073,7 @@ function openItemEditor(item, defaultDate, presets){
       return sheet.querySelector(id).value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
     };
     var rec = {
-      dayDate: cur.dayDate, s: sEl.value || null, e: sheet.querySelector("#ed-e").value || null,
+      dayDate: cur.dayDate, s: step5(sEl.value) || null, e: step5(sheet.querySelector("#ed-e").value) || null,
       cat: cur.cat, meal: cur.meal || null, title: title,
       tag: sheet.querySelector("#ed-tag").value.trim() || null,
       places: lines("#ed-places"), lines: lines("#ed-lines"),
@@ -1150,9 +1188,16 @@ function openAttachSheet(item){
       }
       var del = el('<button class="quietbtn" type="button" aria-label="삭제">' + icon("x") + '</button>');
       ripple(del, editing(function(){
-        if (a.type === "photo") dropPhoto(a.pid);
-        Plan.removeAttach(item.id, a.id);
+        var undo = undoOf(Plan.removeAttach(item.id, a.id));
         paintList(); repaint();
+        /* 사진 한 장은 무겁다. 그래도 되돌릴 수 있는 동안은 지우지 않고,
+           그 시간이 지나야 정말로 버린다. */
+        var gone = true;
+        if (a.type === "photo"){
+          if (!undo) dropPhoto(a.pid);
+          else setTimeout(function(){ if (gone) dropPhoto(a.pid); }, 4500);
+        }
+        if (undo) toastUndo("삭제했어요.", function(){ gone = false; undo(); paintList(); });
       }));
       row.appendChild(del);
       listBox.appendChild(row);
