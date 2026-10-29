@@ -1,7 +1,7 @@
 /* ---------- the trips ---------- */
   .page-head{ display: flex; align-items: center; gap: 4px; margin: 0 0 22px; }
   .page-title{ flex: 1; min-width: 0; }
-  .page-title h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .page-title h1{ font-family: var(--serif); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
 
   .trip-list{ display: flex; flex-direction: column; gap: 12px; }
   /* The card is a frame: the whole of it opens the trip, and the two controls
@@ -71,7 +71,7 @@
   .trip-card.soon .trip-flag{ background: var(--signal-soft); }
   .trip-card.live .trip-flag{ background: var(--travel-soft); }
   .trip-id{ flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .trip-city{ font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+  .trip-city{ font-family: var(--serif); font-size: 19.5px; font-weight: 700; letter-spacing: -0.02em; }
   /* 이름 아래 한 줄. 여행지는 읽는 말이라 또렷하게, 라벨은 배경처럼. */
   .trip-sub, .hero-sub{
     display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;
@@ -115,12 +115,12 @@
     font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
   }
   .td-day small{
-    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-family: var(--sans);
     font-size: 10px; font-weight: 500; color: var(--ink-faint);
   }
   .td-wave{ font-size: 12px; color: var(--ink-faint); }
   .trip-nights{
-    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-family: var(--sans);
     font-size: 11px; padding: 2px 7px; border-radius: 7px;
     background: var(--surface-2); color: var(--ink-faint);
   }
@@ -137,6 +137,7 @@
   .hero-top .icon-btn:last-child{ margin-left: auto; }
   .hero-flag{ margin-right: 6px; }
   .hero-city{
+    font-family: var(--serif);
     font-size: 26px; font-weight: 700; letter-spacing: -0.03em;
     margin: 0; line-height: 1.2; word-break: keep-all;
   }
@@ -151,7 +152,7 @@
     font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
   }
   .hd-day small{
-    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-family: var(--sans);
     font-size: 10.5px; font-weight: 500; color: var(--ink-faint);
   }
   .hd-arrow{ font-size: 13px; color: var(--ink-faint); }

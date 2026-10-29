@@ -81,28 +81,23 @@ var SEED_ROUTES = {
   "2026-12-04": ["파리"],
   "2026-12-05": ["파리", "파리 샤를 드 골 공항"]
 };
+/* 항공편 하나가 일정 하나다 — 이동 · 항공기. 정보 탭의 항공 칸도 이것을 본다.
+   (예전에는 출발 · 도착을 따로 적고 정보 탭에도 한 번 더 적었다.) */
 var SEED_ITEMS = [
-  { id:"g1", d:"2026-11-23", s:"14:05", cat:"air", emo:"✈️", t:"인천 출발",
-    places:["인천국제공항 제2여객터미널"],
-    lines:["KE931 · A350-900", "일반석(K) · 스탠다드"] },
-  { id:"g2", d:"2026-11-23", s:"19:35", cat:"air", emo:"✈️", t:"로마 도착",
-    places:["로마 피우미치노 공항 제3터미널"],
-    lines:["13시간 30분 비행", "현지 시간"] },
-
-  { id:"h1", d:"2026-12-05", s:"15:05", cat:"air", emo:"✈️", t:"파리 출발",
-    places:["파리 샤를 드 골 공항 제2E터미널"],
-    lines:["KE5902 · A350-900", "일반석(U) · 스탠다드", "에어프랑스 운항"] },
-  { id:"h2", d:"2026-12-06", s:"11:15", cat:"air", emo:"✈️", t:"인천 도착",
-    places:["인천국제공항 제2여객터미널"],
-    lines:["12시간 10분 비행"] }
+  { id:"fl-f1", d:"2026-11-23", s:"14:05", e:"19:35", cat:"move", mode:"plane", emo:"✈️",
+    t:"대한항공 KE931",
+    places:["인천국제공항 제2여객터미널", "로마 피우미치노 공항 제3터미널"],
+    lines:["가는 편 · A350-900 · 일반석(K)", "14:05 인천 T2 — 19:35 로마 T3 · 13시간 30분",
+           "KIM MINWOO 36F · KIM SOYEONG 36E"] },
+  { id:"fl-f2", d:"2026-12-05", s:"15:05", cat:"move", mode:"plane", emo:"✈️",
+    t:"대한항공 KE5902",
+    places:["파리 샤를 드 골 공항 제2E터미널", "인천국제공항 제2여객터미널"],
+    lines:["오는 편 · A350-900 · 일반석(U) · 에어프랑스 운항",
+           "15:05 파리 T2E — 12.06 11:15 인천 T2 · 12시간 10분",
+           "KIM MINWOO 32D · KIM SOYEONG 32E"] }
 ];
 var SEED_SHOPS = [];
-var SEED_FLIGHTS = [
-  { id:"f1", label:"가는 편 · 11.23 (월)", airline:"대한항공", no:"KE931",
-    detail:"14:05 인천 T2 — 19:35 로마 T3 · 13시간 30분" },
-  { id:"f2", label:"오는 편 · 12.05 (토)", airline:"대한항공", no:"KE5902",
-    detail:"15:05 파리 T2E — 12.06 11:15 인천 T2 · 12시간 10분 · 에어프랑스 운항" }
-];
+var SEED_FLIGHTS = [];   /* 항공편은 일정(SEED_ITEMS)에 있다 */
 /* 예약된 숙소. 묵는 밤으로 적혀 온 것을 체크인–체크아웃으로 옮겨 적었다. */
 var SEED_STAYS = [
   { id:"st1", name:"비밀의 안뜰 - 트라스테베레", area:"이탈리아 · 로마",
@@ -139,7 +134,7 @@ export function seedTrip(){
     items: SEED_ITEMS.map(function(s){
       return {
         id: s.id, dayDate: s.d, s: s.s, e: s.e || null, cat: s.cat, meal: s.meal || null,
-        title: s.t, emo: s.emo || "", tag: s.tag || null,
+        mode: s.mode || null, title: s.t, emo: s.emo || "", tag: s.tag || null,
         places: (s.places || []).slice(), lines: (s.lines || []).slice()
       };
     }),
@@ -172,6 +167,14 @@ export var CAT = {
   todo:  { label:"준비", color:"var(--c-todo)" }
 };
 export var CAT_ORDER = ["food","sight","shop","move","stay","etc"];
+/* 이동은 무엇으로 가는지까지 적는다. 항공기는 정보 탭의 항공 칸에도 선다. */
+export var MODES = [
+  { key:"plane", label:"항공기" }, { key:"bus", label:"버스" }, { key:"subway", label:"지하철" },
+  { key:"walk", label:"도보" }, { key:"other", label:"기타" }
+];
+export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", walk:"도보", other:"기타" };
+/* 항공기로 가는 이동 — 예전 분류 '항공'도 같은 것이다 */
+export function isFlight(it){ return it && (it.cat === "air" || (it.cat === "move" && it.mode === "plane")); }
 export var MEALS = [
   { key:"all", label:"전체" }, { key:"breakfast", label:"아침" }, { key:"lunch", label:"점심" },
   { key:"dinner", label:"저녁" }, { key:"snack", label:"간식" },
@@ -268,6 +271,50 @@ export function byStart(a, b){
   if (x === null || y === null) return x === y ? 0 : (x === null ? -1 : 1);
   return x - y;
 }
+/* "11.23" 같은 날짜를 이 여행의 해에 맞춰 읽는다. 해가 바뀌는 여행이면 다음 해로. */
+function mdToIso(text, t){
+  var m = /(\d{1,2})\.(\d{1,2})/.exec(text || "");
+  if (!m || !t) return "";
+  var y = +t.start.slice(0, 4), mo = +m[1], d = +m[2];
+  if (mo < +t.start.slice(5, 7)) y++;
+  return y + "-" + String(mo).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+}
+function flightToItem(f, t){
+  var times = (f.detail || "").match(/\b\d{1,2}:\d{2}\b/g) || [];
+  var s = times[0] || null;
+  /* 도착이 출발보다 이르면 다음 날 도착이다 — 끝 시각으로 적지 않고 줄에 남긴다 */
+  var e = times[1] && mins(times[1]) > mins(times[0]) ? times[1] : null;
+  var kind = String(f.label || "").split("·")[0].trim();
+  return {
+    dayDate: mdToIso(f.label, t) || mdToIso(f.detail, t) || t.start,
+    s: s, e: e, cat: "move", mode: "plane", emo: "✈️",
+    title: [f.airline, f.no].filter(Boolean).join(" ") || "항공편",
+    places: [], lines: [kind, f.detail].filter(Boolean)
+  };
+}
+function shopToItem(sh, t){
+  return {
+    dayDate: sh.dayDate || t.start, s: sh.time || null, cat: "shop",
+    title: sh.name || "쇼핑", places: [sh.map || sh.name].filter(Boolean),
+    lines: sh.area ? [sh.area] : [], buys: (sh.items || []).slice()
+  };
+}
+
+/* 그날 밤 묵는 숙소. 숙소의 '기간 · 메모'에 적힌 두 날짜(체크인 – 체크아웃)를 읽는다.
+   체크인한 밤부터 체크아웃 전날 밤까지가 그 숙소다. 못 읽으면 없는 것으로 친다. */
+export function stayOn(date){
+  var t = trip(), hit = null;
+  if (!t) return null;
+  (t.stays || []).forEach(function(st){
+    if (hit) return;
+    var both = String(st.detail || "").match(/\d{1,2}\.\d{1,2}/g) || [];
+    if (both.length < 2) return;
+    var a = mdToIso(both[0], t), b = mdToIso(both[1], t);
+    if (a && b && date >= a && date < b) hit = st;
+  });
+  return hit;
+}
+
 /* 한 분류의 일정 전부, 날짜 순으로. 일정 탭에 적은 것이 그 탭에서도 보이게 하는 데 쓴다. */
 export function itemsOfCat(cat){
   var t = trip();
@@ -396,14 +443,19 @@ export var Plan = {
     this.write(this.path(key) + "/" + full.id, bodyOf(full));
     return full;
   },
+  /* 고친 것도 되돌릴 수 있다: 고치기 전의 모습을 쥐고 있다가 그대로 다시 쓴다. */
   listEdit(key, id, patch){
-    var c = this.cur(), next = null;
+    var self = this, c = this.cur(), next = null, was = null;
+    var here = this.path(key) + "/" + id;
     c[key] = c[key].map(function(x){
       if (x.id !== id) return x;
+      was = JSON.parse(JSON.stringify(x));
       next = Object.assign({}, x, patch);
       return next;
     });
-    if (next) this.write(this.path(key) + "/" + id, bodyOf(next));
+    if (!next) return null;
+    this.write(here, bodyOf(next));
+    return function(){ self.write(here, bodyOf(was)); };
   },
   /* 지운 것들은 되살릴 수 있게 돌려준다: 부른 쪽이 그 함수를 쥐고 있다가
      "되돌리기"를 누르면 지우기 전 모습 그대로 다시 쓴다. */
@@ -477,10 +529,41 @@ export var Plan = {
     return t;
   },
   editTrip(id, rec){
-    var t = this.tripById(id);
-    if (!t) return;
+    var self = this, t = this.tripById(id);
+    if (!t) return null;
+    var was = metaOf(t);
     Object.assign(t, rec);
     this.write(ROOT + "/" + id, metaOf(t));
+    return function(){ self.write(ROOT + "/" + id, was); };
+  },
+
+  /* 예전 모양의 기록을 지금 모양으로 옮긴다. 항공편과 가게는 따로 적던 것을 이제
+     일정 하나로 적는다 — 한 자리에 적어야 탭들이 같은 것을 본다. 옮긴 것은 원래
+     자리에서 지운다(두 군데 남기면 어긋난다). 이미 옮긴 것은 다시 만들지 않는다.
+     고칠 수 있는 사람이 열었을 때만 돈다. 옮긴 개수를 돌려준다. */
+  migrate(){
+    var self = this, t = this.cur();
+    if (!t) return 0;
+    var moved = 0, items = this.path("items"), have = Store.map;
+    function adopt(id, it){
+      if (!have[items + "/" + id]){
+        var full = Object.assign({ id: id, ord: Date.now() + moved }, it);
+        t.items.push(full);
+        self.write(items + "/" + id, bodyOf(full));
+      }
+      moved++;
+    }
+    (t.flights || []).slice().forEach(function(f){
+      adopt("fl-" + f.id, flightToItem(f, t));
+      self.write(self.path("flights") + "/" + f.id, null);
+    });
+    t.flights = [];
+    (t.shops || []).slice().forEach(function(sh){
+      adopt("sh-" + sh.id, shopToItem(sh, t));
+      self.write(self.path("shops") + "/" + sh.id, null);
+    });
+    t.shops = [];
+    return moved;
   },
   /* A pin is a number: nonzero means pinned, and the order among the pinned
      is the order of those numbers. Dragging rewrites them 1, 2, 3… */

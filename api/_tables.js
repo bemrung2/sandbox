@@ -70,6 +70,9 @@ function toRow(path, body) {
       end_time: body.e || null,
       category: body.cat || "todo",
       meal: body.meal || null,
+      mode: body.mode || null,          /* 이동 수단 */
+      map_url: body.mapUrl || null,     /* 직접 적은 구글 지도 주소 */
+      buys: body.buys || [],            /* 쇼핑 리스트 [{id, text, got}] */
       title: body.title || "",
       emoji: body.emo || "",
       tag: body.tag || null,
@@ -140,9 +143,11 @@ function toDocs(tables) {
   for (const row of tables.items || []) {
     docs[PREFIX + "trips/" + row.trip_id + "/items/" + row.id] = strip({
       dayDate: isoDate(row.day_date), s: row.start_time, e: row.end_time,
-      cat: row.category, meal: row.meal, title: row.title, emo: row.emoji,
+      cat: row.category, meal: row.meal, mode: row.mode, mapUrl: row.map_url,
+      buys: row.buys || [], title: row.title, emo: row.emoji,
       tag: row.tag, places: row.places || [], lines: row.lines || [], ord: row.ord
-    }, ["dayDate", "s", "e", "cat", "meal", "title", "emo", "tag", "places", "lines", "ord"]);
+    }, ["dayDate", "s", "e", "cat", "meal", "mode", "mapUrl", "buys", "title", "emo", "tag",
+        "places", "lines", "ord"]);
   }
   for (const row of tables.shops || []) {
     docs[PREFIX + "trips/" + row.trip_id + "/shops/" + row.id] = strip({

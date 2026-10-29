@@ -8,6 +8,7 @@ import { Store } from "./ui/store.js";
 import { Theme } from "./ui/theme.js";
 import { Router } from "./ui/router.js";
 import { paintSignIn } from "./ui/shell.js";
+import { toast } from "./ui/dom.js";
 import { Plan, currentPair } from "./plan/model.js";
 import { state, wire } from "./plan/nav.js";
 import { renderTrips, renderTrip } from "./plan/screens.js";
@@ -71,6 +72,9 @@ function route(path, segs){
     state.meal = state.tab === "food" ? (segs[4] || "all") : "all";
     Plan.open(state.tripId);
     if (!Plan.cur()){ state.screen = "list"; Router.set("/"); return; }
+    /* 예전엔 항공편과 가게를 일정과 따로 적었다. 고칠 수 있는 사람이 열면 한 번
+       일정으로 옮긴다 — 같은 것이 두 군데 적혀 있으면 반드시 어긋난다. */
+    if (Store.canEdit() && Plan.migrate()) toast("항공편과 쇼핑을 일정으로 옮겼습니다.");
   } else {
     state.screen = "list";
     if (!Plan.cur()){

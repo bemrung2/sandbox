@@ -19,11 +19,61 @@ var overlay = null;
 function host(){
   return overlay || (overlay = document.getElementById("overlay"));
 }
-export function closeOverlay(){ host().innerHTML = ""; }
+/* 창은 서서히 뜨고 서서히 걷힌다. 뜨는 쪽은 CSS가 맡고(붙는 순간 움직인다),
+   걷히는 쪽은 여기서 "떠나는 중"이라고 표시한 뒤 움직임이 끝나면 뗀다.
+   떠나는 창은 손가락을 받지 않는다 — 그 사이에 새로 뜬 창은 건드리지 않는다. */
+var LEAVE_MS = 170;
+function leave(node){
+  if (!node || node._leaving) return;
+  node._leaving = true;
+  node.classList.add("leaving");
+  setTimeout(function(){ if (node.parentNode) node.parentNode.removeChild(node); }, LEAVE_MS);
+}
+export function closeOverlay(){ Array.prototype.slice.call(host().children).forEach(leave); }
 export function showOverlay(node){ host().appendChild(node); }
 /* 창 위에 창을 띄울 때는 그 하나만 닫는다 — 뒤에 열려 있던 것까지 치우면
    고치던 내용이 사라진다. */
-export function closeTop(node){ if (node && node.parentNode) node.parentNode.removeChild(node); }
+export function closeTop(node){ leave(node); }
+
+/* 지우기 전에 한 번 묻는다. 창 위에 뜨는 작은 창이라, 아니라고 하면 그것만 닫힌다. */
+export function openAskDialog(opts, onYes){
+  var scrim = el('<div class="scrim mid"><div class="dialog ask" role="alertdialog" aria-modal="true">' +
+    '<h3>' + esc(opts.title || "삭제하시겠습니까?") + '</h3>' +
+    (opts.body ? '<p class="dialog-body">' + esc(opts.body) + '</p>' : '') +
+    '<div class="dialog-actions"><span class="spacer"></span>' +
+      '<button class="btn-text" data-a="no">취소</button>' +
+      '<button class="btn-text danger" data-a="yes">' + esc(opts.okLabel || "삭제") + '</button>' +
+    '</div></div></div>');
+  function no(){ closeTop(scrim); }
+  scrim.querySelector('[data-a="no"]').addEventListener("click", no);
+  scrim.addEventListener("click", function(e){ if (e.target === scrim) no(); });
+  scrim.querySelector('[data-a="yes"]').addEventListener("click", function(){
+    closeTop(scrim);
+    onYes();
+  });
+  showOverlay(scrim);
+}
+
+/* 지우기 → 묻고 → 모든 창을 닫고 → 지운 뒤 되돌리기를 내민다. 어디서 지우든 이 길이다. */
+export function askThenDelete(what, onDelete){
+  openAskDialog({ title: "삭제하시겠습니까?", body: what ? "'" + what + "'" + objectMark(what) + " 삭제합니다." : "" }, function(){
+    closeOverlay();
+    var undo = onDelete();
+    if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
+  });
+}
+/* '을'과 '를'은 마지막 글자의 받침이 정한다. 한글로 끝나지 않으면 읽는 소리를
+   알 수 없으니 둘 다 적는다. */
+function objectMark(word){
+  var c = String(word).trim().slice(-1).charCodeAt(0) - 0xAC00;
+  if (!(c >= 0 && c < 11172)) return "을(를)";
+  return c % 28 ? "을" : "를";
+}
+/* 고친 것도 몇 초간 되돌릴 수 있다 */
+export function savedToast(isEdit, undo){
+  if (isEdit && undo) toastUndo("수정했습니다.", undo);
+  else toast(isEdit ? "수정했습니다." : "추가했습니다.");
+}
 
 export function sheetShell(title, sub){
   var s = el(
@@ -63,11 +113,7 @@ export function openFormSheet(opts, rec, onSave, onDelete){
 
   if (onDelete){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
-    ripple(del, function(){
-      closeOverlay();
-      var undo = onDelete();
-      if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
-    });
+    ripple(del, function(){ askThenDelete(rec && (rec[opts.fields[0].key] || ""), onDelete); });
     foot.appendChild(del);
   }
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
@@ -85,8 +131,7 @@ export function openFormSheet(opts, rec, onSave, onDelete){
       out[f.key] = val;
     }
     closeOverlay();
-    onSave(out);
-    toast(rec ? "수정했습니다." : "추가했습니다.");
+    savedToast(!!rec, onSave(out));
   });
   foot.appendChild(save);
 
@@ -113,14 +158,15 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   var input = scrim.querySelector("#dlg-v");
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
   if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
-    closeOverlay();
-    var undo = onDelete();
-    if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
+    askThenDelete(opts.what || opts.value, onDelete);
   });
   scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
     var v = input.value.trim();
     if (!v){ input.focus(); return; }
-    closeOverlay(); onSave(v);
+    closeOverlay();
+    var undo = onSave(v);
+    /* 있던 것을 바꿨을 때만 되돌리기를 내민다 — 새로 적은 것은 지우면 된다 */
+    if (opts.value && undo) savedToast(true, undo);
   });
   input.addEventListener("keydown", function(e){ if (e.key === "Enter" && !opts.multiline) scrim.querySelector('[data-a="ok"]').click(); });
   showOverlay(scrim);

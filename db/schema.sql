@@ -56,6 +56,9 @@ create table if not exists items (
   end_time   text,
   category   text not null default 'todo',
   meal       text,
+  mode       text,                                  -- 이동 수단: plane · bus · subway · walk · other
+  map_url    text,                                  -- 장소 검색이 빗나갈 때 직접 적는 구글 지도 주소
+  buys       jsonb not null default '[]'::jsonb,    -- 쇼핑 리스트 [{id, text, got}]
   title      text not null default '',
   emoji      text not null default '',
   tag        text,
@@ -64,7 +67,12 @@ create table if not exists items (
   ord        bigint not null default 0
 );
 
--- 가게 하나. buy_list는 [{id, text, got}]
+-- 일정에 나중에 생긴 칸들 — 먼저 만든 표에도 더해준다
+alter table items add column if not exists mode    text;
+alter table items add column if not exists map_url text;
+alter table items add column if not exists buys    jsonb not null default '[]'::jsonb;
+
+-- 가게 하나. buy_list는 [{id, text, got}]  (지금은 쇼핑도 일정으로 적는다 — 예전 기록용)
 create table if not exists shops (
   id        text primary key,
   trip_id   text not null references trips(id) on delete cascade,
