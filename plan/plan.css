@@ -297,33 +297,3 @@
   }
   .placelink:hover{ border-bottom-color: var(--signal); }
 
-/* ---------- tab: map ---------- */
-  .spanrow{ padding-top: 16px; }
-  .spanhint{ margin: 10px 18px 0; font-size: 11.5px; color: var(--ink-faint); }
-  .mapcard{ padding: 15px 15px 8px; }
-
-  /* 줄 하나에 점을 꿴 노선도. 줄은 각 칸이 스스로 그린다 — 첫 점 위와
-     마지막 점 아래는 끊어서, 선이 허공에서 시작하지 않게 한다. */
-  .routemap{ margin-top: 4px; }
-  .rm-stop{
-    position: relative; display: flex; align-items: center; gap: 12px;
-    padding: 9px 0; color: inherit; text-decoration: none;
-  }
-  .rm-stop::before{
-    content: ""; position: absolute; left: 8px; top: 0; bottom: 0;
-    width: 2px; background: var(--line-strong); border-radius: 1px;
-  }
-  .rm-stop:first-child::before{ top: 50%; }
-  .rm-stop:last-child::before{ bottom: 50%; }
-  .rm-stop:only-child::before{ display: none; }
-  .rm-dot{
-    position: relative; z-index: 1; flex-shrink: 0;
-    width: 18px; height: 18px; border-radius: 50%;
-    background: var(--surface); border: 2.5px solid var(--signal);
-  }
-  .rm-stop:first-child .rm-dot, .rm-stop:last-child .rm-dot{ background: var(--signal); }
-  .rm-body{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .rm-body b{ font-size: 14px; font-weight: 600; word-break: keep-all; }
-  .rm-body small{ font-size: 11px; color: var(--ink-faint); }
-  .rm-go{ width: 16px; height: 16px; color: var(--ink-faint); flex-shrink: 0; }
-  .rm-stop:active{ background: var(--surface-2); border-radius: 12px; }

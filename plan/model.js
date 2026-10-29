@@ -63,8 +63,8 @@ var SEED_THEMES = {
   "2026-12-04": "파리",
   "2026-12-05": "파리 → 인천"
 };
-/* 그날 어디에 있고 어디로 넘어가는지. 숙소에서 그대로 나온 것이라
-   지도가 바로 읽는다 — 그날 무엇을 할지는 여기에 더 적으면 된다. */
+/* 그날 어디에 있고 어디로 넘어가는지. 숙소에서 그대로 나온 동선이고,
+   그날 무엇을 할지는 여기에 더 적으면 된다. */
 var SEED_ROUTES = {
   "2026-11-23": ["로마 피우미치노 공항", "트라스테베레, 로마"],
   "2026-11-24": ["트라스테베레, 로마"],
@@ -263,34 +263,6 @@ export function itemsOn(date){
 export function timedOn(date){
   return itemsOn(date).filter(function(i){ return !!i.s; });
 }
-/* 그날 어디를 지나는가 — 지도가 읽는 것.
-   적어둔 동선이 먼저다. 없으면 일정에 적힌 장소와 그날의 가게, 그것도 없으면
-   하루 한 줄에 적힌 곳(“로마 → 피렌체”)을 쪼개 쓴다. 한 줄이 장소 이름이 아니면
-   지도도 그렇게 나오니, 그럴 땐 동선을 적어두면 된다.
-
-   비행은 동선이 아니다. 땅 위를 어떻게 다니는지가 지도에 그려질 것이고,
-   바다 건너는 선은 지도가 그리지 못한다 — 비행편은 일정 탭에 그대로 있다. */
-export function stopsOn(date){
-  var t = trip();
-  if (!t) return [];
-  var route = (t.dayRoutes[date] || []).filter(Boolean);
-  if (route.length) return route.slice();
-
-  var out = [];
-  itemsOn(date).forEach(function(it){
-    if (it.cat === "air") return;
-    (it.places || []).forEach(function(p){ if (p) out.push(p); });
-  });
-  t.shops.forEach(function(sh){
-    if (sh.dayDate === date && sh.name) out.push(sh.map || sh.name);
-  });
-  if (out.length) return out;
-
-  return (t.dayThemes[date] || "").split(/→|->|,/)
-    .map(function(x){ return x.trim(); })
-    .filter(Boolean);
-}
-
 export function currentPair(){
   var days = tripDays(), today = todayISO(), di = -1;
   if (!days.length) return null;

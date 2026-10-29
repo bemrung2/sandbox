@@ -143,7 +143,7 @@ export function pickerField(o){
   var wrap = el(
     '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
       '<label for="' + o.id + '">' + esc(o.label) + '</label>' +
-      '<div class="pickbox' + (o.value ? "" : " empty") + '">' +
+      '<div class="pickbox' + (o.value ? "" : " blank") + '">' +
         '<span class="pickval">' + esc(show(o.value)) + '</span>' +
         '<input id="' + o.id + '" type="' + o.type + '" value="' + esc(o.value || "") + '">' +
       '</div>' +
@@ -154,7 +154,7 @@ export function pickerField(o){
   var val = wrap.querySelector(".pickval");
   function sync(){
     val.textContent = show(input.value);
-    box.classList.toggle("empty", !input.value);
+    box.classList.toggle("blank", !input.value);
   }
   input.addEventListener("input", sync);
   input.addEventListener("change", sync);

@@ -96,7 +96,7 @@ RemoteStore.prototype.flush = async function(){
       body: JSON.stringify({ writes: writes })
     });
     if (res.status === 401){ Store.signedOut(); return; }
-    if (res.status === 403){ Store.refuse(); return; }
+    if (res.status === 403){ Store.deny(); return; }
     if (!res.ok) throw new Error("write " + res.status);
     var data = await res.json();
     this.rev = data.rev || this.rev;
@@ -174,15 +174,22 @@ export var Store = {
     if (this.kind !== "remote") return true;
     return !!this.backend.canWrite;
   },
-  /* 왜 안 되는지는 로그인했는지에 달려 있다. */
-  whyNot(){
-    return this.me ? "편집 권한이 없어요. 계획 주인에게 요청해주세요."
-                   : "고치려면 카카오 로그인이 필요해요.";
+  /* 고치려는 사람에게 할 말은 둘 중 하나다.
+     아직 로그인하지 않았다면 할 말이 없다 — 로그인 화면으로 보내면 될 일이다.
+     로그인했는데도 권한이 없다면, 그건 말해줘야 한다. */
+  deny(){
+    if (this.kind === "remote" && !this.me) return this.signIn();
+    this.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요.");
+  },
+  signIn(){
+    if (this._leaving) return;
+    this._leaving = true;
+    location.href = "api/auth/login?next=" + encodeURIComponent(location.hash || "");
   },
 
   write(path, body){
     if (!this.canEdit()){
-      this.refuse();
+      this.deny();
       return false;
     }
     this.backend.write(path, body);
@@ -214,7 +221,7 @@ export var Store = {
     var self = this;
     clearTimeout(this._back);
     this._back = setTimeout(function(){
-      toast(why || self.whyNot(), true);
+      toast(why || "지금은 고칠 수 없어요.", true);
       if (self.onChange) self.onChange();
     }, 120);
   },

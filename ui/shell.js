@@ -4,7 +4,7 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.10.30 · r21";
+export var BUILD = "2026.10.30 · r22";
 
 /* ---------- the door ---------- */
 function kakaoMark(){
@@ -41,9 +41,7 @@ export function accountFooter(){
   if (!Store.me && Store.kind === "remote"){
     var inRow = el('<div class="account-row"></div>');
     var go = el('<button class="linkbtn" type="button">' + kakaoMark() + '카카오로 로그인</button>');
-    ripple(go, function(){
-      location.href = "api/auth/login?next=" + encodeURIComponent(location.hash || "");
-    });
+    ripple(go, function(){ Store.signIn(); });
     inRow.appendChild(go);
     frag.appendChild(inRow);
   }
