@@ -870,8 +870,7 @@ export function openTripEditor(t){
   var body = sheet.querySelector(".sheet-body");
   /* 제목이 맨 위다 — 이 여행을 뭐라고 부를지가 먼저고, 어디로 가는지가 그다음이다. */
   body.appendChild(el('<div class="fld"><label for="t-title">제목</label>' +
-    '<input id="t-title" type="text" value="' + esc(t && t.title ? t.title : "") + '">' +
-    '<p class="fld-hint">여행지와 함께 보입니다. 예: 겨울 유럽 신혼여행</p></div>'));
+    '<input id="t-title" type="text" value="' + esc(t && t.title ? t.title : "") + '"></div>'));
   var flagRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var inner = flagRow.querySelector(".fld-row");
   inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
@@ -888,7 +887,7 @@ export function openTripEditor(t){
   dr.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t ? t.start : "", col:true }));
   dr.appendChild(pickerField({ type:"date", id:"t-end", label:"종료일", value: t ? t.end : "", col:true }));
   body.appendChild(dateRow);
-  body.appendChild(el('<p class="fld-hint">날짜를 줄이면 그 날에 있던 일정은 화면에서 빠집니다. 다시 늘리면 돌아옵니다.</p>'));
+  body.appendChild(el('<p class="fld-hint">날짜를 줄여도 그 날의 일정은 지워지지 않고 숨겨집니다.</p>'));
 
   var foot = sheet.querySelector(".sheet-foot");
   /* 삭제는 여기 없다 — 정보 탭 맨 아래, 한 번 더 묻는 곳에 있다. */
