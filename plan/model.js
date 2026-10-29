@@ -412,8 +412,11 @@ export var Plan = {
     };
   },
 
+  /* 하루 한 줄과 동선도 지운 것은 지운 것이다 — 되살리는 함수를 돌려준다. */
   setDay(date, patch){
-    var t = this.cur();
+    var self = this, t = this.cur();
+    var here = this.path("days") + "/" + date;
+    var was = { theme: t.dayThemes[date] || "", route: (t.dayRoutes[date] || []).slice() };
     if (patch.theme !== undefined){
       if (patch.theme) t.dayThemes[date] = patch.theme; else delete t.dayThemes[date];
     }
@@ -422,8 +425,14 @@ export var Plan = {
       else delete t.dayRoutes[date];
     }
     var theme = t.dayThemes[date] || "", route = t.dayRoutes[date] || [];
-    if (!theme && !route.length) this.write(this.path("days") + "/" + date, null);
-    else this.write(this.path("days") + "/" + date, { theme: theme, route: route });
+    if (!theme && !route.length) this.write(here, null);
+    else this.write(here, { theme: theme, route: route });
+
+    return function(){
+      /* 저장된 것만 되돌린다. 화면은 다시 읽어 그리므로 그걸로 충분하다. */
+      if (!was.theme && !was.route.length) self.write(here, null);
+      else self.write(here, { theme: was.theme, route: was.route });
+    };
   },
 
   attachOf(id){

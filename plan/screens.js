@@ -390,7 +390,11 @@ function renderSchedule(root, days){
   ripple(themeRow, function(){
     openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 하카타 → 나카스 → 텐진" },
       function(v){ Plan.setDay(day.date, { theme: v }); repaint(); },
-      day.theme ? function(){ Plan.setDay(day.date, { theme: "" }); repaint(); } : null);
+      day.theme ? function(){
+        var undo = undoOf(Plan.setDay(day.date, { theme: "" }));
+        repaint();
+        return undo;
+      } : null);
   });
   root.appendChild(themeRow);
 
@@ -440,7 +444,11 @@ function routeRow(day){
       var next = v.split(/[\n→>,]/).map(function(x){ return x.trim(); }).filter(Boolean);
       Plan.setDay(day.date, { route: next });
       repaint();
-    }, stops.length ? function(){ Plan.setDay(day.date, { route: [] }); repaint(); } : null);
+    }, stops.length ? function(){
+      var undo = undoOf(Plan.setDay(day.date, { route: [] }));
+      repaint();
+      return undo;
+    } : null);
   });
   return row;
 }
