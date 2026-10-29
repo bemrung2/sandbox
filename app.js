@@ -14,13 +14,34 @@ import { renderTrips, renderTrip } from "./plan/screens.js";
 
 var view = null;
 var ticking = false;
+var wasOn = "";
+
+/* 목록과 여행 사이를 오갈 때만 한 번 스치듯 밀린다. 탭을 옮기거나 날짜를
+   고르는 것까지 움직이면 금세 멀미가 난다. */
+function slide(next){
+  if (!view || next === wasOn){ wasOn = next; return; }
+  var back = wasOn === "trip" && next === "list";
+  var first = !wasOn;
+  wasOn = next;
+  if (first) return;
+  view.classList.remove("slide-in", "slide-back");
+  void view.offsetWidth;                 /* 같은 쪽으로 또 가도 다시 움직이게 */
+  view.classList.add(back ? "slide-back" : "slide-in");
+  view.addEventListener("animationend", function off(){
+    view.classList.remove("slide-in", "slide-back");
+    view.removeEventListener("animationend", off);
+  });
+}
 
 function paint(keepScroll){
   if (!view) return;
   Plan.reread();
-  if (state.screen === "trip" && Plan.cur()) renderTrip(view, keepScroll);
-  else {
+  if (state.screen === "trip" && Plan.cur()){
+    slide("trip");
+    renderTrip(view, keepScroll);
+  } else {
     state.screen = "list";
+    slide("list");
     renderTrips(view, keepScroll);
   }
 }

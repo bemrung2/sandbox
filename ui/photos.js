@@ -55,7 +55,7 @@ export function thumb(pid){
 }
 export function openPhoto(pid){
   loadPhoto(pid).then(function(d){
-    if (!d){ toast("사진을 불러오지 못했어요."); return; }
+    if (!d){ toast("사진을 불러오지 못했습니다."); return; }
     var v = el('<div class="photoview"><img src="' + d + '" alt="첨부 사진"></div>');
     ripple(v, function(){ closeTop(v); });
     showOverlay(v);

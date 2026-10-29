@@ -405,10 +405,11 @@
     /* 살짝 비친다 — 아래에 무엇이 있는지 보이되 글자는 또렷하게.
        color-mix를 모르는 브라우저는 앞줄의 불투명한 바탕을 그대로 쓴다. */
     background: var(--ink);
-    background: color-mix(in srgb, var(--ink) 90%, transparent);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
     color: var(--paper);
-    padding: 11px 12px 11px 20px; border-radius: 999px;
+    padding: 10px 11px 10px 16px; border-radius: 15px;
+    box-shadow: 0 10px 26px var(--shadow);
     font-size: 13px; font-weight: 600;
     z-index: 90; opacity: 0; pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -421,14 +422,14 @@
   .toast.show .toast-do{ pointer-events: auto; }
   /* 되돌리기는 무를 수 있다는 뜻이고, 무르는 쪽이 빨강이다 */
   .toast .toast-do{
-    flex-shrink: 0; border: none; border-radius: 999px; cursor: pointer;
+    flex-shrink: 0; border: none; border-radius: 10px; cursor: pointer;
     pointer-events: none;
     background: color-mix(in srgb, var(--danger-on-ink) 18%, transparent);
     color: var(--danger-on-ink);
     font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 13px;
   }
   .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger-on-ink) 30%, transparent); }
-  .toast.plain{ padding: 13px 20px; justify-content: center; }
+  .toast.plain{ padding: 12px 17px; justify-content: center; }
   .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
@@ -614,6 +615,16 @@
   .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .quietbtn.has{ color: var(--signal); }
 
+
+  /* ---------- 화면이 바뀔 때 ---------- */
+  /* 들어갈 때는 오른쪽에서, 나올 때는 왼쪽에서 — 손가락이 민 방향대로 */
+  @keyframes slide-in{ from{ opacity: 0; transform: translateX(16px); } }
+  @keyframes slide-back{ from{ opacity: 0; transform: translateX(-16px); } }
+  .slide-in{ animation: slide-in 230ms cubic-bezier(0.2, 0, 0.1, 1); }
+  .slide-back{ animation: slide-back 230ms cubic-bezier(0.2, 0, 0.1, 1); }
+  @media (prefers-reduced-motion: reduce){
+    .slide-in, .slide-back{ animation: none; }
+  }
 
   /* ---------- waiting ---------- */
   /* Shaped like what is coming, so the page does not jump when it arrives. */

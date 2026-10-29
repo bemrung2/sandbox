@@ -66,7 +66,7 @@ export function openFormSheet(opts, rec, onSave, onDelete){
     ripple(del, function(){
       closeOverlay();
       var undo = onDelete();
-      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+      if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
     });
     foot.appendChild(del);
   }
@@ -78,15 +78,15 @@ export function openFormSheet(opts, rec, onSave, onDelete){
       var val = inputs[f.key].value.trim();
       if (f.url){
         var u = safeUrl(val);
-        if (!u){ inputs[f.key].focus(); toast("http로 시작하는 주소를 넣어주세요."); return; }
+        if (!u){ inputs[f.key].focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
         val = u;
       }
-      if (f.required && !val){ inputs[f.key].focus(); toast(f.label + "을(를) 적어주세요."); return; }
+      if (f.required && !val){ inputs[f.key].focus(); toast(f.label + "을(를) 적어 주세요."); return; }
       out[f.key] = val;
     }
     closeOverlay();
     onSave(out);
-    toast(rec ? "수정했어요." : "추가했어요.");
+    toast(rec ? "수정했습니다." : "추가했습니다.");
   });
   foot.appendChild(save);
 
@@ -115,7 +115,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
     closeOverlay();
     var undo = onDelete();
-    if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+    if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
   });
   scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
     var v = input.value.trim();
@@ -146,7 +146,7 @@ export function openConfirmDialog(opts, onYes){
   var ok = scrim.querySelector('[data-a="ok"]');
   function check(){ ok.disabled = input.value.trim() !== opts.phrase; }
   function done(){
-    if (ok.disabled){ input.focus(); toast('"' + opts.phrase + '"를 그대로 적어주세요.'); return; }
+    if (ok.disabled){ input.focus(); toast('"' + opts.phrase + '"를 그대로 적어 주세요.'); return; }
     closeOverlay();
     onYes();
   }

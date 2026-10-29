@@ -179,7 +179,7 @@ export var Store = {
      로그인했는데도 권한이 없다면, 그건 말해줘야 한다. */
   deny(){
     if (this.kind === "remote" && !this.me) return this.signIn();
-    this.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요.");
+    this.refuse("편집 권한이 없습니다. 계획 주인에게 요청해 주세요.");
   },
   signIn(){
     if (this._leaving) return;
@@ -221,7 +221,7 @@ export var Store = {
     var self = this;
     clearTimeout(this._back);
     this._back = setTimeout(function(){
-      toast(why || "지금은 고칠 수 없어요.", true);
+      toast(why || "지금은 고칠 수 없습니다.", true);
       if (self.onChange) self.onChange();
     }, 120);
   },
@@ -229,7 +229,7 @@ export var Store = {
   failed(){
     if (this._warned) return;
     this._warned = true;
-    toast("저장하지 못했어요. 연결을 확인해주세요.");
+    toast("저장하지 못했습니다. 연결을 확인해 주세요.");
     var self = this;
     setTimeout(function(){ self._warned = false; }, 8000);
   }

@@ -4,7 +4,7 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.11.01 · r29";
+export var BUILD = "2026.11.01 · r30";
 
 /* ---------- the door ---------- */
 function kakaoMark(){
@@ -72,12 +72,12 @@ function openMembers(){
   fetch("api/members", { cache: "no-store" }).then(function(res){ return res.json(); }).then(function(data){
     body.innerHTML = "";
     if (!data || !data.ok || !data.members.length){
-      body.appendChild(el('<p class="card-empty">아직 아무도 로그인하지 않았어요.</p>'));
+      body.appendChild(el('<p class="card-empty">아직 아무도 로그인하지 않았습니다.</p>'));
       return;
     }
     if (data.locked){
       body.appendChild(el('<p class="card-empty">편집할 수 있는 사람은 서버 설정(EDITOR_IDS)에 ' +
-        '적힌 사람들입니다. 여기서는 바꿀 수 없어요.</p>'));
+        '적힌 사람들입니다. 여기서는 바꿀 수 없습니다.</p>'));
     }
     data.members.forEach(function(m){
       var row = el('<div class="rowline"><span class="rowbody"><b>' + esc(m.name || m.id) +
@@ -93,12 +93,12 @@ function openMembers(){
             method: "POST", headers: { "content-type": "application/json" },
             body: JSON.stringify({ id: m.id, canEdit: next })
           }).then(function(res){ return res.json(); }).then(function(out){
-            if (!out || !out.ok){ toast("바꾸지 못했어요."); return; }
+            if (!out || !out.ok){ toast("바꾸지 못했습니다."); return; }
             m.canEdit = next;
             tog.setAttribute("aria-pressed", String(next));
             row.querySelector("small").textContent = next ? "편집 가능" : "보기만";
-            toast((m.name || "") + (next ? " 편집을 열었어요" : " 보기만 가능해요"));
-          }).catch(function(){ toast("바꾸지 못했어요."); });
+            toast((m.name || "이 사람") + (next ? "님의 편집을 열었습니다." : "님은 보기만 가능합니다."));
+          }).catch(function(){ toast("바꾸지 못했습니다."); });
         });
         row.insertBefore(tog, row.firstChild);
       }
@@ -106,7 +106,7 @@ function openMembers(){
     });
   }).catch(function(){
     body.innerHTML = "";
-    body.appendChild(el('<p class="card-empty">멤버를 불러오지 못했어요.</p>'));
+    body.appendChild(el('<p class="card-empty">멤버를 불러오지 못했습니다.</p>'));
   });
 
   showOverlay(sheet);

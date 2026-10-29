@@ -27,7 +27,7 @@ function mayEdit(){
 /* 지운 뒤 몇 초 동안 되돌릴 수 있게. 되살리고 나면 화면도 다시 그린다. */
 function undoOf(restore){
   if (!restore) return null;
-  return function(){ restore(); repaint(); toast("되살렸어요."); };
+  return function(){ restore(); repaint(); toast("되살렸습니다."); };
 }
 function editing(fn){
   return function(){
@@ -77,7 +77,7 @@ function loadBooked(){
   /* 쓴 것을 다시 읽는다 — 화면은 언제나 저장된 것을 그린다. */
   Plan.reread();
   Plan.open(seedId());
-  toast("예약된 내용을 채웠어요.");
+  toast("예약된 내용을 채웠습니다.");
   go({ screen:"trip", tripId: seedId(), tab:"sched", meal:"all", day:0 });
 }
 
@@ -87,7 +87,7 @@ function emptyState(){
   var box = el(
     '<div class="blankstate">' +
       '<div class="blankstate-mark">' + icon("compass") + '</div>' +
-      '<h2>아직 여행이 없어요</h2>' +
+      '<h2>아직 여행이 없습니다</h2>' +
       '<p>날짜만 정하면 일정 · 식사 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
       (bookedWaiting() ? '<button class="btn btn-quiet" type="button" data-booked>' +
@@ -197,15 +197,15 @@ function tripCard(t, box){
     reorder(grip, card, function(){ return pinnedRows(box); }, function(rows){
       if (!mayEdit()) return repaint();
       Plan.setPins(rows.map(function(node){ return node.dataset.trip; }));
-      toast("핀 순서를 바꿨어요.");
+      toast("핀 순서를 바꿨습니다.");
       repaint();
     });
   }
   var pin = el('<button class="trip-pin' + (pinned ? ' on' : '') + '" type="button" aria-pressed="' +
     pinned + '" aria-label="' + (pinned ? "핀 해제" : "맨 위에 고정") + '">' + icon("tack") + '</button>');
   ripple(pin, editing(function(){
-    if (pinned){ Plan.unpin(t.id); toast("핀을 뺐어요."); }
-    else { Plan.pin(t.id); toast("맨 위에 고정했어요."); }
+    if (pinned){ Plan.unpin(t.id); toast("핀을 뺐습니다."); }
+    else { Plan.pin(t.id); toast("맨 위에 고정했습니다."); }
     repaint();
   }));
   acts.appendChild(pin);
@@ -304,7 +304,7 @@ function nowCard(pair){
     card.appendChild(el('<p class="pulse-left mono">' + esc(spanLabel(pair.to - pair.now)) + ' 남음</p>'));
   } else {
     card.appendChild(el('<p class="pulse-title muted">' +
-      (nx ? '다음 일정까지 비어 있어요' : '오늘 일정은 여기까지') + '</p>'));
+      (nx ? '다음 일정까지 비어 있습니다' : '오늘 일정은 여기까지입니다') + '</p>'));
   }
 
   if (nx){
@@ -390,7 +390,7 @@ function renderSchedule(root, days){
     list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
     root.appendChild(tl);
   } else {
-    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없어요.</p></div>'));
+    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없습니다.</p></div>'));
   }
   /* 더하는 자리는 어느 탭에서나 같은 모양이다 — 시간표의 레일에 매달지 않는다. */
   var add = el('<button class="addcard" type="button">' + icon("plus") + '일정 추가</button>');
@@ -532,7 +532,7 @@ function renderFood(root, days){
     }
     root.appendChild(foodCard(f));
   });
-  if (!list.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 식사가 없어요.</p></div>'));
+  if (!list.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 식사가 없습니다.</p></div>'));
 
   var addDate = days[state.day] ? days[state.day].date : days[0].date;
   var add = el('<button class="addcard" type="button">' + icon("plus") + '식사 추가</button>');
@@ -590,7 +590,7 @@ function renderShop(root, days){
     '<span class="group-count mono">' + shops.length + '곳 · 살 것 ' + got + '/' + total + '</span></div>'));
 
   if (!shops.length){
-    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 쇼핑이 없어요.</p></div>'));
+    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 쇼핑이 없습니다.</p></div>'));
   }
 
   var lastDay = "";
@@ -662,7 +662,7 @@ function shopCard(s){
 function renderInfo(root){
   root.appendChild(sectionCard({
     title: "항공", key: "flights", ic: "plane", tone: "air",
-    empty: "아직 항공편이 없어요.",
+    empty: "아직 항공편이 없습니다.",
     render: function(f){
       return '<span class="lbl mono">' + esc(f.label || "") + '</span>' +
         '<b><span class="airline-name">' + esc(f.airline || "") + '</span>' +
@@ -679,7 +679,7 @@ function renderInfo(root){
 
   root.appendChild(sectionCard({
     title: "숙소", key: "stays", ic: "bed", tone: "stay",
-    empty: "아직 숙소가 없어요.",
+    empty: "아직 숙소가 없습니다.",
     render: function(h){
       /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
       var where = h.area ? h.name + " " + h.area.replace(/\s*·\s*/g, " ") : h.name;
@@ -696,7 +696,7 @@ function renderInfo(root){
 
   root.appendChild(sectionCard({
     title: "예약", key: "books", ic: "star", tone: "book",
-    empty: "아직 예약이 없어요.",
+    empty: "아직 예약이 없습니다.",
     render: function(k){
       return (k.when ? '<span class="lbl mono">' + esc(k.when) + '</span>' : '') +
         '<b>' + placeHtml(k.name, k.name) + '</b>' +
@@ -711,7 +711,7 @@ function renderInfo(root){
 
   root.appendChild(sectionCard({
     title: "유용한 정보", key: "links", ic: "link", tone: "link",
-    empty: "아직 링크가 없어요.",
+    empty: "아직 링크가 없습니다.",
     linkMode: true,
     render: function(l){
       var u = safeUrl(l.url);
@@ -725,7 +725,7 @@ function renderInfo(root){
 
   root.appendChild(sectionCard({
     title: "메모", key: "notes", ic: "note", tone: "note",
-    empty: "아직 메모가 없어요.",
+    empty: "아직 메모가 없습니다.",
     simple: true,
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
     fields: [{ key:"text", label:"메모", placeholder:"기억해둘 것", required:true, area:true }]
@@ -836,13 +836,13 @@ function dangerCard(){
       title: "정말 삭제하시겠습니까?",
       body: "'" + (t.city || "이름 없는 여행") + "' 여행의 일정 · 식사 · 쇼핑 · 정보가 모두 사라집니다. " +
             "되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.",
-      label: "확인을 위해 아래 칸에 '삭제하기'를 적어주세요",
+      label: "확인을 위해 아래 칸에 '삭제하기'를 적어 주세요",
       phrase: "삭제하기",
       okLabel: "삭제하기"
     }, function(){
       var undo = undoOf(Plan.removeTrip(t.id));
       go({ screen:"list", tripId: null });
-      if (undo) toastUndo("'" + (t.city || "여행") + "'을 삭제했어요.", undo);
+      if (undo) toastUndo("'" + (t.city || "여행") + "'을 삭제했습니다.", undo);
     });
   });
   box.appendChild(btn);
@@ -879,8 +879,8 @@ export function openTripEditor(t){
     var city = sheet.querySelector("#t-city").value.trim();
     var start = sheet.querySelector("#t-start").value;
     var end = sheet.querySelector("#t-end").value;
-    if (!city){ toast("여행지를 적어주세요."); return; }
-    if (!start || !end){ toast("날짜를 골라주세요."); return; }
+    if (!city){ toast("여행지를 적어 주세요."); return; }
+    if (!start || !end){ toast("날짜를 골라 주세요."); return; }
     if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
     var rec = {
       emoji: sheet.querySelector("#t-emoji").value.trim(),
@@ -892,13 +892,13 @@ export function openTripEditor(t){
     if (adding){
       var made = Plan.addTrip(rec);
       Plan.open(made.id);
-      toast("여행을 만들었어요.");
+      toast("여행을 만들었습니다.");
       go({ screen:"trip", tripId: made.id, tab:"sched", meal:"all", day:0 });
       return;
     }
     Plan.editTrip(t.id, rec);
     state.day = 0;
-    toast("수정했어요.");
+    toast("수정했습니다.");
     repaint();
   });
   foot.appendChild(save);
@@ -934,14 +934,14 @@ export function openShopEditor(shop, defaultDate){
     ripple(del, function(){
       var undo = undoOf(Plan.listRemove("shops", shop.id));
       closeOverlay(); repaint();
-      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+      if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
     });
     foot.appendChild(del);
   }
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
   ripple(save, function(){
     var name = sheet.querySelector("#sh-name").value.trim();
-    if (!name){ toast("이름을 적어주세요."); return; }
+    if (!name){ toast("이름을 적어 주세요."); return; }
     var rec = {
       name: name, dayDate: cur.dayDate,
       time: step5(sheet.querySelector("#sh-time").value) || "",
@@ -950,7 +950,7 @@ export function openShopEditor(shop, defaultDate){
     };
     if (shop) Plan.listEdit("shops", shop.id, rec);
     else Plan.listAdd("shops", Object.assign(rec, { items: [] }));
-    closeOverlay(); toast(shop ? "수정했어요." : "추가했어요."); repaint();
+    closeOverlay(); toast(shop ? "수정했습니다." : "추가했습니다."); repaint();
   });
   foot.appendChild(save);
   showOverlay(sheet);
@@ -1045,7 +1045,7 @@ function openItemEditor(item, defaultDate, presets){
     ripple(del, function(){
       var undo = undoOf(Plan.listRemove("items", item.id));
       closeOverlay(); repaint();
-      if (undo) toastUndo("삭제했어요.", undo); else toast("삭제했어요.");
+      if (undo) toastUndo("삭제했습니다.", undo); else toast("삭제했습니다.");
     });
     foot.appendChild(del);
   }
@@ -1053,12 +1053,12 @@ function openItemEditor(item, defaultDate, presets){
   ripple(save, function(){
     var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
     var title = titleEl.value.trim();
-    if (!title){ titleEl.focus(); toast("일정을 적어주세요."); return; }
+    if (!title){ titleEl.focus(); toast("일정을 적어 주세요."); return; }
     /* An item with no time is off the timeline, so it needs to be a 식사 with
        a kind — otherwise saving it would hide it everywhere. */
     if (!sEl.value && !cur.meal){
       sEl.focus();
-      toast(cur.cat === "food" ? "시간을 비우려면 식사 종류를 골라주세요." : "시작 시간을 골라주세요.");
+      toast(cur.cat === "food" ? "시간을 비우려면 식사 종류를 골라 주세요." : "시작 시간을 골라 주세요.");
       return;
     }
     var lines = function(id){
@@ -1074,7 +1074,7 @@ function openItemEditor(item, defaultDate, presets){
     if (item) Plan.listEdit("items", item.id, rec);
     else Plan.listAdd("items", rec);
     closeOverlay();
-    toast(item ? "수정했어요." : "추가했어요.");
+    toast(item ? "수정했습니다." : "추가했습니다.");
     if (!item){
       var di = tripDays().findIndex(function(d){ return d.date === rec.dayDate; });
       if (di >= 0) state.day = di;
@@ -1121,7 +1121,7 @@ function openAttachSheet(item){
         if (!v) return;
         Plan.addAttach(item.id, { type:"note", text:v });
         f.querySelector("#a-note").value = "";
-        paintList(); repaint(); toast("메모를 넣었어요.");
+        paintList(); repaint(); toast("메모를 넣었습니다.");
       }));
       form.appendChild(f);
     } else if (kind === "link"){
@@ -1131,10 +1131,10 @@ function openAttachSheet(item){
       ripple(g.querySelector("button"), editing(function(){
         var t = g.querySelector("#a-lt").value.trim();
         var u = safeUrl(g.querySelector("#a-lu").value);
-        if (!u){ g.querySelector("#a-lu").focus(); toast("http로 시작하는 주소를 넣어주세요."); return; }
+        if (!u){ g.querySelector("#a-lu").focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
         Plan.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
         g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
-        paintList(); repaint(); toast("링크를 넣었어요.");
+        paintList(); repaint(); toast("링크를 넣었습니다.");
       }));
       form.appendChild(g);
     } else {
@@ -1151,8 +1151,8 @@ function openAttachSheet(item){
         try{
           var pid = await storePhoto(file);
           Plan.addAttach(item.id, { type:"photo", pid: pid });
-          paintList(); repaint(); toast("사진을 넣었어요.");
-        }catch(e){ toast("사진을 저장하지 못했어요."); }
+          paintList(); repaint(); toast("사진을 넣었습니다.");
+        }catch(e){ toast("사진을 저장하지 못했습니다."); }
         label.innerHTML = icon("image") + "사진 고르기";
         label.appendChild(fileInput);
         fileInput.value = "";
@@ -1165,7 +1165,7 @@ function openAttachSheet(item){
     listBox.innerHTML = "";
     var atts = Plan.attachOf(item.id);
     if (!atts.length){
-      listBox.appendChild(el('<p class="card-empty" style="padding:12px 0">아직 자료가 없어요.</p>'));
+      listBox.appendChild(el('<p class="card-empty" style="padding:12px 0">아직 자료가 없습니다.</p>'));
       return;
     }
     atts.forEach(function(a){
@@ -1189,7 +1189,7 @@ function openAttachSheet(item){
           if (!undo) dropPhoto(a.pid);
           else setTimeout(function(){ if (gone) dropPhoto(a.pid); }, 4500);
         }
-        if (undo) toastUndo("삭제했어요.", function(){ gone = false; undo(); paintList(); });
+        if (undo) toastUndo("삭제했습니다.", function(){ gone = false; undo(); paintList(); });
       }));
       row.appendChild(del);
       listBox.appendChild(row);
