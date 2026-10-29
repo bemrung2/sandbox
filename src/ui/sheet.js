@@ -1,5 +1,15 @@
 /* Sheets, dialogs and the form controls they are made of. */
 import { el, esc, icon, ripple, safeUrl, toast } from "./dom.js";
+import { Store } from "./store.js";
+
+/* 고치는 창은 고칠 수 있는 사람에게만 열린다. 열어놓고 저장할 때 막으면
+   적어둔 것이 사라지므로, 열기 전에 묻는다 — 로그인하지 않았다면 그 길로
+   로그인 화면으로 간다(Store.deny). */
+function mayEdit(){
+  if (Store.canEdit()) return true;
+  Store.deny();
+  return false;
+}
 
 /* A weekday name is calendar knowledge; it belongs with the controls. */
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
@@ -31,6 +41,7 @@ export function sheetShell(title, sub){
 
 /* Generic record form — used by every 정보 section and 쇼핑 가게. */
 export function openFormSheet(opts, rec, onSave, onDelete){
+  if (!mayEdit()) return;
   var sheet = sheetShell(opts.title);
   var body = sheet.querySelector(".sheet-body");
   var foot = sheet.querySelector(".sheet-foot");
@@ -77,6 +88,7 @@ export function openFormSheet(opts, rec, onSave, onDelete){
 }
 
 export function openTextDialog(opts, onSave, onDelete, onCancel){
+  if (!mayEdit()) return;
   var field = opts.multiline
     ? '<textarea id="dlg-v" placeholder="' + esc(opts.placeholder || "") + '">' + esc(opts.value || "") + '</textarea>'
     : '<input id="dlg-v" type="text" placeholder="' + esc(opts.placeholder || "") + '" value="' + esc(opts.value || "") + '">';
@@ -107,6 +119,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
 /* Something that cannot be undone asks you to write it out. A tap can happen
    by accident; typing 삭제하기 cannot. */
 export function openConfirmDialog(opts, onYes){
+  if (!mayEdit()) return;
   var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
     '<h3>' + esc(opts.title) + '</h3>' +
     '<p class="dialog-body">' + esc(opts.body) + '</p>' +

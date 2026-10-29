@@ -102,37 +102,25 @@
   .hero-flag{ margin-right: 6px; }
   .hero-city{ font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin: 0; }
   .hero-country{ font-size: 11.5px; color: var(--ink-faint); letter-spacing: 0.14em; }
-  /* 떠나는 날과 돌아오는 날을 양 끝에 세우고, 그 사이를 하나로 잇는다. */
-  .trail{
-    display: flex; align-items: center; gap: 12px;
-    margin-top: 13px; padding: 11px 8px 11px 14px;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  /* 날짜는 글자다. 굵기와 색으로만 모양을 준다 — 테두리도, 상자도 없다. */
+  .hero-dates{
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    margin: 9px 0 0;
   }
-  .trail-end{ display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; }
-  .trail-end b{ font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
-  .trail-end small{ font-size: 10px; color: var(--ink-faint); }
-  .trail-rail{
-    flex: 1; min-width: 0; height: 26px; position: relative;
-    display: flex; align-items: center; justify-content: center;
+  .hd-day{
+    display: inline-flex; align-items: baseline; gap: 4px;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
   }
-  .trail-rail::before{
-    content: ""; position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;
-    background: linear-gradient(90deg,
-      var(--signal),
-      color-mix(in srgb, var(--signal) 35%, transparent) 50%,
-      var(--travel));
+  .hd-day small{
+    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-size: 10.5px; font-weight: 500; color: var(--ink-faint);
   }
-  .trail-rail::after{
-    content: ""; position: absolute; right: -1px; width: 6px; height: 6px;
-    border-radius: 50%; background: var(--travel);
+  .hd-arrow{ font-size: 13px; color: var(--ink-faint); }
+  .hd-nights{
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 7px;
+    background: var(--signal-soft); color: var(--signal);
   }
-  .trail-nights{
-    position: relative; z-index: 1;
-    padding: 2px 9px; border-radius: 999px;
-    background: var(--surface); border: 1px solid var(--line);
-    font-size: 10.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap;
-  }
-  .trail-pen{ flex-shrink: 0; color: var(--ink-faint); }
+  .hd-pen{ margin-left: auto; color: var(--ink-faint); }
 
 
 /* ---------- where the day is right now ---------- */
@@ -228,8 +216,7 @@
   }
   .theme-row:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
   .theme-body{ flex: 1; min-width: 0; }
-  .theme-label{ display: block; font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); }
-  .theme-text{ display: block; font-size: 14.5px; font-weight: 600; margin-top: 1px; word-break: keep-all; }
+  .theme-text{ display: block; font-size: 14.5px; font-weight: 600; word-break: keep-all; }
   .theme-text.empty{ color: var(--ink-faint); font-weight: 400; }
   .theme-row .icon{ width: 15px; height: 15px; color: var(--ink-faint); }
 
