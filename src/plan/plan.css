@@ -296,3 +296,33 @@
     vertical-align: -1px; margin-left: 3px; color: var(--ink-faint);
   }
   .placelink:hover{ border-bottom-color: var(--signal); }
+
+/* ---------- tab: map ---------- */
+  .spanrow{ padding-top: 16px; }
+  .spanpick{ padding: 12px 14px; }
+  .spanpick .fld-row{ margin: 0; }
+  .mapcard{ padding: 12px; }
+  /* 지도는 세로로 조금 긴 편이 손에 쥐었을 때 읽기 좋다. */
+  .mapframe{
+    display: block; width: 100%; height: 300px;
+    border: 0; border-radius: 14px; background: var(--surface-2);
+  }
+  .mapopen{ width: 100%; margin-top: 10px; text-decoration: none; }
+  .mapopen .icon{ width: 17px; height: 17px; }
+  .mapcard .card-empty{ text-align: center; }
+
+  .routelist{ padding-bottom: 6px; }
+  .routeday{
+    display: flex; flex-direction: column; gap: 6px; width: 100%;
+    padding: 11px 2px; background: transparent; border: none;
+    border-top: 1px solid var(--line);
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+  }
+  .routeday-when{ font-size: 11px; color: var(--ink-faint); }
+  .routeday-stops{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .routestop{
+    font-size: 12.5px; font-weight: 600; color: var(--ink);
+    background: var(--surface-2); border-radius: 9px; padding: 4px 9px;
+    word-break: keep-all;
+  }
+  .routearrow{ font-size: 11px; color: var(--ink-faint); }

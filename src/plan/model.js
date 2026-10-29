@@ -63,7 +63,23 @@ var SEED_THEMES = {
   "2026-12-04": "파리",
   "2026-12-05": "파리 → 인천"
 };
-var SEED_ROUTES = {};
+/* 그날 어디에 있고 어디로 넘어가는지. 숙소에서 그대로 나온 것이라
+   지도가 바로 읽는다 — 그날 무엇을 할지는 여기에 더 적으면 된다. */
+var SEED_ROUTES = {
+  "2026-11-23": ["로마 피우미치노 공항", "트라스테베레, 로마"],
+  "2026-11-24": ["트라스테베레, 로마"],
+  "2026-11-25": ["트라스테베레, 로마"],
+  "2026-11-26": ["트라스테베레, 로마"],
+  "2026-11-27": ["트라스테베레, 로마", "피렌체"],
+  "2026-11-28": ["피렌체", "체르마트"],
+  "2026-11-29": ["체르마트"],
+  "2026-11-30": ["체르마트", "그린델발트"],
+  "2026-12-01": ["그린델발트"],
+  "2026-12-02": ["그린델발트"],
+  "2026-12-03": ["그린델발트", "파리"],
+  "2026-12-04": ["파리"],
+  "2026-12-05": ["파리", "파리 샤를 드 골 공항"]
+};
 var SEED_ITEMS = [
   { id:"g1", d:"2026-11-23", s:"14:05", cat:"air", emo:"✈️", t:"인천 출발",
     places:["인천국제공항 제2여객터미널"],
@@ -89,7 +105,7 @@ var SEED_FLIGHTS = [
 /* 예약된 숙소. 묵는 밤으로 적혀 온 것을 체크인–체크아웃으로 옮겨 적었다. */
 var SEED_STAYS = [
   { id:"st1", name:"비밀의 안뜰 - 트라스테베레", area:"이탈리아 · 로마",
-    detail:"11.24 (화) – 11.27 (금) · 3박" },
+    detail:"11.23 (월) – 11.27 (금) · 4박" },
   { id:"st2", name:"Hotel Ester", area:"이탈리아 · 피렌체",
     detail:"11.27 (금) – 11.28 (토) · 1박" },
   { id:"st3", name:"알펜리조트", area:"스위스 · 체르마트",
@@ -242,6 +258,41 @@ export function itemsOn(date){
 export function timedOn(date){
   return itemsOn(date).filter(function(i){ return !!i.s; });
 }
+/* 그날 어디를 지나는가 — 지도가 읽는 것.
+   적어둔 동선이 먼저다. 없으면 일정에 적힌 장소와 그날의 가게, 그것도 없으면
+   하루 한 줄에 적힌 곳(“로마 → 피렌체”)을 쪼개 쓴다. 한 줄이 장소 이름이 아니면
+   지도도 그렇게 나오니, 그럴 땐 동선을 적어두면 된다.
+
+   비행은 동선이 아니다. 땅 위를 어떻게 다니는지가 지도에 그려질 것이고,
+   바다 건너는 선은 지도가 그리지 못한다 — 비행편은 일정 탭에 그대로 있다. */
+export function stopsOn(date){
+  var t = trip();
+  if (!t) return [];
+  var route = (t.dayRoutes[date] || []).filter(Boolean);
+  if (route.length) return route.slice();
+
+  var out = [];
+  itemsOn(date).forEach(function(it){
+    if (it.cat === "air") return;
+    (it.places || []).forEach(function(p){ if (p) out.push(p); });
+  });
+  t.shops.forEach(function(sh){
+    if (sh.dayDate === date && sh.name) out.push(sh.map || sh.name);
+  });
+  if (out.length) return out;
+
+  return (t.dayThemes[date] || "").split(/→|->|,/)
+    .map(function(x){ return x.trim(); })
+    .filter(Boolean);
+}
+
+/* 고른 기간의 하루하루와 그날의 동선. */
+export function routeDays(from, to){
+  return tripDays()
+    .filter(function(d){ return d.date >= from && d.date <= to; })
+    .map(function(d){ return { date: d.date, dow: d.dow, theme: d.theme, stops: stopsOn(d.date) }; });
+}
+
 export function currentPair(){
   var days = tripDays(), today = todayISO(), di = -1;
   if (!days.length) return null;

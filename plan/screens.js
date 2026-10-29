@@ -12,7 +12,7 @@ import { accountFooter } from "../ui/shell.js";
 import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, fmtMD, dowOf, todayISO, dayDiff,
-  trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
+  trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus, routeDays,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
@@ -32,8 +32,15 @@ function bookedMissing(){
   });
   var out = {};
   Object.keys(map).forEach(function(path){
-    if (have[path]) return;
     var p = path.indexOf(base) === 0 ? path.slice(base.length).split("/") : [];
+    var mine = have[path];
+    if (mine){
+      /* 하루 한 줄은 그대로 두고, 비어 있는 동선만 채운다. */
+      if (p[0] !== "days" || !map[path].route || !map[path].route.length) return;
+      if (mine.route && mine.route.length) return;
+      out[path] = { theme: mine.theme || map[path].theme || "", route: map[path].route };
+      return;
+    }
     if (p.length === 2 && p[0] !== "days" && filled[p[0]]) return;
     out[path] = map[path];
   });
@@ -202,7 +209,7 @@ export function renderTrip(root, keepScroll){
   frag.appendChild(renderHero());
 
   var tabs = el('<div class="tabs" role="tablist"></div>');
-  [["sched","일정"],["food","음식"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
+  [["sched","일정"],["map","지도"],["food","음식"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
     var b = el('<button class="tab" role="tab" type="button" aria-selected="' + (state.tab === t[0]) + '">' + t[1] + '</button>');
     ripple(b, function(){ go({ tab: t[0] }); });
     tabs.appendChild(b);
@@ -216,6 +223,7 @@ export function renderTrip(root, keepScroll){
   root.appendChild(frag);
 
   if (state.tab === "sched") renderSchedule(body, days);
+  else if (state.tab === "map") renderMap(body, days);
   else if (state.tab === "food") renderFood(body, days);
   else if (state.tab === "shop") renderShop(body, days);
   else renderInfo(body);
@@ -308,10 +316,9 @@ function countCard(t, d){
   return card;
 }
 
-/* ---------- tab: schedule ---------- */
-function renderSchedule(root, days){
+/* The row of days, shared by 일정 and 지도. */
+function dayRow(days){
   var pair = currentPair();
-
   var dayrow = el('<div class="dayrow"></div>');
   days.forEach(function(day, i){
     var isToday = pair && pair.dayIndex === i;
@@ -320,7 +327,6 @@ function renderSchedule(root, days){
     ripple(b, function(){ go({ day: i }); });
     dayrow.appendChild(b);
   });
-  root.appendChild(dayrow);
 
   /* A fortnight does not fit on a phone, so the row scrolls. Bring the day you
      are actually on into it — otherwise day 12 looks like an empty row of 1s.
@@ -330,6 +336,13 @@ function renderSchedule(root, days){
     if (!on || dayrow.scrollWidth <= dayrow.clientWidth) return;
     dayrow.scrollLeft = on.offsetLeft - (dayrow.clientWidth - on.offsetWidth) / 2;
   });
+  return dayrow;
+}
+
+/* ---------- tab: schedule ---------- */
+function renderSchedule(root, days){
+  var pair = currentPair();
+  root.appendChild(dayRow(days));
 
   var day = days[state.day];
   var list = timedOn(day.date);
@@ -466,6 +479,149 @@ function attachStrip(itemId, atts){
     }
   });
   return box;
+}
+
+/* ---------- tab: map ---------- */
+/* 구글 지도로 보내는 주소 두 가지. 키도, 계정도 필요 없다 —
+   장소 이름을 그대로 넘기고 지도 쪽이 찾게 한다.
+   길찾기는 경유지를 9개까지 받으므로, 그보다 길면 고르게 솎아낸다. */
+/* 같은 곳에 계속 머무르면 한 번만 센다 — 사흘 로마는 로마 한 곳이다. */
+function oneByOne(stops){
+  var out = [], last = null;
+  stops.forEach(function(s){ if (s && s !== last){ out.push(s); last = s; } });
+  return out;
+}
+function trimStops(stops){
+  var out = oneByOne(stops);
+  if (out.length <= 11) return out;
+  var keep = [out[0]], step = (out.length - 2) / 9, seen = {};
+  for (var i = 1; i <= 9; i++) keep.push(out[Math.round(i * step)]);
+  keep.push(out[out.length - 1]);
+  return keep.filter(function(x){ if (seen[x]) return false; seen[x] = 1; return true; });
+}
+function routeUrl(stops){
+  var list = trimStops(stops);
+  if (!list.length) return null;
+  if (list.length === 1) return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(list[0]);
+  var mid = list.slice(1, -1);
+  return "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(list[0]) +
+    "&destination=" + encodeURIComponent(list[list.length - 1]) +
+    (mid.length ? "&waypoints=" + mid.map(encodeURIComponent).join("%7C") : "");
+}
+function embedUrl(stops){
+  var list = trimStops(stops);
+  if (!list.length) return null;
+  if (list.length === 1) return "https://www.google.com/maps?output=embed&q=" + encodeURIComponent(list[0]);
+  return "https://www.google.com/maps?output=embed&saddr=" + encodeURIComponent(list[0]) +
+    "&daddr=" + list.slice(1).map(encodeURIComponent).join("+to:");
+}
+
+/* 보고 있는 범위. 주소에 실려 있어서 새로고침해도 그대로다.
+     all                  여행 전체
+     day                  고른 하루
+     <시작>~<종료>         고른 기간 */
+function spanOf(days){
+  var raw = state.span || "all";
+  if (raw === "day"){
+    var d = days[Math.min(state.day, days.length - 1)];
+    return { kind:"day", from: d.date, to: d.date };
+  }
+  var pair = /^(\d{4}-\d\d-\d\d)~(\d{4}-\d\d-\d\d)$/.exec(raw);
+  if (pair) return { kind:"range", from: pair[1], to: pair[2] };
+  return { kind:"all", from: days[0].date, to: days[days.length - 1].date };
+}
+
+function renderMap(root, days){
+  var span = spanOf(days);
+  var groups = routeDays(span.from, span.to).filter(function(g){ return g.stops.length; });
+  var stops = [];
+  groups.forEach(function(g){ g.stops.forEach(function(p){ stops.push(p); }); });
+  var route = oneByOne(stops);
+  var shown = trimStops(stops);
+
+  /* 전체 · 기간 · 하루 */
+  var chips = el('<div class="chiprow spanrow"></div>');
+  [["all", "전체"], ["range", "기간"], ["day", "하루"]].forEach(function(o){
+    var b = el('<button class="chip" type="button" aria-pressed="' + (span.kind === o[0]) + '">' +
+      esc(o[1]) + '</button>');
+    ripple(b, function(){
+      if (o[0] === span.kind) return;
+      if (o[0] === "all") return go({ span:"all" });
+      if (o[0] === "day") return go({ span:"day" });
+      /* 기간은 여행 전체에서 시작한다 — 좁혀 가는 게 자연스럽다. */
+      go({ span: days[0].date + "~" + days[days.length - 1].date });
+    });
+    chips.appendChild(b);
+  });
+  root.appendChild(chips);
+
+  if (span.kind === "day") root.appendChild(dayRow(days));
+  if (span.kind === "range"){
+    var row = el('<div class="card spanpick"><div class="fld-row"></div></div>');
+    var inner = row.querySelector(".fld-row");
+    var from = pickerField({ type:"date", id:"mp-from", label:"시작", value: span.from, col:true });
+    var to = pickerField({ type:"date", id:"mp-to", label:"종료", value: span.to, col:true });
+    inner.appendChild(from); inner.appendChild(to);
+    function apply(){
+      var a = from.querySelector("input").value, b = to.querySelector("input").value;
+      if (!a || !b) return;
+      go({ span: (a <= b ? a + "~" + b : b + "~" + a) });
+    }
+    from.querySelector("input").addEventListener("change", apply);
+    to.querySelector("input").addEventListener("change", apply);
+    root.appendChild(row);
+  }
+
+  if (!shown.length){
+    root.appendChild(el('<div class="card"><p class="card-empty">' +
+      '이 기간에는 적어둔 곳이 없어요. 일정에 장소를 적거나 그날의 동선을 채우면 지도에 올라옵니다.</p></div>'));
+    return;
+  }
+
+  /* 지도 자체. 길찾기는 구글이 하고, 우리는 어디를 지나는지만 넘긴다. */
+  var card = el('<div class="card mapcard"></div>');
+  var frame = el('<iframe class="mapframe" title="동선 지도" loading="lazy" ' +
+    'referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>');
+  frame.src = embedUrl(shown);
+  card.appendChild(frame);
+
+  var open = el('<a class="btn btn-primary mapopen" target="_blank" rel="noopener">' +
+    icon("pin") + '구글 지도에서 열기</a>');
+  open.href = routeUrl(shown);
+  card.appendChild(open);
+  if (route.length > shown.length){
+    card.appendChild(el('<p class="card-empty">구글 지도는 한 번에 ' + shown.length + '곳까지 그려요. ' +
+      '기간이나 하루로 좁히면 ' + route.length + '곳이 다 보입니다.</p>'));
+  }
+  root.appendChild(card);
+
+  /* 지나는 순서. 같은 곳에 머무는 날들은 한 줄로 묶는다 — 사흘 내리 로마면
+     "11.24 (화) – 11.26 (목) 로마" 한 줄이다. */
+  var rows = [];
+  groups.forEach(function(g){
+    var last = rows[rows.length - 1];
+    if (last && last.key === g.stops.join("\u0000")) { last.to = g; return; }
+    rows.push({ key: g.stops.join("\u0000"), from: g, to: g, stops: g.stops });
+  });
+
+  var list = el('<div class="card routelist"></div>');
+  list.appendChild(el('<div class="card-head"><h3>지나는 곳 · ' + route.length + '</h3></div>'));
+  rows.forEach(function(r){
+    var g = r.from;
+    var i = 0;
+    days.forEach(function(d, n){ if (d.date === g.date) i = n; });
+    var when = fmtMD(g.date) + ' (' + g.dow + ')' +
+      (r.to !== g ? ' – ' + fmtMD(r.to.date) + ' (' + r.to.dow + ')' : '');
+    var row = el('<button class="routeday" type="button">' +
+      '<span class="routeday-when mono">' + when + '</span>' +
+      '<span class="routeday-stops">' + r.stops.map(function(p){
+        return '<span class="routestop">' + esc(p) + '</span>';
+      }).join('<span class="routearrow">→</span>') + '</span>' +
+    '</button>');
+    ripple(row, function(){ go({ span:"day", day: i }); });
+    list.appendChild(row);
+  });
+  root.appendChild(list);
 }
 
 /* ---------- tab: food ---------- */

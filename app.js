@@ -37,7 +37,8 @@ function startTicking(){
 }
 
 /* "/"                      the trips
-   "/t/<id>/<tab>/<day>"    one of them, on a tab, on a day */
+   "/t/<id>/<tab>/<day>"    one of them, on a tab, on a day
+   the last segment is the 음식 탭's 끼니 or the 지도 탭's 범위 */
 function route(path, segs){
   if (Store.needSignIn) return paintSignIn(view);
   Plan.reread();
@@ -45,9 +46,10 @@ function route(path, segs){
   if (segs[0] === "t" && segs[1]){
     state.screen = "trip";
     state.tripId = decodeURIComponent(segs[1]);
-    state.tab = ["sched", "food", "shop", "info"].indexOf(segs[2]) >= 0 ? segs[2] : "sched";
+    state.tab = ["sched", "map", "food", "shop", "info"].indexOf(segs[2]) >= 0 ? segs[2] : "sched";
     state.day = Math.max(0, parseInt(segs[3], 10) || 0);
-    state.meal = segs[4] || "all";
+    state.meal = state.tab === "food" ? (segs[4] || "all") : "all";
+    state.span = state.tab === "map" ? decodeURIComponent(segs[4] || "all") : "all";
     Plan.open(state.tripId);
     if (!Plan.cur()){ state.screen = "list"; Router.set("/"); return; }
   } else {
