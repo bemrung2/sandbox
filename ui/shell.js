@@ -4,7 +4,7 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.10.29 · r20";
+export var BUILD = "2026.10.30 · r21";
 
 /* ---------- the door ---------- */
 function kakaoMark(){
@@ -36,6 +36,17 @@ export function paintSignIn(view){
 /* ---------- the foot of the list ---------- */
 export function accountFooter(){
   var frag = document.createDocumentFragment();
+  /* 보는 건 로그인 없이 된다. 고치려면 로그인해야 하므로, 들어갈 문은
+     여기 한 줄로 열어둔다. */
+  if (!Store.me && Store.kind === "remote"){
+    var inRow = el('<div class="account-row"></div>');
+    var go = el('<button class="linkbtn" type="button">' + kakaoMark() + '카카오로 로그인</button>');
+    ripple(go, function(){
+      location.href = "api/auth/login?next=" + encodeURIComponent(location.hash || "");
+    });
+    inRow.appendChild(go);
+    frag.appendChild(inRow);
+  }
   if (Store.me){
     var row = el('<div class="account-row"></div>');
     if (Store.me.isOwner){
@@ -49,8 +60,7 @@ export function accountFooter(){
     row.appendChild(out);
     frag.appendChild(row);
   }
-  frag.appendChild(el('<p class="build-stamp mono">build ' + BUILD + ' · ' + esc(Store.label) +
-    (Store.ungated ? ' · 로그인 없이 열림' : '') + '</p>'));
+  frag.appendChild(el('<p class="build-stamp mono">build ' + BUILD + '</p>'));
   return frag;
 }
 
@@ -67,12 +77,16 @@ function openMembers(){
       body.appendChild(el('<p class="card-empty">아직 아무도 로그인하지 않았어요.</p>'));
       return;
     }
+    if (data.locked){
+      body.appendChild(el('<p class="card-empty">편집할 수 있는 사람은 서버 설정(EDITOR_IDS)에 ' +
+        '적힌 사람들입니다. 여기서는 바꿀 수 없어요.</p>'));
+    }
     data.members.forEach(function(m){
       var row = el('<div class="rowline"><span class="rowbody"><b>' + esc(m.name || m.id) +
         (m.isOwner ? ' <span class="badge tag">주인</span>' : '') +
         (m.you && !m.isOwner ? ' <span class="badge">나</span>' : '') + '</b>' +
         '<small>' + (m.canEdit ? "편집 가능" : "보기만") + '</small></span></div>');
-      if (!m.isOwner){
+      if (!m.isOwner && !data.locked){
         var tog = el('<button class="check" type="button" aria-pressed="' + m.canEdit +
           '" aria-label="편집 허용">' + icon("check") + '</button>');
         ripple(tog, function(){

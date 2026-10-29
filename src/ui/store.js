@@ -50,7 +50,7 @@ function RemoteStore(){
   this.map = {};
   this.rev = 0;
   this.me = null;
-  this.ungated = false;   /* the server is not asking anyone to sign in */
+  this.canWrite = false;  /* 서버가 "당신은 고쳐도 된다"고 한 경우에만 참 */
   this.pending = {};
   this._t = null;
 }
@@ -68,7 +68,7 @@ RemoteStore.prototype.probe = async function(){
   this.map = data.docs || {};
   this.rev = data.rev || 0;
   this.me = data.me || null;
-  this.ungated = !!data.open;
+  this.canWrite = !!data.canWrite;
   return "ok";
 };
 RemoteStore.prototype.write = function(path, body){
@@ -96,7 +96,7 @@ RemoteStore.prototype.flush = async function(){
       body: JSON.stringify({ writes: writes })
     });
     if (res.status === 401){ Store.signedOut(); return; }
-    if (res.status === 403){ Store.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요."); return; }
+    if (res.status === 403){ Store.refuse(); return; }
     if (!res.ok) throw new Error("write " + res.status);
     var data = await res.json();
     this.rev = data.rev || this.rev;
@@ -118,7 +118,7 @@ RemoteStore.prototype.watch = function(cb){
       var data = await res.json();
       if (!data.ok) return;
       if (data.me) self.me = data.me;
-      self.ungated = !!data.open;
+      self.canWrite = !!data.canWrite;
       if (data.unchanged) return;
       self.map = data.docs || {};
       self.rev = data.rev || self.rev;
@@ -165,22 +165,24 @@ export var Store = {
   },
 
   get kind(){ return this.backend ? this.backend.kind : "local"; },
-  /* nobody was asked to sign in, so nobody is held back */
-  get ungated(){ return !!(this.backend && this.backend.ungated); },
   get label(){ return this.backend ? this.backend.label : ""; },
   get map(){ return this.backend ? this.backend.map : {}; },
 
-  /* Signing in is what the shared copy asks for; everywhere else there is
-     nobody to be, and everything is editable. */
+  /* 고칠 수 있는지는 서버가 말해준다. 백엔드가 없는 사본(아티팩트 · 내 브라우저)은
+     혼자 쓰는 것이라 늘 고칠 수 있다. */
   canEdit(){
     if (this.kind !== "remote") return true;
-    if (this.ungated) return true;
-    return !!(this.me && this.me.canEdit);
+    return !!this.backend.canWrite;
+  },
+  /* 왜 안 되는지는 로그인했는지에 달려 있다. */
+  whyNot(){
+    return this.me ? "편집 권한이 없어요. 계획 주인에게 요청해주세요."
+                   : "고치려면 카카오 로그인이 필요해요.";
   },
 
   write(path, body){
     if (!this.canEdit()){
-      this.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요.");
+      this.refuse();
       return false;
     }
     this.backend.write(path, body);
@@ -212,7 +214,7 @@ export var Store = {
     var self = this;
     clearTimeout(this._back);
     this._back = setTimeout(function(){
-      toast(why || "지금은 편집할 수 없어요.", true);
+      toast(why || self.whyNot(), true);
       if (self.onChange) self.onChange();
     }, 120);
   },

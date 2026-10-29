@@ -12,22 +12,47 @@ const COOKIE = "bemlab_s";
 const SESSION_DAYS = 30;
 
 /*
- * The door.
+ * Two doors, not one.
  *
- * Off: no sign-in screen, and anyone who has the address can read and write.
- * On: Kakao sign-in is required to read, and editing is granted per person.
+ * LOGIN_REQUIRED — reading. Off by default: anyone with the address can look.
+ * EDIT_OPEN      — writing. Off by default: a signed-in editor may change
+ *                  things, and nobody else.
  *
- * The whole sign-in path — /api/auth/*, the members table, the screen — is
- * still here and still works; this only decides whether anyone is stopped at
- * it. Turn it back on with LOGIN_REQUIRED=1 in the host's environment, or by
- * flipping the default below.
+ * EDITOR_IDS says who those editors are: a comma-separated list of Kakao ids.
+ * When it is set it is the whole truth — those people own the plan and may
+ * edit it, everyone else may only look, whatever the members table says. When
+ * it is empty the table decides, as before (first person in owns it).
+ *
+ * The sign-in path — /api/auth/*, the members table, the screen — is always
+ * here; these only decide who is stopped where.
  */
-function loginRequired() {
-  const want = String(process.env.LOGIN_REQUIRED || "").toLowerCase();
+function flag(name, fallback) {
+  const want = String(process.env[name] || "").toLowerCase();
   if (want === "1" || want === "true" || want === "on") return true;
   if (want === "0" || want === "false" || want === "off") return false;
-  return false;   /* 지금은 닫혀 있다 */
+  return fallback;
 }
+function loginRequired() { return flag("LOGIN_REQUIRED", false); }
+function editOpen() { return flag("EDIT_OPEN", false); }
+
+function editorIds() {
+  return String(process.env.EDITOR_IDS || "")
+    .split(/[\s,]+/).map((x) => x.trim()).filter(Boolean);
+}
+function isEditor(row) {
+  if (!row) return false;
+  const ids = editorIds();
+  if (ids.length) return ids.indexOf(String(row.kakao_id)) >= 0;
+  return !!row.can_edit;
+}
+function isOwner(row) {
+  if (!row) return false;
+  const ids = editorIds();
+  if (ids.length) return ids.indexOf(String(row.kakao_id)) >= 0;
+  return !!row.is_owner;
+}
+/* 명단이 있으면 멤버 화면의 스위치는 아무 일도 하지 않는다 — 그걸 화면에 알린다. */
+function membersLocked() { return editorIds().length > 0; }
 
 /* ---------------- environment ---------------- */
 
@@ -157,22 +182,25 @@ function db(cfg) {
 
 /* ---------------- members ---------------- */
 
-/* The first person to sign in owns the plan; everyone after that can look, and
-   edits only once the owner says so. Nobody has to be named in a config file. */
+/* With EDITOR_IDS set, signing in writes down what that list says. Without it,
+   the first person to sign in owns the plan and the rest start as lookers. */
 async function touchMember(store, profile) {
+  const named = editorIds().indexOf(String(profile.id)) >= 0;
+  const listed = editorIds().length > 0;
   const existing = await store.select("members", "select=*&kakao_id=eq." + encodeURIComponent(profile.id));
   if (existing && existing.length) {
     const row = existing[0];
-    await store.upsert("members", [{
+    const next = {
       kakao_id: row.kakao_id,
       name: profile.name || row.name,
       avatar: profile.avatar || row.avatar,
-      can_edit: row.can_edit,
-      is_owner: row.is_owner,
+      can_edit: listed ? named : row.can_edit,
+      is_owner: listed ? named : row.is_owner,
       joined_at: row.joined_at,
       seen_at: new Date().toISOString()
-    }]);
-    return row;
+    };
+    await store.upsert("members", [next]);
+    return next;
   }
   const all = await store.select("members", "select=kakao_id&limit=1");
   const first = !all || !all.length;
@@ -180,8 +208,8 @@ async function touchMember(store, profile) {
     kakao_id: profile.id,
     name: profile.name || "",
     avatar: profile.avatar || "",
-    can_edit: first,
-    is_owner: first,
+    can_edit: listed ? named : first,
+    is_owner: listed ? named : first,
     seen_at: new Date().toISOString()
   };
   await store.upsert("members", [row]);
@@ -218,7 +246,7 @@ function origin(req) {
 
 module.exports = {
   COOKIE,
-  env, json, setupError, loginRequired,
+  env, json, setupError, loginRequired, editOpen, editorIds, isEditor, isOwner, membersLocked,
   sign, unsign, readCookie, setSession, clearSession, session,
   db, touchMember, member, readBody, origin
 };

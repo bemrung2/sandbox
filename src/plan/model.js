@@ -156,16 +156,21 @@ export function seedTrip(){
   });
 }
 
+/* 고를 수 있는 분류는 CAT_ORDER다. CAT에는 예전에 쓰던 것(항공 · 자유 · 준비)도
+   남아 있다 — 이미 그렇게 저장된 일정이 그대로 보여야 하기 때문이다. */
 export var CAT = {
-  air:  { label:"항공", color:"var(--c-air)" },
-  move: { label:"이동", color:"var(--c-move)" },
-  food: { label:"식사", color:"var(--c-food)" },
-  shop: { label:"쇼핑", color:"var(--c-shop)" },
-  stay: { label:"숙소", color:"var(--c-stay)" },
-  free: { label:"자유", color:"var(--c-free)" },
-  todo: { label:"준비", color:"var(--c-todo)" }
+  food:  { label:"식사", color:"var(--c-food)" },
+  sight: { label:"관광", color:"var(--c-sight)" },
+  shop:  { label:"쇼핑", color:"var(--c-shop)" },
+  move:  { label:"이동", color:"var(--c-move)" },
+  stay:  { label:"숙소", color:"var(--c-stay)" },
+  etc:   { label:"기타", color:"var(--c-etc)" },
+
+  air:   { label:"항공", color:"var(--c-air)" },
+  free:  { label:"자유", color:"var(--c-free)" },
+  todo:  { label:"준비", color:"var(--c-todo)" }
 };
-export var CAT_ORDER = ["food","shop","move","free","stay","todo","air"];
+export var CAT_ORDER = ["food","sight","shop","move","stay","etc"];
 export var MEALS = [
   { key:"all", label:"전체" }, { key:"breakfast", label:"아침" }, { key:"lunch", label:"점심" },
   { key:"dinner", label:"저녁" }, { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
@@ -284,13 +289,6 @@ export function stopsOn(date){
   return (t.dayThemes[date] || "").split(/→|->|,/)
     .map(function(x){ return x.trim(); })
     .filter(Boolean);
-}
-
-/* 고른 기간의 하루하루와 그날의 동선. */
-export function routeDays(from, to){
-  return tripDays()
-    .filter(function(d){ return d.date >= from && d.date <= to; })
-    .map(function(d){ return { date: d.date, dow: d.dow, theme: d.theme, stops: stopsOn(d.date) }; });
 }
 
 export function currentPair(){

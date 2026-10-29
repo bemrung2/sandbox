@@ -34,10 +34,11 @@ module.exports = async function handler(req, res) {
     ]);
     if (!row && gated) return lib.json(res, 401, { ok: false, error: "signin" });
 
-    /* With the door open there is nobody to be: everyone reads and writes. */
-    const open = !gated && !row;
+    /* 읽기는 열려 있어도 쓰기는 아니다: 고치려면 로그인한 편집자여야 한다.
+       EDIT_OPEN=1이면 예전처럼 누구나 고칠 수 있다. */
+    const canWrite = lib.editOpen() ? true : lib.isEditor(row);
     const me = row
-      ? { name: row.name, avatar: row.avatar, canEdit: !!row.can_edit, isOwner: !!row.is_owner }
+      ? { name: row.name, avatar: row.avatar, canEdit: lib.isEditor(row), isOwner: lib.isOwner(row) }
       : null;
 
     if (req.method === "GET") {
@@ -50,15 +51,17 @@ module.exports = async function handler(req, res) {
         return lib.json(res, 200, { ok: true, doc: rows && rows.length ? { data: rows[0].data } : null });
       }
 
-      if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me, open });
+      if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me, canWrite });
       return lib.json(res, 200, {
-        ok: true, rev, me, open,
+        ok: true, rev, me, canWrite,
         docs: docs || (await tables.readPlan(store))
       });
     }
 
     if (req.method === "POST") {
-      if (!open && !row.can_edit) return lib.json(res, 403, { ok: false, error: "readonly" });
+      if (!canWrite) {
+        return lib.json(res, 403, { ok: false, error: row ? "readonly" : "signin" });
+      }
 
       const body = await lib.readBody(req);
       const writes = (body && body.writes) || {};

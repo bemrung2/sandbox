@@ -12,7 +12,7 @@ import { accountFooter } from "../ui/shell.js";
 import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, fmtMD, dowOf, todayISO, dayDiff,
-  trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus, routeDays,
+  trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus, stopsOn,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
@@ -68,7 +68,7 @@ function emptyState(){
     '<div class="empty">' +
       '<div class="empty-mark">' + icon("compass") + '</div>' +
       '<h2>아직 여행이 없어요</h2>' +
-      '<p>날짜만 정하면 일정 · 음식 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
+      '<p>날짜만 정하면 일정 · 식사 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
       (bookedWaiting() ? '<button class="btn btn-quiet" type="button" data-booked>' +
         icon("plane") + '예약 내용 불러오기</button>' : '') +
@@ -209,7 +209,7 @@ export function renderTrip(root, keepScroll){
   frag.appendChild(renderHero());
 
   var tabs = el('<div class="tabs" role="tablist"></div>');
-  [["sched","일정"],["map","지도"],["food","음식"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
+  [["sched","일정"],["map","지도"],["food","식사"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
     var b = el('<button class="tab" role="tab" type="button" aria-selected="' + (state.tab === t[0]) + '">' + t[1] + '</button>');
     ripple(b, function(){ go({ tab: t[0] }); });
     tabs.appendChild(b);
@@ -316,15 +316,19 @@ function countCard(t, d){
   return card;
 }
 
-/* The row of days, shared by 일정 and 지도. */
-function dayRow(days){
+/* The row of days, shared by 일정 and 지도. 지도에서는 여러 날을 고를 수 있어서
+   무엇이 눌린 상태인지와 누르면 무엇을 하는지를 밖에서 정한다. */
+function dayRow(days, opts){
+  opts = opts || {};
+  var on = opts.on || function(i){ return state.day === i; };
+  var pick = opts.pick || function(i){ go({ day: i }); };
   var pair = currentPair();
   var dayrow = el('<div class="dayrow"></div>');
   days.forEach(function(day, i){
     var isToday = pair && pair.dayIndex === i;
     var b = el('<button class="daybtn' + (isToday ? " today" : "") + '" type="button" aria-pressed="' +
-      (state.day === i) + '"><b>' + fmtMD(day.date) + '</b>' + day.dow + (isToday ? " · 오늘" : "") + '</button>');
-    ripple(b, function(){ go({ day: i }); });
+      on(i) + '"><b>' + fmtMD(day.date) + '</b>' + day.dow + (isToday ? " · 오늘" : "") + '</button>');
+    ripple(b, function(){ pick(i); });
     dayrow.appendChild(b);
   });
 
@@ -482,10 +486,10 @@ function attachStrip(itemId, atts){
 }
 
 /* ---------- tab: map ---------- */
-/* 구글 지도로 보내는 주소 두 가지. 키도, 계정도 필요 없다 —
-   장소 이름을 그대로 넘기고 지도 쪽이 찾게 한다.
-   길찾기는 경유지를 9개까지 받으므로, 그보다 길면 고르게 솎아낸다. */
-/* 같은 곳에 계속 머무르면 한 번만 센다 — 사흘 로마는 로마 한 곳이다. */
+/* 자세한 지도는 지도 앱이 한다. 여기서 보고 싶은 건 "어디를 거쳐 가는가" 하나뿐이라,
+   줄 하나에 점을 꿴 노선도를 직접 그린다 — 키도, 좌표도, 바깥 요청도 없다.
+   점을 누르면 그 곳이, 위 버튼을 누르면 전체 동선이 구글 지도에서 열린다.
+   길찾기 주소는 경유지를 9개까지 받으므로, 그보다 길면 고르게 솎아낸다. */
 function oneByOne(stops){
   var out = [], last = null;
   stops.forEach(function(s){ if (s && s !== last){ out.push(s); last = s; } });
@@ -502,126 +506,109 @@ function trimStops(stops){
 function routeUrl(stops){
   var list = trimStops(stops);
   if (!list.length) return null;
-  if (list.length === 1) return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(list[0]);
+  if (list.length === 1) return mapUrl(list[0], true);
   var mid = list.slice(1, -1);
   return "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(list[0]) +
     "&destination=" + encodeURIComponent(list[list.length - 1]) +
     (mid.length ? "&waypoints=" + mid.map(encodeURIComponent).join("%7C") : "");
 }
-function embedUrl(stops){
-  var list = trimStops(stops);
-  if (!list.length) return null;
-  if (list.length === 1) return "https://www.google.com/maps?output=embed&q=" + encodeURIComponent(list[0]);
-  return "https://www.google.com/maps?output=embed&saddr=" + encodeURIComponent(list[0]) +
-    "&daddr=" + list.slice(1).map(encodeURIComponent).join("+to:");
+
+/* 보고 있는 날들. 주소에 실려 있어서 새로고침해도, 링크로 보내도 그대로다.
+     all        여행 전체
+     0,4,5      고른 날들 (며칠째인지로) */
+function spanOf(days){
+  var all = days.map(function(d, i){ return i; });
+  var raw = state.span || "all";
+  if (raw === "all") return { kind:"all", picks: all };
+  var seen = {}, picks = [];
+  raw.split(",").forEach(function(x){
+    var n = parseInt(x, 10);
+    if (isNaN(n) || n < 0 || n >= days.length || seen[n]) return;
+    seen[n] = 1; picks.push(n);
+  });
+  picks.sort(function(a, b){ return a - b; });
+  return picks.length ? { kind:"pick", picks: picks } : { kind:"all", picks: all };
 }
 
-/* 보고 있는 범위. 주소에 실려 있어서 새로고침해도 그대로다.
-     all                  여행 전체
-     day                  고른 하루
-     <시작>~<종료>         고른 기간 */
-function spanOf(days){
-  var raw = state.span || "all";
-  if (raw === "day"){
-    var d = days[Math.min(state.day, days.length - 1)];
-    return { kind:"day", from: d.date, to: d.date };
-  }
-  var pair = /^(\d{4}-\d\d-\d\d)~(\d{4}-\d\d-\d\d)$/.exec(raw);
-  if (pair) return { kind:"range", from: pair[1], to: pair[2] };
-  return { kind:"all", from: days[0].date, to: days[days.length - 1].date };
+/* 같은 곳에 이어서 머무르면 점 하나다 — 언제부터 언제까지인지만 붙는다. */
+function routeNodes(groups){
+  var out = [];
+  groups.forEach(function(g){
+    g.stops.forEach(function(place){
+      var last = out[out.length - 1];
+      if (last && last.place === place){ last.to = g; return; }
+      out.push({ place: place, from: g, to: g });
+    });
+  });
+  return out;
 }
 
 function renderMap(root, days){
   var span = spanOf(days);
-  var groups = routeDays(span.from, span.to).filter(function(g){ return g.stops.length; });
-  var stops = [];
-  groups.forEach(function(g){ g.stops.forEach(function(p){ stops.push(p); }); });
-  var route = oneByOne(stops);
-  var shown = trimStops(stops);
+  var groups = span.picks.map(function(i){
+    return { date: days[i].date, dow: days[i].dow, stops: stopsOn(days[i].date) };
+  }).filter(function(g){ return g.stops.length; });
 
-  /* 전체 · 기간 · 하루 */
   var chips = el('<div class="chiprow spanrow"></div>');
-  [["all", "전체"], ["range", "기간"], ["day", "하루"]].forEach(function(o){
+  [["all", "전체"], ["pick", "날짜 고르기"]].forEach(function(o){
     var b = el('<button class="chip" type="button" aria-pressed="' + (span.kind === o[0]) + '">' +
       esc(o[1]) + '</button>');
     ripple(b, function(){
       if (o[0] === span.kind) return;
-      if (o[0] === "all") return go({ span:"all" });
-      if (o[0] === "day") return go({ span:"day" });
-      /* 기간은 여행 전체에서 시작한다 — 좁혀 가는 게 자연스럽다. */
-      go({ span: days[0].date + "~" + days[days.length - 1].date });
+      go({ span: o[0] === "all" ? "all" : String(state.day) });
     });
     chips.appendChild(b);
   });
   root.appendChild(chips);
 
-  if (span.kind === "day") root.appendChild(dayRow(days));
-  if (span.kind === "range"){
-    var row = el('<div class="card spanpick"><div class="fld-row"></div></div>');
-    var inner = row.querySelector(".fld-row");
-    var from = pickerField({ type:"date", id:"mp-from", label:"시작", value: span.from, col:true });
-    var to = pickerField({ type:"date", id:"mp-to", label:"종료", value: span.to, col:true });
-    inner.appendChild(from); inner.appendChild(to);
-    function apply(){
-      var a = from.querySelector("input").value, b = to.querySelector("input").value;
-      if (!a || !b) return;
-      go({ span: (a <= b ? a + "~" + b : b + "~" + a) });
-    }
-    from.querySelector("input").addEventListener("change", apply);
-    to.querySelector("input").addEventListener("change", apply);
-    root.appendChild(row);
+  if (span.kind === "pick"){
+    root.appendChild(dayRow(days, {
+      on: function(i){ return span.picks.indexOf(i) >= 0; },
+      pick: function(i){
+        var next = span.picks.slice(), at = next.indexOf(i);
+        if (at >= 0){
+          if (next.length === 1) return;        /* 하나는 남겨둔다 */
+          next.splice(at, 1);
+        } else next.push(i);
+        next.sort(function(a, b){ return a - b; });
+        go({ day: i, span: next.join(",") });
+      }
+    }));
+    root.appendChild(el('<p class="spanhint">날짜를 눌러 넣고 뺍니다. 고른 날의 동선만 이어집니다.</p>'));
   }
 
-  if (!shown.length){
+  var nodes = routeNodes(groups);
+  if (!nodes.length){
     root.appendChild(el('<div class="card"><p class="card-empty">' +
-      '이 기간에는 적어둔 곳이 없어요. 일정에 장소를 적거나 그날의 동선을 채우면 지도에 올라옵니다.</p></div>'));
+      '이 날에는 적어둔 곳이 없어요. 일정에 장소를 적거나 그날의 동선을 채우면 여기에 이어집니다.</p></div>'));
     return;
   }
 
-  /* 지도 자체. 길찾기는 구글이 하고, 우리는 어디를 지나는지만 넘긴다. */
   var card = el('<div class="card mapcard"></div>');
-  var frame = el('<iframe class="mapframe" title="동선 지도" loading="lazy" ' +
-    'referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>');
-  frame.src = embedUrl(shown);
-  card.appendChild(frame);
+  var head = el('<div class="card-head"><h3>동선 · ' + nodes.length + '곳</h3></div>');
+  var open = el('<a class="quietbtn has" target="_blank" rel="noopener">' + icon("pin") + '지도 앱에서</a>');
+  open.href = routeUrl(nodes.map(function(n){ return n.place; }));
+  head.appendChild(open);
+  card.appendChild(head);
 
-  var open = el('<a class="btn btn-primary mapopen" target="_blank" rel="noopener">' +
-    icon("pin") + '구글 지도에서 열기</a>');
-  open.href = routeUrl(shown);
-  card.appendChild(open);
-  if (route.length > shown.length){
-    card.appendChild(el('<p class="card-empty">구글 지도는 한 번에 ' + shown.length + '곳까지 그려요. ' +
-      '기간이나 하루로 좁히면 ' + route.length + '곳이 다 보입니다.</p>'));
+  var strip = el('<div class="routemap"></div>');
+  nodes.forEach(function(n){
+    var when = fmtMD(n.from.date) + ' (' + n.from.dow + ')' +
+      (n.to !== n.from ? ' – ' + fmtMD(n.to.date) + ' (' + n.to.dow + ')' : '');
+    var row = el('<a class="rm-stop" target="_blank" rel="noopener">' +
+      '<span class="rm-dot"></span>' +
+      '<span class="rm-body"><b>' + esc(n.place) + '</b><small class="mono">' + esc(when) + '</small></span>' +
+      icon("pin", "rm-go") +
+    '</a>');
+    row.href = mapUrl(n.place, true);
+    strip.appendChild(row);
+  });
+  card.appendChild(strip);
+  if (nodes.length > trimStops(nodes.map(function(n){ return n.place; })).length){
+    card.appendChild(el('<p class="card-empty">지도 앱으로는 한 번에 11곳까지 넘어갑니다. ' +
+      '날짜를 좁히면 나머지도 이어서 볼 수 있어요.</p>'));
   }
   root.appendChild(card);
-
-  /* 지나는 순서. 같은 곳에 머무는 날들은 한 줄로 묶는다 — 사흘 내리 로마면
-     "11.24 (화) – 11.26 (목) 로마" 한 줄이다. */
-  var rows = [];
-  groups.forEach(function(g){
-    var last = rows[rows.length - 1];
-    if (last && last.key === g.stops.join("\u0000")) { last.to = g; return; }
-    rows.push({ key: g.stops.join("\u0000"), from: g, to: g, stops: g.stops });
-  });
-
-  var list = el('<div class="card routelist"></div>');
-  list.appendChild(el('<div class="card-head"><h3>지나는 곳 · ' + route.length + '</h3></div>'));
-  rows.forEach(function(r){
-    var g = r.from;
-    var i = 0;
-    days.forEach(function(d, n){ if (d.date === g.date) i = n; });
-    var when = fmtMD(g.date) + ' (' + g.dow + ')' +
-      (r.to !== g ? ' – ' + fmtMD(r.to.date) + ' (' + r.to.dow + ')' : '');
-    var row = el('<button class="routeday" type="button">' +
-      '<span class="routeday-when mono">' + when + '</span>' +
-      '<span class="routeday-stops">' + r.stops.map(function(p){
-        return '<span class="routestop">' + esc(p) + '</span>';
-      }).join('<span class="routearrow">→</span>') + '</span>' +
-    '</button>');
-    ripple(row, function(){ go({ span:"day", day: i }); });
-    list.appendChild(row);
-  });
-  root.appendChild(list);
 }
 
 /* ---------- tab: food ---------- */
@@ -656,7 +643,7 @@ function renderFood(root, days){
   if (!list.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">해당하는 식사가 없어요.</p></div>'));
 
   var addDate = days[state.day] ? days[state.day].date : days[0].date;
-  var add = el('<button class="addcard" type="button">' + icon("plus") + '음식 추가</button>');
+  var add = el('<button class="addcard" type="button">' + icon("plus") + '식사 추가</button>');
   ripple(add, function(){
     openItemEditor(null, addDate, { cat:"food", meal: state.meal === "all" ? "lunch" : state.meal });
   });
@@ -721,7 +708,7 @@ function renderShop(root, days){
     root.appendChild(shopCard(s));
   });
 
-  var add = el('<button class="addcard" type="button">' + icon("plus") + '가게 추가</button>');
+  var add = el('<button class="addcard" type="button">' + icon("plus") + '쇼핑 추가</button>');
   ripple(add, function(){ openShopEditor(null, days[state.day] ? days[state.day].date : days[0].date); });
   root.appendChild(add);
 }
@@ -847,35 +834,6 @@ function renderInfo(root){
   root.appendChild(dangerCard());
 }
 
-/* The last card in 정보: the one action with nothing after it. */
-function dangerCard(){
-  var t = trip();
-  var card = el(
-    '<div class="card danger">' +
-      '<div class="card-head"><h3>여행 삭제</h3></div>' +
-      '<p class="card-empty">일정 · 음식 · 쇼핑 · 정보에 적어둔 것이 모두 사라집니다. ' +
-        '되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.</p>' +
-      '<button class="btn btn-danger" type="button">' + icon("trash") + '이 여행 삭제하기</button>' +
-    '</div>'
-  );
-  ripple(card.querySelector(".btn-danger"), function(){
-    if (!Store.canEdit()){ Store.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요."); return; }
-    openConfirmDialog({
-      title: "정말 삭제하시겠습니까?",
-      body: "'" + (t.city || "이름 없는 여행") + "' 여행과 그 안의 모든 기록이 사라집니다. " +
-            "되돌릴 수 없습니다.",
-      label: "확인을 위해 아래 칸에 '삭제하기'를 적어주세요",
-      phrase: "삭제하기",
-      okLabel: "삭제하기"
-    }, function(){
-      Plan.removeTrip(t.id);
-      toast("'" + (t.city || "여행") + "'을 삭제했어요.");
-      go({ screen:"list", tripId: null });
-    });
-  });
-  return card;
-}
-
 /* One card shape for every editable list in 정보. */
 function sectionCard(o){
   var list = ordered(trip()[o.key]);
@@ -955,6 +913,30 @@ function packCard(){
   return card;
 }
 
+/* 정보의 맨 끝. 작은 글씨 하나 — 경고는 누른 다음에 나온다. */
+function dangerCard(){
+  var t = trip();
+  var box = el('<div class="dangerfoot"></div>');
+  var btn = el('<button class="linkbtn danger" type="button">' + icon("trash") + '여행 삭제</button>');
+  ripple(btn, function(){
+    if (!Store.canEdit()){ Store.refuse(); return; }
+    openConfirmDialog({
+      title: "정말 삭제하시겠습니까?",
+      body: "'" + (t.city || "이름 없는 여행") + "' 여행의 일정 · 식사 · 쇼핑 · 정보가 모두 사라집니다. " +
+            "되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.",
+      label: "확인을 위해 아래 칸에 '삭제하기'를 적어주세요",
+      phrase: "삭제하기",
+      okLabel: "삭제하기"
+    }, function(){
+      Plan.removeTrip(t.id);
+      toast("'" + (t.city || "여행") + "'을 삭제했어요.");
+      go({ screen:"list", tripId: null });
+    });
+  });
+  box.appendChild(btn);
+  return box;
+}
+
 export function openTripEditor(t){
   var adding = !t;
   var sheet = sheetShell(adding ? "여행 추가" : "여행 정보");
@@ -1013,7 +995,7 @@ export function openTripEditor(t){
 export function openShopEditor(shop, defaultDate){
   var days = tripDays();
   var cur = { dayDate: shop ? shop.dayDate : defaultDate };
-  var sheet = sheetShell(shop ? "가게 수정" : "가게 추가");
+  var sheet = sheetShell(shop ? "쇼핑 수정" : "쇼핑 추가");
   var body = sheet.querySelector(".sheet-body");
 
   body.appendChild(el('<div class="fld"><label for="sh-name">이름</label>' +
@@ -1088,9 +1070,10 @@ function openItemEditor(item, defaultDate, presets){
   row.appendChild(pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true }));
   body.appendChild(timeRow);
   body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
-  body.appendChild(el('<div class="fld"><label>음식 종류</label><div class="pickrow" id="ed-meal"></div>' +
-    '<p class="fld-hint">고르면 음식 탭에도 함께 표시됩니다. 음식은 시작 시간을 비워둘 수 있고, ' +
-    '그러면 음식 탭 맨 위에 시간 미정으로 모입니다.</p></div>'));
+  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div>' +
+    '<p class="fld-hint">고르면 식사 탭에도 함께 표시됩니다. 식사는 시작 시간을 비워둘 수 있고, ' +
+    '그러면 식사 탭 맨 위에 시간 미정으로 모입니다.</p></div>');
+  body.appendChild(mealFld);
   body.appendChild(el('<div class="fld"><label for="ed-tag">배지</label>' +
     '<input id="ed-tag" type="text" placeholder="예: 예약 17:15 · 2명" value="' + esc(item && item.tag ? item.tag : "") + '">' +
     '<p class="fld-hint">짧게 강조할 한마디. 비워두면 표시되지 않습니다.</p></div>'));
@@ -1103,12 +1086,25 @@ function openItemEditor(item, defaultDate, presets){
   pickGroup(sheet.querySelector("#ed-day"),
     days.map(function(d){ return { key:d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
     function(){ return cur.dayDate; }, function(v){ cur.dayDate = v; });
+  /* 식사 종류는 식사일 때만 묻는다 — 관광에 "점심"을 고를 일은 없다. */
+  function syncMeal(){
+    var food = cur.cat === "food";
+    mealFld.hidden = !food;
+    if (!food && cur.meal){
+      cur.meal = "";
+      mealRow.querySelectorAll(".pick").forEach(function(x, i){
+        x.setAttribute("aria-pressed", String(i === 0));
+      });
+    }
+  }
   pickGroup(sheet.querySelector("#ed-cat"),
     CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; }),
-    function(){ return cur.cat; }, function(v){ cur.cat = v; });
-  pickGroup(sheet.querySelector("#ed-meal"),
+    function(){ return cur.cat; }, function(v){ cur.cat = v; syncMeal(); });
+  var mealRow = sheet.querySelector("#ed-meal");
+  pickGroup(mealRow,
     [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
     function(){ return cur.meal; }, function(v){ cur.meal = v; });
+  syncMeal();
 
   var foot = sheet.querySelector(".sheet-foot");
   if (item){
@@ -1124,11 +1120,11 @@ function openItemEditor(item, defaultDate, presets){
     var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
     var title = titleEl.value.trim();
     if (!title){ titleEl.focus(); toast("이름을 적어주세요."); return; }
-    /* An item with no time is off the timeline, so it needs 음식 종류 to
-       have somewhere to live — otherwise saving would hide it everywhere. */
+    /* An item with no time is off the timeline, so it needs to be a 식사 with
+       a kind — otherwise saving it would hide it everywhere. */
     if (!sEl.value && !cur.meal){
       sEl.focus();
-      toast("시간을 비우려면 음식 종류를 골라주세요.");
+      toast(cur.cat === "food" ? "시간을 비우려면 식사 종류를 골라주세요." : "시작 시간을 골라주세요.");
       return;
     }
     var lines = function(id){

@@ -8,7 +8,7 @@
 ```
 src/ui/            화면을 이루는 부품 — 시트 · 아이콘 · 저장소 · 주소 · 끌어 옮기기
 src/plan/          계획 그 자체 — 데이터(model) · 화면(screens) · 지금 어디(nav)
-                   화면: 일정 · 지도 · 음식 · 쇼핑 · 정보
+                   화면: 일정 · 지도 · 식사 · 쇼핑 · 정보
 src/app.js         주소를 읽고 어느 화면인지 정하는 곳
 src/app.html       문서 껍데기
 api/_core.js       로그인 · 저장소 · 멤버
@@ -39,16 +39,16 @@ node build.js
 ## 저장 방식
 
 계획은 **Supabase(Postgres) 한 곳**에 있고, `bemlab.vercel.app`이 그 앞이다.
-문(카카오 로그인)은 지금 **꺼져 있다** — 주소를 아는 사람은 누구나 보고 고친다.
-`LOGIN_REQUIRED=1`이면 로그인해야 보이고, 편집은 주인이 사람별로 열어준다.
-스위치는 `api/_core.js`의 `loginRequired()` 한 곳뿐이고, 로그인 코드는 그대로 남아 있다.
+**보는 건 로그인 없이, 고치는 건 로그인한 편집자만.** 편집자는 `EDITOR_IDS`(카카오 id)가
+정하고, 비워두면 `members` 표가 정한다. 보는 것까지 잠그려면 `LOGIN_REQUIRED=1`,
+아무나 고치게 하려면 `EDIT_OPEN=1`. 스위치는 전부 `api/_core.js` 한 곳에 있다.
 
 | 어디서 열었나 | 저장소 |
 | --- | --- |
 | `bemlab.vercel.app` | Supabase Postgres |
 | 그 외 (아티팩트 등) | 그 브라우저의 localStorage — 혼자 보는 사본 |
 
-지금 어느 쪽인지는 목록 맨 아래에 적힌다. 설정은 [SETUP.md](SETUP.md).
+설정은 [SETUP.md](SETUP.md).
 
 ### 안에서는 한 가지 모양
 

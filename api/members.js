@@ -25,22 +25,26 @@ module.exports = async function handler(req, res) {
       const rows = (await store.select("members", "select=*&order=joined_at.asc")) || [];
       return lib.json(res, 200, {
         ok: true,
+        /* 명단으로 정해둔 경우에는 표가 아니라 명단이 답이고, 화면의 스위치도
+           의미가 없다 — locked로 알린다. */
+        locked: lib.membersLocked(),
         members: rows.map((m) => ({
           id: m.kakao_id, name: m.name, avatar: m.avatar,
-          canEdit: !!m.can_edit, isOwner: !!m.is_owner, you: m.kakao_id === who.id
+          canEdit: lib.isEditor(m), isOwner: lib.isOwner(m), you: m.kakao_id === who.id
         }))
       });
     }
 
     if (req.method === "POST") {
-      if (!row.is_owner) return lib.json(res, 403, { ok: false, error: "owner" });
+      if (!lib.isOwner(row)) return lib.json(res, 403, { ok: false, error: "owner" });
+      if (lib.membersLocked()) return lib.json(res, 403, { ok: false, error: "locked" });
       const body = await lib.readBody(req, 4096);
       const id = String((body && body.id) || "");
       if (!id) return lib.json(res, 400, { ok: false, error: "id" });
 
       const target = await lib.member(store, id);
       if (!target) return lib.json(res, 404, { ok: false, error: "unknown" });
-      if (target.is_owner) return lib.json(res, 400, { ok: false, error: "owner" });
+      if (lib.isOwner(target)) return lib.json(res, 400, { ok: false, error: "owner" });
 
       await store.upsert("members", [{
         kakao_id: target.kakao_id, name: target.name, avatar: target.avatar,

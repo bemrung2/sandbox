@@ -3,9 +3,9 @@
 계획은 **Supabase(Postgres) 한 곳**에 있다. 비밀값은 전부 Vercel 환경변수에 들어가고,
 저장소에는 아무것도 커밋하지 않는다.
 
-> **지금 로그인은 꺼져 있다.** 주소를 아는 사람은 누구나 보고 고칠 수 있다.
-> 카카오 로그인 코드는 그대로 살아 있고, Vercel 환경변수에 `LOGIN_REQUIRED=1`을 넣고
-> 다시 배포하면 바로 다시 켜진다 (2단계 설정이 되어 있어야 한다).
+> **보는 것은 열려 있고, 고치는 것은 잠겨 있다.** 주소를 아는 사람은 누구나 볼 수 있지만,
+> 고치려면 카카오로 로그인한 **편집자**여야 한다. 보는 것까지 잠그려면 `LOGIN_REQUIRED=1`,
+> 반대로 아무나 고치게 하려면 `EDIT_OPEN=1`을 환경변수에 넣고 다시 배포하면 된다.
 
 ## 1. 데이터베이스 (약 5분)
 
@@ -48,8 +48,26 @@ Vercel → 프로젝트 → **Settings → Environment Variables**:
 | `KAKAO_REST_API_KEY` | 2번의 REST API 키 |
 | `KAKAO_CLIENT_SECRET` | 2번의 Client Secret (안 켰으면 비워둬도 된다) |
 | `SESSION_SECRET` | 아무 긴 임의 문자열. `openssl rand -base64 32` 결과를 쓰면 된다 |
+| `EDITOR_IDS` | (선택) 고칠 수 있는 사람의 카카오 id. 쉼표로 여럿 — 예: `1234567890,1234567891` |
 
 `SESSION_SECRET`은 로그인 쿠키에 서명하는 데 쓴다. 바꾸면 모두 로그아웃된다.
+
+## 3-1. 누가 고칠 수 있나
+
+**`EDITOR_IDS`에 적힌 사람만** 고칠 수 있다. 적힌 사람은 주인이고, 나머지는 로그인해도
+보기만 된다. 멤버 화면의 스위치는 이때 사라진다 — 명단이 답이기 때문이다.
+
+카카오 id는 한 번 로그인하면 Supabase의 `members` 표 `kakao_id` 칸에 남는다.
+거기서 복사해 넣으면 된다.
+
+`EDITOR_IDS`를 비워두면 예전 방식이다: **처음 로그인한 사람이 주인**이 되고, 주인이
+멤버 화면에서 사람마다 편집을 열어준다. 표를 직접 고쳐도 된다.
+
+```sql
+-- 이 두 사람만 편집 · 주인, 나머지는 보기만
+update members set can_edit = true,  is_owner = true  where kakao_id in ('<id1>', '<id2>');
+update members set can_edit = false, is_owner = false where kakao_id not in ('<id1>', '<id2>');
+```
 
 ## 4. 다시 배포
 
