@@ -13,7 +13,7 @@ import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
-  spanLabel, emoPrefix, itemsOn, timedOn, currentPair
+  tripName, tripUnder, spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
 
@@ -168,8 +168,8 @@ function tripCard(t, box){
         '<span class="trip-top">' +
           '<span class="trip-flag">' + (t.emoji ? esc(t.emoji) : icon("pin")) + '</span>' +
           '<span class="trip-id">' +
-            '<span class="trip-city">' + esc(t.city || "이름 없는 여행") + '</span>' +
-            (t.country ? '<span class="trip-country mono">' + esc(t.country) + '</span>' : '') +
+            '<span class="trip-city">' + esc(tripName(t)) + '</span>' +
+            (tripUnder(t) ? '<span class="trip-country mono">' + esc(tripUnder(t)) + '</span>' : '') +
           '</span>' +
           '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
         '</span>' +
@@ -253,9 +253,11 @@ function renderHero(){
     '<div class="hero">' +
       '<div class="hero-top">' +
       '<button class="icon-btn hero-back" type="button" aria-label="여행 목록으로">' + icon("back") + '</button>' +
-      '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
-      esc(t.city) + '</h1>' +
-      '<span class="hero-country mono">' + esc(t.country) + '</span></div>' +
+      '<div class="hero-id">' +
+        '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
+        esc(tripName(t)) + '</h1>' +
+        (tripUnder(t) ? '<span class="hero-country mono">' + esc(tripUnder(t)) + '</span>' : '') +
+      '</div></div>' +
     '</div>'
   );
   hero.querySelector(".hero-top").appendChild(themeButton());
@@ -834,7 +836,7 @@ function dangerCard(){
     if (!Store.canEdit()){ Store.deny(); return; }
     openConfirmDialog({
       title: "정말 삭제하시겠습니까?",
-      body: "'" + (t.city || "이름 없는 여행") + "' 여행의 일정 · 식사 · 쇼핑 · 정보가 모두 사라집니다. " +
+      body: "'" + tripName(t) + "' 여행의 일정 · 식사 · 쇼핑 · 정보가 모두 사라집니다. " +
             "되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.",
       label: "확인을 위해 아래 칸에 '삭제하기'를 적어 주세요",
       phrase: "삭제하기",
@@ -842,7 +844,7 @@ function dangerCard(){
     }, function(){
       var undo = undoOf(Plan.removeTrip(t.id));
       go({ screen:"list", tripId: null });
-      if (undo) toastUndo("'" + (t.city || "여행") + "'을 삭제했습니다.", undo);
+      if (undo) toastUndo("'" + tripName(t) + "'을 삭제했습니다.", undo);
     });
   });
   box.appendChild(btn);
@@ -854,6 +856,10 @@ export function openTripEditor(t){
   var adding = !t;
   var sheet = sheetShell(adding ? "여행 추가" : "여행 정보");
   var body = sheet.querySelector(".sheet-body");
+  /* 제목이 맨 위다 — 이 여행을 뭐라고 부를지가 먼저고, 어디로 가는지가 그다음이다. */
+  body.appendChild(el('<div class="fld"><label for="t-title">제목</label>' +
+    '<input id="t-title" type="text" value="' + esc(t && t.title ? t.title : "") + '">' +
+    '<p class="fld-hint">비워두면 여행지가 제목이 됩니다.</p></div>'));
   var flagRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var inner = flagRow.querySelector(".fld-row");
   inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
@@ -883,6 +889,7 @@ export function openTripEditor(t){
     if (!start || !end){ toast("날짜를 골라 주세요."); return; }
     if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
     var rec = {
+      title: sheet.querySelector("#t-title").value.trim(),
       emoji: sheet.querySelector("#t-emoji").value.trim(),
       city: city,
       country: sheet.querySelector("#t-country").value.trim(),

@@ -44,6 +44,7 @@ function toRow(path, body) {
   if (p.length === 2) {
     return { table: "trips", key: "id=eq." + trip, row: {
       id: trip,
+      title: body.title || "",
       emoji: body.emoji || "",
       city: body.city || "",
       country: body.country || "",
@@ -126,7 +127,7 @@ function toDocs(tables) {
   const docs = {};
   for (const row of tables.trips || []) {
     docs[PREFIX + "trips/" + row.id] = {
-      pin: Number(row.ord) || 0,
+      pin: Number(row.ord) || 0, title: row.title || "",
       emoji: row.emoji || "", city: row.city || "", country: row.country || "",
       start: isoDate(row.start_date), end: isoDate(row.end_date)
     };

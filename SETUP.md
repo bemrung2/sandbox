@@ -11,7 +11,7 @@
 
 1. [supabase.com](https://supabase.com) → 새 프로젝트. 지역은 `Northeast Asia (Seoul)`이 가깝다.
 2. 왼쪽 **SQL Editor** → **New query** → 이 저장소의 [`db/schema.sql`](db/schema.sql)을 통째로 붙여넣고 **Run**.
-   표 9개가 생긴다. 다시 실행해도 안전하다.
+   표 9개가 생긴다. **다시 실행해도 안전하다** — 칸이 늘어난 뒤에도 이 파일만 다시 돌리면 맞춰진다.
 3. **Settings → API** 에서 두 가지를 복사한다.
    - **Project URL**
    - **service_role** 키 (`anon` 말고 **service_role**)
@@ -51,6 +51,13 @@ Vercel → 프로젝트 → **Settings → Environment Variables**:
 | `EDITOR_IDS` | (선택) 고칠 수 있는 사람의 카카오 id. 쉼표로 여럿 — 예: `1234567890,1234567891` |
 
 `SESSION_SECRET`은 로그인 쿠키에 서명하는 데 쓴다. 바꾸면 모두 로그아웃된다.
+
+> **이미 만들어 쓰고 있다면**: 여행 제목이 생기면서 `trips`에 칸이 하나 늘었다.
+> SQL Editor에 `db/schema.sql`을 다시 붙여넣고 Run 하거나, 이 한 줄만 실행하면 된다.
+>
+> ```sql
+> alter table trips add column if not exists title text not null default '';
+> ```
 
 ## 3-1. 누가 고칠 수 있나
 

@@ -25,6 +25,7 @@ export function newTrip(o){
   return {
     id: o.id || uid("tr"),
     pin: +o.pin || 0,
+    title: o.title || "",
     emoji: o.emoji || "",
     city: o.city || "",
     country: o.country || "",
@@ -298,8 +299,18 @@ export function currentPair(){
 
 /* ---------- the plan itself ---------- */
 export function metaOf(t){
-  return { pin: +t.pin || 0, emoji: t.emoji || "", city: t.city,
+  return { pin: +t.pin || 0, title: t.title || "", emoji: t.emoji || "", city: t.city,
            country: t.country || "", start: t.start, end: t.end };
+}
+
+/* 제목을 붙였으면 그게 이 여행의 이름이고, 아니면 여행지가 대신한다. */
+export function tripName(t){
+  return (t && (t.title || t.city)) || "이름 없는 여행";
+}
+/* 이름 아래 한 줄: 제목이 있으면 여행지까지 거기로 내려온다. */
+export function tripUnder(t){
+  if (!t) return "";
+  return [t.title ? t.city : "", t.country].filter(Boolean).join(" · ");
 }
 export function bodyOf(rec){
   var body = Object.assign({}, rec);

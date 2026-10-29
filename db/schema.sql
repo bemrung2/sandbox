@@ -26,6 +26,7 @@ create table if not exists meta (
 -- 목록 맨 위에서의 순서 (앱에서 끌어다 바꾼다).
 create table if not exists trips (
   id         text primary key,
+  title      text not null default '',
   emoji      text not null default '',
   city       text not null default '',
   country    text not null default '',
@@ -33,6 +34,9 @@ create table if not exists trips (
   end_date   date,
   ord        bigint not null default 0
 );
+
+-- 먼저 만든 표에도 더해준다 (이 파일은 다시 실행해도 안전하다)
+alter table trips add column if not exists title text not null default '';
 
 -- 하루의 한 줄 요약과 동선
 create table if not exists days (
