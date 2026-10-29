@@ -1,7 +1,7 @@
 /* Sheets, dialogs and the form controls they are made of. */
-import { el, esc, icon, ripple, toast } from "./dom.js";
+import { el, esc, icon, ripple, safeUrl, toast } from "./dom.js";
 
-/* A weekday name is calendar knowledge, not any experiment's. */
+/* A weekday name is calendar knowledge; it belongs with the controls. */
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 function dowOf(iso){ return DOW[new Date(iso + "T00:00:00").getDay()]; }
 
@@ -100,6 +100,37 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
     closeOverlay(); onSave(v);
   });
   input.addEventListener("keydown", function(e){ if (e.key === "Enter" && !opts.multiline) scrim.querySelector('[data-a="ok"]').click(); });
+  showOverlay(scrim);
+  setTimeout(function(){ input.focus(); }, 60);
+}
+
+/* Something that cannot be undone asks you to write it out. A tap can happen
+   by accident; typing 삭제하기 cannot. */
+export function openConfirmDialog(opts, onYes){
+  var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
+    '<h3>' + esc(opts.title) + '</h3>' +
+    '<p class="dialog-body">' + esc(opts.body) + '</p>' +
+    '<div class="fld"><label for="cfm-v">' + esc(opts.label || opts.phrase) + '</label>' +
+    '<input id="cfm-v" type="text" autocomplete="off" autocapitalize="off" ' +
+    'spellcheck="false" placeholder="' + esc(opts.phrase) + '"></div>' +
+    '<div class="dialog-actions">' +
+      '<span class="spacer"></span>' +
+      '<button class="btn-text" data-a="no">취소</button>' +
+      '<button class="btn-text danger" data-a="ok" disabled>' + esc(opts.okLabel || "삭제") + '</button>' +
+    '</div></div></div>');
+  var input = scrim.querySelector("#cfm-v");
+  var ok = scrim.querySelector('[data-a="ok"]');
+  function check(){ ok.disabled = input.value.trim() !== opts.phrase; }
+  function done(){
+    if (ok.disabled){ input.focus(); toast('"' + opts.phrase + '"를 그대로 적어주세요.'); return; }
+    closeOverlay();
+    onYes();
+  }
+  input.addEventListener("input", check);
+  input.addEventListener("keydown", function(e){ if (e.key === "Enter") done(); });
+  scrim.querySelector('[data-a="no"]').addEventListener("click", closeOverlay);
+  ok.addEventListener("click", done);
+  scrim.addEventListener("click", function(e){ if (e.target === scrim) closeOverlay(); });
   showOverlay(scrim);
   setTimeout(function(){ input.focus(); }, 60);
 }

@@ -1,24 +1,22 @@
-# BEMLAB
+# 여행 계획
 
-실험을 하나씩 만들어 모아두는 사이트. 홈에 실험 목록이 있고, 하나를 고르면 그 실험으로 들어간다.
-
-- EXP 01 — 여행 계획
+여러 여행을 만들어두고, 하나를 열어 일정 · 음식 · 쇼핑 · 정보를 같이 보고 같이 고치는 곳.
+`bemlab.vercel.app`에 올라가 있고, 들어가면 바로 여행 목록이 뜬다.
 
 ## 파일 구조
 
 ```
-src/core/          사이트. 어떤 실험에도 쓰이고, 실험 이름은 모른다
-src/exp/travel/    실험 하나 — 화면 · CSS · 저장 경로를 스스로 가진다
-src/app.js         둘을 아는 유일한 곳
+src/ui/            화면을 이루는 부품 — 시트 · 아이콘 · 저장소 · 주소 · 끌어 옮기기
+src/plan/          계획 그 자체 — 데이터(model) · 화면(screens) · 지금 어디(nav)
+src/app.js         주소를 읽고 어느 화면인지 정하는 곳
 src/app.html       문서 껍데기
 api/_core.js       로그인 · 저장소 · 멤버
-api/_travel.js     travel의 문서 ↔ 표 변환
+api/_tables.js     문서 ↔ 표 변환
 db/schema.sql      Supabase에 한 번 붙여넣는 스키마
 build.js           src/ → index.html + 모듈 복사
 ```
 
-실험을 더하는 건 `src/exp/<이름>/`을 만들고 `src/app.js`에 한 줄 더하는 것이다.
-지우는 것도 그 반대로, 폴더와 한 줄. 자세한 규칙은 [CLAUDE.md](CLAUDE.md).
+자세한 규칙은 [CLAUDE.md](CLAUDE.md).
 
 ## 수정하는 법
 
@@ -49,11 +47,11 @@ node build.js
 | `bemlab.vercel.app` | Supabase Postgres |
 | 그 외 (아티팩트 등) | 그 브라우저의 localStorage — 혼자 보는 사본 |
 
-지금 어느 쪽인지는 홈 맨 아래에 적힌다. 설정은 [SETUP.md](SETUP.md).
+지금 어느 쪽인지는 목록 맨 아래에 적힌다. 설정은 [SETUP.md](SETUP.md).
 
 ### 안에서는 한 가지 모양
 
-저장소가 어디든 앱은 한 가지만 안다 — **경로 하나에 문서 하나**. 실험마다 자기 접두사를 쓴다.
+저장소가 어디든 앱은 한 가지만 안다 — **경로 하나에 문서 하나**.
 
 ```
 travel/trips/<여행id>                     여행
@@ -65,7 +63,7 @@ blobs/<id>                               사진 한 장 (목록 동기화에서 
 ```
 
 레코드 하나가 문서 하나라서, 두 사람이 서로 다른 걸 고쳐도 덮어쓰지 않는다.
-`api/_travel.js`가 이 경로를 진짜 표의 행으로 옮긴다 — Supabase 화면에서는 `items`, `shops`,
+`api/_tables.js`가 이 경로를 진짜 표의 행으로 옮긴다 — Supabase 화면에서는 `items`, `shops`,
 `entries` 같은 **읽을 수 있는 표**로 보이고, 앱은 그 사실을 몰라도 된다.
 
 열어둔 화면은 4초마다 "바뀐 게 있나(rev)"만 묻고, 없으면 서버가 아무것도 보내지 않는다.

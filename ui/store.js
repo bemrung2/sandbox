@@ -1,9 +1,9 @@
-/* Where anything an experiment saves goes.
+/* Where everything the plan saves goes.
  *
  * One shape, wherever it ends up: a flat map of document path to body. A
  * record is a document, so an edit writes one path and two people editing
- * different things never overwrite each other. Each experiment owns the paths
- * under its own id — this file never looks inside them.
+ * different things never overwrite each other. What the paths mean is
+ * src/plan/model.js's business — this file never looks inside them.
  *
  *   RemoteStore  /api/plan, behind a sign-in. The shared one.
  *   LocalStore   this browser only. What you get with no backend.
@@ -11,7 +11,8 @@
 import { toast } from "./dom.js";
 
 var API = "api/plan";
-var LOCAL_KEY = "lab.docs";
+var LOCAL_KEY = "plan.docs";
+var LOCAL_WAS = "lab.docs";   /* what it was called before the site was only this */
 
 /* ---------- this browser only ---------- */
 function LocalStore(){
@@ -23,7 +24,7 @@ function LocalStore(){
 }
 LocalStore.prototype.open = async function(){
   try{
-    var raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
+    var raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || localStorage.getItem(LOCAL_WAS) || "null");
     if (raw && raw.docs) this.map = raw.docs;
   }catch(e){ /* nothing saved yet */ }
 };
@@ -37,9 +38,9 @@ LocalStore.prototype.write = function(path, body){
   }, 300);
 };
 LocalStore.prototype.watch = function(){};
-LocalStore.prototype.blobPut = async function(id, data){ localStorage.setItem("lab.blob." + id, data); };
-LocalStore.prototype.blobGet = async function(id){ return localStorage.getItem("lab.blob." + id); };
-LocalStore.prototype.blobDrop = function(id){ try{ localStorage.removeItem("lab.blob." + id); }catch(e){} };
+LocalStore.prototype.blobPut = async function(id, data){ localStorage.setItem("plan.blob." + id, data); };
+LocalStore.prototype.blobGet = async function(id){ return localStorage.getItem("plan.blob." + id) || localStorage.getItem("lab.blob." + id); };
+LocalStore.prototype.blobDrop = function(id){ try{ localStorage.removeItem("plan.blob." + id); localStorage.removeItem("lab.blob." + id); }catch(e){} };
 
 /* ---------- the shared one ---------- */
 function RemoteStore(){

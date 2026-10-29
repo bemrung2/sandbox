@@ -1,7 +1,7 @@
 /*
- * The site's own server side: who is signed in, who may edit, and how to reach
- * the database. It knows nothing about any experiment — the translation from
- * one experiment's documents to its tables lives in api/_<experiment>.js.
+ * The server side: who is signed in, who may edit, and how to reach the
+ * database. Turning the documents the page saves into table rows is
+ * api/_tables.js's job, not this file's.
  *
  * No dependencies: the repo stays build-free.
  */

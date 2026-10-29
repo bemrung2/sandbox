@@ -1,13 +1,18 @@
 import { el, icon, ripple } from "./dom.js";
 
 export var Theme = {
-  get(){ try{ return localStorage.getItem("lab.theme") || ""; }catch(e){ return ""; } },
+  /* "lab.theme" is what this was called while the site was a lab; a choice
+     made then is still the choice. */
+  get(){
+    try{ return localStorage.getItem("plan.theme") || localStorage.getItem("lab.theme") || ""; }
+    catch(e){ return ""; }
+  },
   systemDark(){ return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; },
   isDark(){ var t = this.get(); return t ? t === "dark" : this.systemDark(); },
   apply(){ var t = this.get(); if (t) document.documentElement.setAttribute("data-theme", t); },
   toggle(){
     var next = this.isDark() ? "light" : "dark";
-    try{ localStorage.setItem("lab.theme", next); }catch(e){ /* private mode */ }
+    try{ localStorage.setItem("plan.theme", next); }catch(e){ /* private mode */ }
     document.documentElement.setAttribute("data-theme", next);
     return next;
   }

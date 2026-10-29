@@ -1,21 +1,54 @@
-/* ---------- trip list ---------- */
+/* ---------- the trips ---------- */
   .page-head{ display: flex; align-items: center; gap: 4px; margin: 0 0 22px; }
-  .page-head .back{ margin-left: -10px; }
   .page-title{ flex: 1; min-width: 0; }
-  .page-kicker{ display: block; font-size: 10.5px; letter-spacing: 0.12em; color: var(--ink-faint); }
-  .page-title h1{ font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .page-title h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
 
   .trip-list{ display: flex; flex-direction: column; gap: 12px; }
+  /* The card is a frame: the whole of it opens the trip, and the two controls
+     in its corner (핀 · 손잡이) sit above that, not inside it. */
   .trip-card{
-    display: flex; flex-direction: column;
-    width: 100%; padding: 16px 16px 13px;
+    position: relative;
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 22px;
+  }
+  .trip-open{
+    display: flex; flex-direction: column;
+    width: 100%; padding: 16px 16px 13px;
+    background: transparent; border: none; border-radius: 22px;
     font: inherit; color: inherit; text-align: left; cursor: pointer;
   }
-  .trip-card:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+  .trip-open:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
   .trip-card.live{ border-color: var(--travel); }
   .trip-card.past{ opacity: 0.66; }
+  .trip-card.pinned{ border-color: var(--signal); }
+
+  /* 핀과 손잡이. 통계 줄 오른쪽 끝을 비워두고 그 자리에 얹는다. */
+  .trip-acts{
+    position: absolute; right: 9px; bottom: 8px;
+    display: flex; align-items: center; gap: 2px;
+  }
+  .trip-pin{
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; padding: 0;
+    background: transparent; border: none; border-radius: 12px;
+    color: var(--ink-faint); cursor: pointer;
+  }
+  .trip-pin .icon{ width: 17px; height: 17px; }
+  .trip-pin.on{ color: var(--signal); }
+  .trip-pin:hover{ background: var(--surface-2); }
+  .trip-pin:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
+  .trip-grip{
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 12px;
+    color: var(--ink-faint); cursor: grab;
+    touch-action: none;            /* 끌 때 화면이 같이 스크롤되지 않게 */
+  }
+  .trip-grip .icon{ width: 18px; height: 18px; }
+  .trip-card.dragging{
+    z-index: 5; cursor: grabbing;
+    box-shadow: 0 14px 30px var(--shadow); border-color: var(--signal);
+  }
+  .trip-card.dragging .trip-grip{ cursor: grabbing; }
 
   .trip-top{ display: flex; align-items: center; gap: 11px; }
   .trip-flag{
@@ -49,12 +82,13 @@
     word-break: keep-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .trip-stats{
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line);
+    padding-right: 42px;           /* 핀 자리 */
   }
+  .trip-card.pinned .trip-stats{ padding-right: 80px; }
   .trip-stat{ font-size: 11px; color: var(--ink-faint); }
   .trip-stat b{ font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-right: 3px; }
-  .trip-go{ margin-left: auto; color: var(--ink-faint); display: flex; }
   .trip-add{ margin-top: 2px; }
 
 

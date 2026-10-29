@@ -1,4 +1,4 @@
--- BEMLAB — 여행 계획. Supabase SQL Editor에 통째로 붙여넣고 실행.
+-- 여행 계획. Supabase SQL Editor에 통째로 붙여넣고 실행.
 -- 다시 실행해도 안전하다 (if not exists).
 --
 -- 모든 테이블은 RLS를 켜되 정책을 두지 않는다. 서버(service_role)만 읽고 쓰고,
@@ -22,6 +22,8 @@ create table if not exists meta (
   body jsonb not null default '{}'::jsonb
 );
 
+-- 여행 하나. ord는 핀이다: 0이면 핀 없음, 1부터는 핀을 꽂은 순서 =
+-- 목록 맨 위에서의 순서 (앱에서 끌어다 바꾼다).
 create table if not exists trips (
   id         text primary key,
   emoji      text not null default '',

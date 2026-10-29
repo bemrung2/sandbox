@@ -1,5 +1,9 @@
-/* Where inside this experiment you are. The site's router owns the address;
-   this owns the meaning of the part after /travel. */
+/* Where in the plan you are. The address is the screen, so this is what the
+   address means:
+
+     /                          the trips
+     /t/<id>/<tab>/<day>        one of them  (음식 탭은 끝에 끼니가 붙는다)
+*/
 
 export var state = { screen: "list", tripId: null, tab: "sched", day: 0, meal: "all" };
 
@@ -9,8 +13,8 @@ export function wire(o){ navigate = o.go; repaintFn = o.paint; }
 
 export function pathOf(s){
   s = s || state;
-  if (s.screen !== "trip" || !s.tripId) return "/travel";
-  return "/travel/t/" + encodeURIComponent(s.tripId) + "/" + s.tab + "/" + s.day +
+  if (s.screen !== "trip" || !s.tripId) return "/";
+  return "/t/" + encodeURIComponent(s.tripId) + "/" + s.tab + "/" + s.day +
     (s.tab === "food" && s.meal !== "all" ? "/" + s.meal : "");
 }
 

@@ -1,6 +1,6 @@
 /*
- * 여행 계획 (travel) — the one place that knows both the documents the page
- * saves and the tables they are kept in.
+ * The one place that knows both the documents the page saves and the tables
+ * they are kept in.
  *
  *   travel/trips/<id>                -> trips
  *   travel/trips/<id>/days/<date>    -> days
@@ -10,7 +10,8 @@
  *   travel/trips/<id>/attach/<id>    -> attachments
  *   blobs/<id>                       -> photos
  *
- * Another experiment gets its own file like this one; nothing here is shared.
+ * The "travel/" prefix is what the browser has been saving under all along;
+ * the database never sees it.
  */
 
 const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes"];
@@ -34,7 +35,7 @@ function toRow(path, body) {
   if (p[0] === "meta" && p.length === 2) {
     return { table: "meta", key: "key=eq." + p[1], row: { key: p[1], body: body } };
   }
-  /* 여행 계획's documents live under travel/trips/... */
+  /* the plan's documents live under travel/trips/... */
   if (p[0] !== "travel") return null;
   p = p.slice(1);
   if (p[0] !== "trips" || !p[1]) return null;
@@ -47,7 +48,9 @@ function toRow(path, body) {
       city: body.city || "",
       country: body.country || "",
       start_date: body.start || null,
-      end_date: body.end || null
+      end_date: body.end || null,
+      /* 0 = 핀 없음. 핀을 꽂은 여행끼리는 이 번호 순서로 맨 위에 선다. */
+      ord: Number(body.pin) || 0
     } };
   }
   if (p.length !== 4) return null;
@@ -123,6 +126,7 @@ function toDocs(tables) {
   const docs = {};
   for (const row of tables.trips || []) {
     docs[PREFIX + "trips/" + row.id] = {
+      pin: Number(row.ord) || 0,
       emoji: row.emoji || "", city: row.city || "", country: row.country || "",
       start: isoDate(row.start_date), end: isoDate(row.end_date)
     };

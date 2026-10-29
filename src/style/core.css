@@ -16,6 +16,7 @@
     --travel: #9A6224;
     --travel-soft: #F7E7D3;
     --danger: #A32C22;
+    --danger-line: #E6BDB7;
     --airline: #D4541A;
 
     --c-air: #3E6FA8;
@@ -52,6 +53,7 @@
       --travel: #E3A96C;
       --travel-soft: #3D2F1C;
       --danger: #FF9E92;
+      --danger-line: #56302C;
       --airline: #FF8E5E;
 
       --c-air: #8FB8E8;
@@ -84,6 +86,7 @@
     --travel: #E3A96C;
     --travel-soft: #3D2F1C;
     --danger: #FF9E92;
+    --danger-line: #56302C;
     --airline: #FF8E5E;
 
     --c-air: #8FB8E8;
@@ -155,51 +158,24 @@
   .rip > *:not(.ink){ position: relative; z-index: 1; }
 
   /* a press also sinks, which reads as weight rather than as a highlight */
-  .btn, .lab-row, .trip-card, .kakao, .daybtn, .chip, .pick{
+  .btn, .trip-open, .kakao, .daybtn, .chip, .pick{
     transition: transform 120ms ease, box-shadow 160ms ease;
   }
-  .btn:active, .lab-row:active, .trip-card:active, .kakao:active{ transform: scale(0.985); }
+  .btn:active, .trip-open:active, .kakao:active{ transform: scale(0.985); }
 
   @media (prefers-reduced-motion: reduce){
     .rip > .ink{ animation-duration: 1ms; }
-    .btn:active, .lab-row:active, .trip-card:active, .kakao:active{ transform: none; }
+    .btn:active, .trip-open:active, .kakao:active{ transform: none; }
   }
 
-/* ---------- home ---------- */
+/* ---------- the page ---------- */
   .pad{ padding: calc(var(--safe-t) + 18px) 18px 0; }
-  .wordmark-row{ display: flex; align-items: center; gap: 8px; }
   .wordmark{
     flex: 1; min-width: 0;
     font-family: "IBM Plex Mono", monospace;
     font-size: 21px; font-weight: 700; letter-spacing: 0.18em;
     margin: 0 0 2px;
   }
-  .wordmark-row{ margin-bottom: 26px; }
-
-  .lab-list{ display: flex; flex-direction: column; gap: 10px; }
-  .lab-row{
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; padding: 16px;
-    background: var(--surface); border: 1px solid var(--line);
-    border-radius: 20px;
-    color: inherit; text-align: left; font: inherit; cursor: pointer;
-  }
-  
-  .lab-row:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
-  .lab-mark{
-    width: 44px; height: 44px; border-radius: 14px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    background: var(--signal-soft); color: var(--signal);
-  }
-  .lab-text{ flex: 1; min-width: 0; }
-  .lab-index{ display: block; font-size: 10.5px; letter-spacing: 0.12em; color: var(--ink-faint); }
-  .lab-name{ display: block; font-size: 16px; font-weight: 600; margin-top: 1px; }
-  .lab-desc{ display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
-  .lab-go{ color: var(--ink-faint); }
-  .lab-row.vacant{
-    cursor: default; background: transparent; border-style: dashed; color: var(--ink-faint);
-  }
-  .lab-row.vacant .lab-mark{ background: var(--surface-2); color: var(--ink-faint); }
   .build-stamp{ margin: 18px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
   .account-row{ display: flex; justify-content: center; gap: 4px; margin-top: 26px; flex-wrap: wrap; }
   .linkbtn{
@@ -349,6 +325,11 @@
     width: 100%; max-width: 340px; box-shadow: 0 18px 40px var(--shadow);
   }
   .dialog h3{ margin: 0 0 14px; font-size: 17px; font-weight: 700; }
+  .dialog-body{
+    font-size: 13px; line-height: 1.55; color: var(--ink-soft);
+    margin: -6px 0 16px; word-break: keep-all;
+  }
+  .btn-text[disabled]{ opacity: 0.4; cursor: default; }
   .dialog-actions{ display: flex; justify-content: flex-end; gap: 2px; align-items: center; margin-top: 4px; }
   .dialog-actions .spacer{ flex: 1; }
   .btn-text{
@@ -385,6 +366,12 @@
     .pulse-live i{ animation: none; }
   }
   [hidden]{ display: none !important; }
+  /* While a row is being dragged, nothing else on the page reacts to the
+     finger: no text selection, no iOS magnifier, no hover highlights. */
+  body.dragging-row{
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: none;            /* 끌고 있는 동안에는 화면이 따라 움직이지 않는다 */
+  }
 
 /* ---------- cards ---------- */
   .card{
@@ -392,6 +379,10 @@
     border-radius: 18px; padding: 15px; margin: 0 18px 10px;
   }
   .card.dashed{ background: transparent; border-style: dashed; }
+  .card.danger{ border-color: var(--danger-line); }
+  .card.danger .card-head h3{ color: var(--danger); }
+  .card.danger .card-empty{ margin-bottom: 14px; line-height: 1.55; word-break: keep-all; }
+  .card.danger .btn-danger{ width: 100%; }
   .card-top{ display: flex; align-items: flex-start; gap: 10px; }
   .card-name{ flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; margin: 0; word-break: keep-all; }
   .card-when{ font-size: 11.5px; color: var(--ink-faint); margin: 0 0 3px; }
@@ -538,18 +529,17 @@
 
   /* ---------- waiting ---------- */
   /* Shaped like what is coming, so the page does not jump when it arrives. */
-  .lab-row.ghost{ cursor: default; pointer-events: none; }
-  .lab-row.ghost .lab-mark{ background: var(--surface-2); }
+  .trip-card.ghost{ cursor: default; pointer-events: none; padding: 20px 16px; }
   .bar{
     display: block; height: 10px; border-radius: 5px;
     background: var(--surface-2);
     animation: breathe 1.4s ease-in-out infinite;
   }
   .bar-s{ width: 44px; height: 8px; }
-  .bar-m{ width: 42%; margin-top: 7px; height: 13px; }
-  .bar-l{ width: 68%; margin-top: 7px; }
-  .lab-row.ghost .bar-m{ animation-delay: 0.1s; }
-  .lab-row.ghost .bar-l{ animation-delay: 0.2s; }
+  .bar-m{ width: 52%; margin-top: 11px; height: 17px; }
+  .bar-l{ width: 72%; margin-top: 11px; }
+  .ghost .bar-m{ animation-delay: 0.1s; }
+  .ghost .bar-l{ animation-delay: 0.2s; }
   @keyframes breathe{ 0%, 100%{ opacity: 1; } 50%{ opacity: 0.45; } }
   @media (prefers-reduced-motion: reduce){ .bar{ animation: none; } }
 
@@ -571,7 +561,7 @@
   :root[data-theme="dark"] .signin-art .orb{ opacity: 0.32; }
 
   .signin-main{ position: relative; }
-  .signin .wordmark{ flex: 0 0 auto; font-size: 34px; letter-spacing: 0.2em; margin: 0 0 26px; }
+  .signin .wordmark{ flex: 0 0 auto; font-size: 30px; letter-spacing: 0.14em; margin: 0 0 26px; }
   .kakao{
     display: flex; align-items: center; justify-content: center; gap: 9px;
     width: 100%; padding: 17px 20px;

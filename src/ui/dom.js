@@ -1,4 +1,4 @@
-/* Building blocks every experiment uses. Knows nothing about any of them. */
+/* The building blocks every screen is made of. */
 
 export function el(html){
   var t = document.createElement("template");
@@ -22,6 +22,9 @@ export var ICONS = {
   check: '<polyline points="5 12.5 10 17 19 7"/>',
   compass: '<circle cx="12" cy="12" r="9"/><polygon points="15.6 8.4 10.4 10.4 8.4 15.6 13.6 13.6" fill="currentColor" stroke="none"/>',
   pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
+  tack: '<line x1="8.5" y1="3.5" x2="15.5" y2="3.5"/><path d="M10 3.5l-.8 6.1L5.8 13h12.4l-3.4-3.4-.8-6.1"/><line x1="12" y1="13" x2="12" y2="20.5"/>',
+  grip: '<line x1="6.5" y1="9.5" x2="17.5" y2="9.5"/><line x1="6.5" y1="14.5" x2="17.5" y2="14.5"/>',
+  trash: '<polyline points="5 7 19 7"/><path d="M8 7V5a1.6 1.6 0 0 1 1.6-1.6h4.8A1.6 1.6 0 0 1 16 5v2"/><path d="M6.6 7l.8 12.2A1.6 1.6 0 0 0 9 20.7h6a1.6 1.6 0 0 0 1.6-1.5L17.4 7"/>',
   plane: '<path d="M2 13l20-7-7 20-3-8-8-3z"/>',
   bed: '<path d="M3 18v-8h11a5 5 0 0 1 5 5v3"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="7.5" cy="12.5" r="1.6"/>',
   clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>',

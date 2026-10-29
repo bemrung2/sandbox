@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Wraps src/app.html into a complete, standalone index.html and copies the
- * module tree next to it.
+ * module tree (src/ui, src/plan, src/style) next to it.
  *
  * Why this exists: src/app.html is written for the Claude Artifact viewer,
  * which supplies the document shell itself. Serving that file as-is on plain
@@ -55,7 +55,7 @@ const html = `<!doctype html>
 <meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="BEMLAB">
+<meta name="apple-mobile-web-app-title" content="여행 계획">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 ${head}
 </head>

@@ -1,22 +1,21 @@
-/* 여행 계획 — every screen of it. Talks to the site through core/ only. */
-import { el, esc, icon, ripple, tap, toast, safeUrl, hostOf } from "../../core/dom.js";
-import { Store } from "../../core/store.js";
-import { themeButton } from "../../core/theme.js";
+/* 여행 계획 — every screen of it. */
+import { el, esc, icon, ripple, tap, toast, safeUrl, hostOf } from "../ui/dom.js";
+import { Store } from "../ui/store.js";
+import { themeButton } from "../ui/theme.js";
 import {
-  sheetShell, openFormSheet, openTextDialog, pickerField, pickGroup,
+  sheetShell, openFormSheet, openTextDialog, openConfirmDialog, pickerField, pickGroup,
   showOverlay, closeOverlay
-} from "../../core/sheet.js";
-import { storePhoto, dropPhoto, thumb } from "../../core/photos.js";
+} from "../ui/sheet.js";
+import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
+import { reorder } from "../ui/reorder.js";
+import { accountFooter } from "../ui/shell.js";
 import {
-  Plan, CAT, CAT_ORDER, MEALS, MEAL_LABEL, LISTS, ordered, newTrip, seedTrip, seedId, tripToMap,
-  mins, fmtMD, dowOf, todayISO, dayDiff, isoOf, nowMins,
-  trip, tripsSorted, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
+  Plan, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
+  mins, fmtMD, dowOf, todayISO, dayDiff,
+  trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
-
-var leave = function(){};
-export function onLeave(fn){ leave = fn; }
 
 /* The trip that is already booked, written down from the airline's own
    screen. It is offered until it is actually here, and then never again. */
@@ -69,26 +68,16 @@ function placeHtml(text, place){
     '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></a>';
 }
 
-/* ---------- trip list ---------- */
-/* 다가오는 여행이 위로, 지난 여행은 최근 것부터 아래로. */
-function tripsForList(){
-  var today = todayISO();
-  var soon = [], past = [];
-  tripsSorted().forEach(function(t){ (dayDiff(t.end, today) >= 0 ? soon : past).push(t); });
-  return soon.concat(past.reverse());
-}
-
+/* ---------- the trips: the first screen there is ---------- */
 export function renderTrips(root, keepScroll){
   var wrap = el(
     '<div class="pad">' +
       '<div class="page-head">' +
-        '<button class="icon-btn back" type="button" aria-label="BEMLAB으로">' + icon("back") + '</button>' +
-        '<div class="page-title"><span class="page-kicker mono">EXP 01</span><h1>여행 계획</h1></div>' +
+        '<div class="page-title"><h1>여행 계획</h1></div>' +
       '</div>' +
     '</div>'
   );
   wrap.querySelector(".page-head").appendChild(themeButton());
-  ripple(wrap.querySelector(".back"), function(){ leave(); });
 
   var list = tripsForList();
   var box = el('<div class="trip-list"></div>');
@@ -96,7 +85,7 @@ export function renderTrips(root, keepScroll){
   if (!list.length){
     box.appendChild(emptyState());
   } else {
-    list.forEach(function(t){ box.appendChild(tripCard(t)); });
+    list.forEach(function(t){ box.appendChild(tripCard(t, box)); });
     var add = el('<button class="addcard trip-add" type="button">' + icon("plus") + '여행 추가</button>');
     ripple(add, function(){ openTripEditor(null); });
     box.appendChild(add);
@@ -107,45 +96,80 @@ export function renderTrips(root, keepScroll){
     }
   }
   wrap.appendChild(box);
+  wrap.appendChild(accountFooter());
 
   root.innerHTML = "";
   root.appendChild(wrap);
   if (!keepScroll) window.scrollTo(0, 0);
 }
 
-function tripCard(t){
+/* The pinned cards are the ones that may be dragged, and they are the top of
+   the list, so their order is simply their order in the DOM. */
+function pinnedRows(box){
+  return Array.prototype.filter.call(box.children, function(node){
+    return node.classList.contains("pinned");
+  });
+}
+
+function tripCard(t, box){
   var st = tripStatus(t);
   var days = tripDaysOf(t);
   var packOn = t.packList.filter(function(k){ return k.on; }).length;
   var theme = days.map(function(d){ return d.theme; }).filter(Boolean)[0] || "";
 
+  var pinned = isPinned(t);
   var card = el(
-    '<button class="trip-card ' + st.kind + '" type="button">' +
-      '<span class="trip-top">' +
-        '<span class="trip-flag">' + (t.emoji ? esc(t.emoji) : icon("pin")) + '</span>' +
-        '<span class="trip-id">' +
-          '<span class="trip-city">' + esc(t.city || "이름 없는 여행") + '</span>' +
-          (t.country ? '<span class="trip-country mono">' + esc(t.country) + '</span>' : '') +
+    '<div class="trip-card ' + st.kind + (pinned ? ' pinned' : '') + '">' +
+      '<button class="trip-open" type="button">' +
+        '<span class="trip-top">' +
+          '<span class="trip-flag">' + (t.emoji ? esc(t.emoji) : icon("pin")) + '</span>' +
+          '<span class="trip-id">' +
+            '<span class="trip-city">' + esc(t.city || "이름 없는 여행") + '</span>' +
+            (t.country ? '<span class="trip-country mono">' + esc(t.country) + '</span>' : '') +
+          '</span>' +
+          '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
         '</span>' +
-        '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
-      '</span>' +
-      '<span class="trip-dates mono">' + esc(t.start.replace(/-/g, ".")) + ' (' + dowOf(t.start) + ')' +
-        ' – ' + esc(fmtMD(t.end)) + ' (' + dowOf(t.end) + ')' +
-        '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
-      (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
-      '<span class="trip-stats">' +
-        '<span class="trip-stat"><b class="mono">' + t.items.length + '</b>일정</span>' +
-        '<span class="trip-stat"><b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
-        '<span class="trip-stat"><b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
-        '<span class="trip-go">' + icon("go") + '</span>' +
-      '</span>' +
-    '</button>'
+        '<span class="trip-dates mono">' + esc(t.start.replace(/-/g, ".")) + ' (' + dowOf(t.start) + ')' +
+          ' – ' + esc(fmtMD(t.end)) + ' (' + dowOf(t.end) + ')' +
+          '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
+        (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
+        '<span class="trip-stats">' +
+          '<span class="trip-stat"><b class="mono">' + t.items.length + '</b>일정</span>' +
+          '<span class="trip-stat"><b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
+          '<span class="trip-stat"><b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
+        '</span>' +
+      '</button>' +
+      '<div class="trip-acts"></div>' +
+    '</div>'
   );
-  ripple(card, function(){
+  ripple(card.querySelector(".trip-open"), function(){
     Plan.open(t.id);
     var p = currentPair();
     go({ screen:"trip", tripId: t.id, tab:"sched", meal:"all", day: p ? p.dayIndex : 0 });
   });
+
+  var acts = card.querySelector(".trip-acts");
+  /* Only the pinned ones are hand-ordered — the rest sort themselves by how
+     near they are, and dragging one would be undone by the next render. */
+  if (pinned){
+    var grip = el('<span class="trip-grip" aria-hidden="true">' + icon("grip") + '</span>');
+    acts.appendChild(grip);
+    reorder(grip, card, function(){ return pinnedRows(box); }, function(rows){
+      Plan.setPins(rows.map(function(node){ return node.dataset.trip; }));
+      toast("핀 순서를 바꿨어요.");
+      repaint();
+    });
+  }
+  var pin = el('<button class="trip-pin' + (pinned ? ' on' : '') + '" type="button" aria-pressed="' +
+    pinned + '" aria-label="' + (pinned ? "핀 해제" : "맨 위에 고정") + '">' + icon("tack") + '</button>');
+  ripple(pin, function(){
+    if (pinned){ Plan.unpin(t.id); toast("핀을 뺐어요."); }
+    else { Plan.pin(t.id); toast("맨 위에 고정했어요."); }
+    repaint();
+  });
+  acts.appendChild(pin);
+
+  card.dataset.trip = t.id;
   return card;
 }
 
@@ -642,6 +666,36 @@ function renderInfo(root){
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
     fields: [{ key:"text", label:"메모", placeholder:"기억해둘 것", required:true, area:true }]
   }));
+  root.appendChild(dangerCard());
+}
+
+/* The last card in 정보: the one action with nothing after it. */
+function dangerCard(){
+  var t = trip();
+  var card = el(
+    '<div class="card danger">' +
+      '<div class="card-head"><h3>여행 삭제</h3></div>' +
+      '<p class="card-empty">일정 · 음식 · 쇼핑 · 정보에 적어둔 것이 모두 사라집니다. ' +
+        '되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.</p>' +
+      '<button class="btn btn-danger" type="button">' + icon("trash") + '이 여행 삭제하기</button>' +
+    '</div>'
+  );
+  ripple(card.querySelector(".btn-danger"), function(){
+    if (!Store.canEdit()){ Store.refuse("편집 권한이 없어요. 계획 주인에게 요청해주세요."); return; }
+    openConfirmDialog({
+      title: "정말 삭제하시겠습니까?",
+      body: "'" + (t.city || "이름 없는 여행") + "' 여행과 그 안의 모든 기록이 사라집니다. " +
+            "되돌릴 수 없습니다.",
+      label: "확인을 위해 아래 칸에 '삭제하기'를 적어주세요",
+      phrase: "삭제하기",
+      okLabel: "삭제하기"
+    }, function(){
+      Plan.removeTrip(t.id);
+      toast("'" + (t.city || "여행") + "'을 삭제했어요.");
+      go({ screen:"list", tripId: null });
+    });
+  });
+  return card;
 }
 
 /* One card shape for every editable list in 정보. */
@@ -746,16 +800,7 @@ export function openTripEditor(t){
   body.appendChild(el('<p class="fld-hint">날짜를 줄이면 그 날에 있던 일정은 화면에서 빠집니다. 다시 늘리면 돌아옵니다.</p>'));
 
   var foot = sheet.querySelector(".sheet-foot");
-  if (!adding){
-    var del = el('<button class="btn btn-danger" type="button">삭제</button>');
-    ripple(del, function(){
-      Plan.removeTrip(t.id);
-      closeOverlay();
-      toast("여행을 삭제했어요.");
-      go({ screen:"list" });
-    });
-    foot.appendChild(del);
-  }
+  /* 삭제는 여기 없다 — 정보 탭 맨 아래, 한 번 더 묻는 곳에 있다. */
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
   ripple(save, function(){
     var city = sheet.querySelector("#t-city").value.trim();
@@ -781,7 +826,7 @@ export function openTripEditor(t){
     Plan.editTrip(t.id, rec);
     state.day = 0;
     toast("수정했어요.");
-    render();
+    repaint();
   });
   foot.appendChild(save);
   showOverlay(sheet);
@@ -814,7 +859,7 @@ export function openShopEditor(shop, defaultDate){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
     ripple(del, function(){
       Plan.listRemove("shops", shop.id);
-      closeOverlay(); toast("삭제했어요."); render();
+      closeOverlay(); toast("삭제했어요."); repaint();
     });
     foot.appendChild(del);
   }
@@ -830,7 +875,7 @@ export function openShopEditor(shop, defaultDate){
     };
     if (shop) Plan.listEdit("shops", shop.id, rec);
     else Plan.listAdd("shops", Object.assign(rec, { items: [] }));
-    closeOverlay(); toast(shop ? "수정했어요." : "추가했어요."); render();
+    closeOverlay(); toast(shop ? "수정했어요." : "추가했어요."); repaint();
   });
   foot.appendChild(save);
   showOverlay(sheet);

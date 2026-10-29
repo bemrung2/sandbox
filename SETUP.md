@@ -57,7 +57,7 @@ Vercel → 프로젝트 → **Settings → Environment Variables**:
 
 ## 5. 들어가기
 
-`bemlab.vercel.app`에 들어가면 바로 홈이 뜬다. 로그인은 없다.
+`bemlab.vercel.app`에 들어가면 바로 여행 목록이 뜬다. 로그인은 없다.
 
 `LOGIN_REQUIRED=1`로 켜둔 경우에만 카카오 로그인 화면이 나오고, 그때는
 **가장 먼저 로그인한 사람이 계획의 주인이 되어** 처음부터 편집할 수 있다.

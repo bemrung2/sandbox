@@ -1,7 +1,7 @@
 /* 여행 계획 — the data, and the reading of it.
  *
- * Everything this experiment saves lives under one prefix, so it can be
- * dropped from the site without leaving anything behind:
+ * One record is one document, so two people editing different things never
+ * overwrite each other. The paths are what the server turns into table rows:
  *
  *   travel/trips/<id>                      여행
  *   travel/trips/<id>/days/<YYYY-MM-DD>    그날 요약 + 동선
@@ -9,8 +9,8 @@
  *   travel/trips/<id>/<목록>/<id>           가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
  *   travel/trips/<id>/attach/<id>          일정에 붙인 자료
  */
-import { uid } from "../../core/dom.js";
-import { Store } from "../../core/store.js";
+import { uid } from "../ui/dom.js";
+import { Store } from "../ui/store.js";
 
 export var ROOT = "travel/trips";
 export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes"];
@@ -24,6 +24,7 @@ export function newTrip(o){
   o = o || {};
   return {
     id: o.id || uid("tr"),
+    pin: +o.pin || 0,
     emoji: o.emoji || "",
     city: o.city || "",
     country: o.country || "",
@@ -130,11 +131,10 @@ export var MEALS = [
   { key:"dinner", label:"저녁" }, { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
 ];
 export var MEAL_LABEL = { breakfast:"아침", lunch:"점심", dinner:"저녁", drink:"술", cafe:"카페" };
-var DOW = ["일","월","화","수","목","금","토"];
 
 /* ---------- time ---------- */
-/* Korea and Japan share UTC+9, so the device clock needs no conversion. */
-/* Korea and Japan share UTC+9, so the device clock needs no conversion. */
+/* Every clock on screen is the one you are travelling by: the times are
+   written down as they were given, and the device clock reads them as is. */
 export function mins(hhmm){
   if (!hhmm) return null;
   var p = String(hhmm).split(":");
@@ -151,9 +151,24 @@ export function nowMins(){ var d = new Date(); return d.getHours() * 60 + d.getM
 
 /* ---------- reading the plan ---------- */
 export function trip(){ return Plan.cur(); }
-export function tripsSorted(){
-  return Plan.trips.slice().sort(function(a, b){ return a.start.localeCompare(b.start); });
+export function isPinned(t){ return (+t.pin || 0) > 0; }
+
+/* 핀을 꽂은 여행이 꽂은 순서대로 맨 위에, 그 아래로 다가오는 여행이 임박한
+   순서대로, 지난 여행은 최근 다녀온 것부터. */
+export function tripsForList(){
+  var today = todayISO();
+  var pinned = [], soon = [], past = [];
+  Plan.trips.forEach(function(t){
+    if (isPinned(t)) pinned.push(t);
+    else if (dayDiff(t.end, today) >= 0) soon.push(t);
+    else past.push(t);
+  });
+  pinned.sort(function(a, b){ return (+a.pin) - (+b.pin) || a.start.localeCompare(b.start); });
+  soon.sort(function(a, b){ return a.start.localeCompare(b.start); });
+  past.sort(function(a, b){ return b.end.localeCompare(a.end); });
+  return pinned.concat(soon, past);
 }
+export function pinnedTrips(){ return tripsForList().filter(isPinned); }
 export function tripDaysOf(t){
   var out = [], guard = 0;
   var d = new Date(t.start + "T00:00:00"), end = new Date(t.end + "T00:00:00");
@@ -226,7 +241,8 @@ export function currentPair(){
 
 /* ---------- the plan itself ---------- */
 export function metaOf(t){
-  return { emoji: t.emoji || "", city: t.city, country: t.country || "", start: t.start, end: t.end };
+  return { pin: +t.pin || 0, emoji: t.emoji || "", city: t.city,
+           country: t.country || "", start: t.start, end: t.end };
 }
 export function bodyOf(rec){
   var body = Object.assign({}, rec);
@@ -283,9 +299,9 @@ export var Plan = {
      screen along when one person taps a trip */
   open(id){
     this.active = id;
-    try{ localStorage.setItem("travel.trip", id); }catch(e){ /* private mode */ }
+    try{ localStorage.setItem("plan.trip", id); }catch(e){ /* private mode */ }
   },
-  lastOpened(){ try{ return localStorage.getItem("travel.trip"); }catch(e){ return null; } },
+  lastOpened(){ try{ return localStorage.getItem("plan.trip"); }catch(e){ return null; } },
 
   path(key){ return ROOT + "/" + this.active + "/" + key; },
   write(path, body){ return Store.write(path, body); },
@@ -357,6 +373,32 @@ export var Plan = {
     Object.assign(t, rec);
     this.write(ROOT + "/" + id, metaOf(t));
   },
+  /* A pin is a number: nonzero means pinned, and the order among the pinned
+     is the order of those numbers. Dragging rewrites them 1, 2, 3… */
+  setPins(ids){
+    var self = this;
+    ids.forEach(function(id, i){
+      var t = self.tripById(id);
+      if (!t || t.pin === i + 1) return;
+      t.pin = i + 1;
+      self.write(ROOT + "/" + id, metaOf(t));
+    });
+  },
+  pin(id){
+    var t = this.tripById(id);
+    if (!t) return;
+    var ids = pinnedTrips().map(function(x){ return x.id; });
+    if (ids.indexOf(id) < 0) ids.push(id);
+    this.setPins(ids);
+  },
+  unpin(id){
+    var t = this.tripById(id);
+    if (!t) return;
+    t.pin = 0;
+    this.write(ROOT + "/" + id, metaOf(t));
+    this.setPins(pinnedTrips().filter(function(x){ return x.id !== id; }).map(function(x){ return x.id; }));
+  },
+
   removeTrip(id){
     var self = this, t = this.tripById(id);
     if (!t) return;

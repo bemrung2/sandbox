@@ -8,7 +8,7 @@
  *   POST /api/plan            { writes: { path: body|null } } -> { ok, rev }
  */
 const lib = require("./_core.js");
-const exp = require("./_travel.js");
+const tables = require("./_tables.js");
 
 module.exports = async function handler(req, res) {
   const cfg = lib.env();
@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
     const [row, rev, docs] = await Promise.all([
       who ? lib.member(store, who.id) : null,
       req.method === "GET" && !onePath ? store.rev() : null,
-      req.method === "GET" && !onePath && !since ? exp.readPlan(store) : null
+      req.method === "GET" && !onePath && !since ? tables.readPlan(store) : null
     ]);
     if (!row && gated) return lib.json(res, 401, { ok: false, error: "signin" });
 
@@ -43,7 +43,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "GET") {
       const one = onePath;
       if (one) {
-        if (!exp.PATH_OK.test(one) || one.indexOf("blobs/") !== 0) {
+        if (!tables.PATH_OK.test(one) || one.indexOf("blobs/") !== 0) {
           return lib.json(res, 400, { ok: false, error: "path" });
         }
         const rows = await store.select("photos", "select=data&id=eq." + encodeURIComponent(one.slice(6)));
@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
       if (since > 0 && since === rev) return lib.json(res, 200, { ok: true, unchanged: true, rev, me, open });
       return lib.json(res, 200, {
         ok: true, rev, me, open,
-        docs: docs || (await exp.readPlan(store))
+        docs: docs || (await tables.readPlan(store))
       });
     }
 
@@ -69,12 +69,12 @@ module.exports = async function handler(req, res) {
       /* group first, so one import is a handful of statements, not hundreds */
       const puts = {}, dels = {};
       for (const path of paths) {
-        if (!exp.PATH_OK.test(path)) return lib.json(res, 400, { ok: false, error: "path", path });
+        if (!tables.PATH_OK.test(path)) return lib.json(res, 400, { ok: false, error: "path", path });
         const value = writes[path];
         if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
           return lib.json(res, 400, { ok: false, error: "body", path });
         }
-        const mapped = exp.toRow(path, value || {});
+        const mapped = tables.toRow(path, value || {});
         if (!mapped) return lib.json(res, 400, { ok: false, error: "path", path });
         if (value === null) (dels[mapped.table] = dels[mapped.table] || []).push(mapped.key);
         else (puts[mapped.table] = puts[mapped.table] || []).push(mapped.row);

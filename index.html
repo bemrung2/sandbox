@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="BEMLAB">
+<meta name="apple-mobile-web-app-title" content="여행 계획">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>BEMLAB</title>
-<meta name="description" content="실험을 하나씩 만들어 모아두는 개인 실험실.">
+<title>여행 계획</title>
+<meta name="description" content="같이 보고 같이 고치는 여행 계획.">
 <!-- The web fonts must never hold up the first paint: the stack falls back to
      the system font, and the page swaps when they arrive. 500 is not used. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +20,7 @@
 <noscript><link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="style/core.css">
+<link rel="stylesheet" href="plan/plan.css">
 </head>
 <body>
 <div class="app">
@@ -28,14 +29,14 @@
        The first real render replaces it. -->
   <div id="view">
     <div class="pad">
-      <div class="wordmark-row"><h1 class="wordmark">BEMLAB</h1></div>
-      <div class="lab-list">
-        <div class="lab-row ghost"><span class="lab-mark"></span><span class="lab-text">
+      <div class="page-head"><div class="page-title"><h1>여행 계획</h1></div></div>
+      <div class="trip-list">
+        <div class="trip-card ghost">
           <span class="bar bar-s"></span><span class="bar bar-m"></span><span class="bar bar-l"></span>
-        </span></div>
-        <div class="lab-row ghost"><span class="lab-mark"></span><span class="lab-text">
+        </div>
+        <div class="trip-card ghost">
           <span class="bar bar-s"></span><span class="bar bar-m"></span><span class="bar bar-l"></span>
-        </span></div>
+        </div>
       </div>
     </div>
   </div>
