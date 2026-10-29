@@ -85,8 +85,8 @@ function loadBooked(){
    someone who would rather look at a finished one first. */
 function emptyState(){
   var box = el(
-    '<div class="empty">' +
-      '<div class="empty-mark">' + icon("compass") + '</div>' +
+    '<div class="blankstate">' +
+      '<div class="blankstate-mark">' + icon("compass") + '</div>' +
       '<h2>아직 여행이 없어요</h2>' +
       '<p>날짜만 정하면 일정 · 식사 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
@@ -160,8 +160,6 @@ function pinnedRows(box){
 
 function tripCard(t, box){
   var st = tripStatus(t);
-  var days = tripDaysOf(t);
-  var theme = days.map(function(d){ return d.theme; }).filter(Boolean)[0] || "";
 
   var pinned = isPinned(t);
   var card = el(
@@ -180,7 +178,6 @@ function tripCard(t, box){
           '<span class="td-wave">~</span>' +
           '<span class="td-day mono">' + esc(fmtMD(t.end)) + '<small>' + dowOf(t.end) + '</small></span>' +
           '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
-        (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
       '</button>' +
       '<div class="trip-acts"></div>' +
     '</div>'
@@ -372,7 +369,7 @@ function renderSchedule(root, days){
 
   var themeRow = el(
     '<button class="theme-row" type="button">' +
-      '<span class="theme-body"><span class="theme-text' + (day.theme ? "" : " empty") + '">' +
+      '<span class="theme-body"><span class="theme-text' + (day.theme ? "" : " blank") + '">' +
       esc(day.theme || "이 날의 한 줄 요약 추가") + '</span></span>' + icon("edit") +
     '</button>'
   );
@@ -416,7 +413,7 @@ function routeRow(day){
     });
     row.appendChild(chain);
   } else {
-    row.appendChild(el('<span class="route-chain empty">이 날의 동선 적어두기</span>'));
+    row.appendChild(el('<span class="route-chain blank">이 날의 동선 적어두기</span>'));
   }
   row.appendChild(el(icon("edit", "route-pen")));
   ripple(row, function(){
@@ -726,7 +723,6 @@ function renderInfo(root){
     ]
   }));
 
-  root.appendChild(packCard());
   root.appendChild(sectionCard({
     title: "메모", key: "notes", ic: "note", tone: "note",
     empty: "아직 메모가 없어요.",
@@ -734,6 +730,7 @@ function renderInfo(root){
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
     fields: [{ key:"text", label:"메모", placeholder:"기억해둘 것", required:true, area:true }]
   }));
+  root.appendChild(packCard());
   root.appendChild(dangerCard());
 }
 

@@ -274,8 +274,6 @@
     font-size: 16px; color: var(--ink);
     line-height: 1; white-space: nowrap; text-align: center;
   }
-  /* "blank", not "empty": .empty is the nothing-here-yet screen, and its
-     padding was landing on this box and pushing --:-- off centre. */
   .pickbox.blank .pickval{ color: var(--ink-faint); }
   /* 시각을 고르는 칸. 누르면 휠이 열린다. */
   .timebox{
@@ -655,16 +653,18 @@
   .kakao:focus-visible{ outline: 2px solid var(--ink); outline-offset: 3px; }
 
   /* ---------- nothing here yet ---------- */
-  .empty{ text-align: center; padding: 34px 6px 10px; }
-  .empty-mark{
+  /* 이름을 "blankstate"로 둔 이유: 짧은 .empty는 "값이 비었다"는 뜻으로 여기저기
+     붙어 다니는 말이라, 이 큰 여백이 엉뚱한 칸에 두 번이나 먹었다. */
+  .blankstate{ text-align: center; padding: 34px 6px 10px; }
+  .blankstate-mark{
     width: 60px; height: 60px; margin: 0 auto 18px;
     border-radius: 20px; display: flex; align-items: center; justify-content: center;
     background: var(--signal-soft); color: var(--signal);
   }
-  .empty-mark .icon{ width: 28px; height: 28px; }
-  .empty h2{ font-size: 18px; font-weight: 700; margin: 0 0 6px; }
-  .empty p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 22px; word-break: keep-all; }
-  .empty .btn{ width: 100%; }
+  .blankstate-mark .icon{ width: 28px; height: 28px; }
+  .blankstate h2{ font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+  .blankstate p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 22px; word-break: keep-all; }
+  .blankstate .btn{ width: 100%; }
   .btn-quiet{
     background: transparent; color: var(--ink-soft);
     border: 1px solid var(--line-strong); margin-top: 8px;

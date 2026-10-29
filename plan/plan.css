@@ -9,11 +9,20 @@
   .trip-card{
     position: relative;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: 22px;
+    border-radius: 22px; overflow: hidden;
   }
+  /* 카드 한 장에 남은 것은 어디로, 언제뿐이다. 그 둘이 잘 보이도록
+     바탕을 아주 옅게 물들이고 — 지난 여행은 물들이지 않는다. */
+  .trip-card.soon::before, .trip-card.live::before{
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--tone) 8%, transparent), transparent 58%);
+  }
+  .trip-card.soon{ --tone: var(--signal); }
+  .trip-card.live{ --tone: var(--travel); }
   .trip-open{
+    position: relative; z-index: 1;
     display: flex; flex-direction: column;
-    width: 100%; padding: 16px 16px 15px;
+    width: 100%; padding: 17px 16px 16px;
     background: transparent; border: none; border-radius: 22px;
     font: inherit; color: inherit; text-align: left; cursor: pointer;
   }
@@ -24,7 +33,8 @@
 
   /* 핀과 손잡이. 통계 줄 오른쪽 끝을 비워두고 그 자리에 얹는다. */
   .trip-acts{
-    position: absolute; right: 9px; bottom: 7px;
+    /* 카드 본체(z-index:1) 위에 와야 손가락이 닿는다 */
+    position: absolute; right: 9px; bottom: 7px; z-index: 2;
     display: flex; align-items: center; gap: 2px;
   }
   .trip-pin{
@@ -53,15 +63,15 @@
   .trip-top{ display: flex; align-items: center; gap: 11px; }
   /* 깃발 자리는 그 여행이 어디쯤인지에 따라 옅게 물든다 */
   .trip-flag{
-    width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 16px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    background: var(--surface-2); font-size: 21px; line-height: 1;
+    background: var(--surface-2); font-size: 23px; line-height: 1;
     color: var(--ink-faint);
   }
   .trip-card.soon .trip-flag{ background: var(--signal-soft); }
   .trip-card.live .trip-flag{ background: var(--travel-soft); }
   .trip-id{ flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .trip-city{ font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .trip-city{ font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
   .trip-country{ font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); }
   .trip-status{
     flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
@@ -74,9 +84,11 @@
   /* 날짜는 여행 머리와 같은 투로 — 굵은 날짜, 흐린 요일, 물결 하나 */
   .trip-dates{
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    margin-top: 13px; padding-right: 46px;      /* 핀 · 손잡이 자리 */
+    margin-top: 14px; padding-top: 12px; padding-right: 46px;   /* 핀 · 손잡이 자리 */
+    border-top: 1px solid var(--line);
   }
   .trip-card.pinned .trip-dates{ padding-right: 84px; }
+  .trip-card.soon .trip-dates, .trip-card.live .trip-dates{ border-top-color: var(--line); }
   .td-day{
     display: inline-flex; align-items: baseline; gap: 3px;
     font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
@@ -91,11 +103,6 @@
     font-size: 11px; padding: 2px 7px; border-radius: 7px;
     background: var(--surface-2); color: var(--ink-faint);
   }
-  .trip-theme{
-    font-size: 12.5px; color: var(--ink-soft); margin-top: 7px; padding-right: 46px;
-    word-break: keep-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .trip-card.pinned .trip-theme{ padding-right: 84px; }
   .trip-add{ margin-top: 2px; }
 
 
@@ -224,7 +231,7 @@
   .theme-row:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
   .theme-body{ flex: 1; min-width: 0; }
   .theme-text{ display: block; font-size: 14.5px; font-weight: 600; word-break: keep-all; }
-  .theme-text.empty{ color: var(--ink-faint); font-weight: 400; }
+  .theme-text.blank{ color: var(--ink-faint); font-weight: 400; }
   .theme-row .icon{ width: 15px; height: 15px; color: var(--ink-faint); }
 
 
@@ -243,7 +250,7 @@
   }
   .route-chain{ flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
   .route-seg{ display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; margin-right: 5px; }
-  .route-chain.empty{ font-size: 12.5px; color: var(--ink-faint); }
+  .route-chain.blank{ font-size: 12.5px; color: var(--ink-faint); }
   .route-stop{
     font-size: 11.5px; line-height: 1.3; padding: 3px 8px; border-radius: 8px;
     background: var(--surface-2); color: var(--ink-soft); word-break: keep-all;
