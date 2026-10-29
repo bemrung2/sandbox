@@ -79,14 +79,15 @@
   /* 카드에서는 라벨이 여행지 아래로 내려간다 */
   .trip-sub{ flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 3px; }
   .trip-sub .sub-dot{ display: none; }
-  /* 여행지는 칩 하나로 세운다 — 같은 줄의 라벨에 묻히지 않게 */
+  /* 여행지는 칩 하나로 세운다 — 같은 줄의 라벨에 묻히지 않게.
+     바탕은 색을 더하지 않고 한 단 들어간 면으로, 색은 핀에만 쓴다. */
   .sub-place{
     display: inline-flex; align-items: center; gap: 3px;
     font-size: 12.5px; font-weight: 600; color: var(--ink);
-    background: color-mix(in srgb, var(--travel) 15%, transparent);
+    background: var(--surface-2);
     padding: 3px 8px 3px 6px; border-radius: 8px;
   }
-  .sub-pin{ width: 12px; height: 12px; color: var(--travel); flex-shrink: 0; }
+  .sub-pin{ width: 12px; height: 12px; color: var(--signal); flex-shrink: 0; }
   .sub-dot{ font-size: 11px; color: var(--ink-faint); }
   .sub-label{ font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); }
   .hero-sub{ margin-top: 4px; }

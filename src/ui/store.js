@@ -97,12 +97,16 @@ RemoteStore.prototype.flush = async function(){
     });
     if (res.status === 401){ Store.signedOut(); return; }
     if (res.status === 403){ Store.deny(); return; }
-    if (!res.ok) throw new Error("write " + res.status);
+    if (!res.ok){
+      var why = "";
+      try{ var bad = await res.json(); why = (bad && bad.message) || ""; }catch(e2){ /* 본문이 없을 수도 */ }
+      throw new Error(why || ("write " + res.status));
+    }
     var data = await res.json();
     this.rev = data.rev || this.rev;
   }catch(e){
     Object.assign(this.pending, writes);
-    Store.failed();
+    Store.failed(String((e && e.message) || ""));
     var retry = this;
     setTimeout(function(){ retry.send(); }, 4000);
   }
@@ -226,10 +230,14 @@ export var Store = {
     }, 120);
   },
 
-  failed(){
+  /* 서버가 이유를 말해주면 그대로 전한다. "연결을 확인해 주세요"로 뭉뚱그리면
+     표에 칸이 없다는 것 같은 진짜 이유가 묻혀, 고칠 수가 없다. */
+  failed(why){
     if (this._warned) return;
     this._warned = true;
-    toast("저장하지 못했습니다. 연결을 확인해 주세요.");
+    var plain = /^write \d+$/.test(why || "");
+    toast(why && !plain ? "저장하지 못했습니다 — " + why.slice(0, 90)
+                        : "저장하지 못했습니다. 연결을 확인해 주세요.", true);
     var self = this;
     setTimeout(function(){ self._warned = false; }, 8000);
   }
