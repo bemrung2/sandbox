@@ -6,7 +6,7 @@ import { Theme, themeButton } from "./theme.js";
 import { Router } from "./router.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-var BUILD = "2026.10.27 · r18";
+var BUILD = "2026.10.29 · r19";
 var view = null;
 var list = [];
 

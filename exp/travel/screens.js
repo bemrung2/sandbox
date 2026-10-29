@@ -8,7 +8,7 @@ import {
 } from "../../core/sheet.js";
 import { storePhoto, dropPhoto, thumb } from "../../core/photos.js";
 import {
-  Plan, CAT, CAT_ORDER, MEALS, MEAL_LABEL, LISTS, ordered, newTrip, seedTrip, tripToMap,
+  Plan, CAT, CAT_ORDER, MEALS, MEAL_LABEL, LISTS, ordered, newTrip, seedTrip, seedId, tripToMap,
   mins, fmtMD, dowOf, todayISO, dayDiff, isoOf, nowMins,
   trip, tripsSorted, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
@@ -17,6 +17,24 @@ import { state, go, repaint } from "./nav.js";
 
 var leave = function(){};
 export function onLeave(fn){ leave = fn; }
+
+/* The trip that is already booked, written down from the airline's own
+   screen. It is offered until it is actually here, and then never again. */
+function bookedWaiting(){
+  return !Plan.tripById(seedId());
+}
+
+function loadBooked(){
+  var t = seedTrip();
+  var map = tripToMap(t, {});
+  var wrote = true;
+  Object.keys(map).forEach(function(path){ if (!Store.write(path, map[path])) wrote = false; });
+  if (!wrote) return;
+  Plan.trips.push(t);
+  Plan.open(t.id);
+  toast("예약된 일정을 불러왔어요.");
+  go({ screen:"trip", tripId: t.id, tab:"sched", meal:"all", day:0 });
+}
 
 /* Nothing here yet. One tap should start a trip, and a second way in for
    someone who would rather look at a finished one first. */
@@ -27,21 +45,12 @@ function emptyState(){
       '<h2>아직 여행이 없어요</h2>' +
       '<p>날짜만 정하면 일정 · 음식 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
-      '<button class="btn btn-quiet" type="button" data-demo>예시로 시작하기</button>' +
+      (bookedWaiting() ? '<button class="btn btn-quiet" type="button" data-booked>' +
+        icon("plane") + '예약된 일정 불러오기</button>' : '') +
     '</div>'
   );
   ripple(box.querySelector("[data-new]"), function(){ openTripEditor(null); });
-  ripple(box.querySelector("[data-demo]"), function(){
-    var t = seedTrip();
-    var map = tripToMap(t, {});
-    var wrote = true;
-    Object.keys(map).forEach(function(path){ if (!Store.write(path, map[path])) wrote = false; });
-    if (!wrote) return;
-    Plan.trips.push(t);
-    Plan.open(t.id);
-    toast("예시 여행을 넣었어요.");
-    go({ screen:"trip", tripId: t.id, tab:"sched", meal:"all", day:0 });
-  });
+  if (bookedWaiting()) ripple(box.querySelector("[data-booked]"), loadBooked);
   return box;
 }
 
@@ -91,6 +100,11 @@ export function renderTrips(root, keepScroll){
     var add = el('<button class="addcard trip-add" type="button">' + icon("plus") + '여행 추가</button>');
     ripple(add, function(){ openTripEditor(null); });
     box.appendChild(add);
+    if (bookedWaiting()){
+      var booked = el('<button class="addcard" type="button">' + icon("plane") + '예약된 일정 불러오기</button>');
+      ripple(booked, loadBooked);
+      box.appendChild(booked);
+    }
   }
   wrap.appendChild(box);
 
@@ -263,6 +277,15 @@ function renderSchedule(root, days){
     dayrow.appendChild(b);
   });
   root.appendChild(dayrow);
+
+  /* A fortnight does not fit on a phone, so the row scrolls. Bring the day you
+     are actually on into it — otherwise day 12 looks like an empty row of 1s.
+     Only the row moves; the page stays where it is. */
+  requestAnimationFrame(function(){
+    var on = dayrow.children[state.day];
+    if (!on || dayrow.scrollWidth <= dayrow.clientWidth) return;
+    dayrow.scrollLeft = on.offsetLeft - (dayrow.clientWidth - on.offsetWidth) / 2;
+  });
 
   var day = days[state.day];
   var list = timedOn(day.date);
