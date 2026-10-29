@@ -50,6 +50,17 @@ var SEED_TRIP = { id:"europe2026", emoji:"🇪🇺", city:"유럽", country:"ROM
                   start:"2026-11-23", end:"2026-12-06" };
 var SEED_THEMES = {
   "2026-11-23": "인천 → 로마",
+  "2026-11-24": "로마",
+  "2026-11-25": "로마",
+  "2026-11-26": "로마",
+  "2026-11-27": "로마 → 피렌체",
+  "2026-11-28": "피렌체 → 체르마트",
+  "2026-11-29": "체르마트",
+  "2026-11-30": "체르마트 → 그린델발트",
+  "2026-12-01": "그린델발트",
+  "2026-12-02": "그린델발트",
+  "2026-12-03": "그린델발트 → 파리",
+  "2026-12-04": "파리",
   "2026-12-05": "파리 → 인천"
 };
 var SEED_ROUTES = {};
@@ -75,7 +86,19 @@ var SEED_FLIGHTS = [
   { id:"f2", label:"오는 편 · 12.05 (토)", airline:"대한항공", no:"KE5902",
     detail:"15:05 파리 T2E — 12.06 11:15 인천 T2 · 12시간 10분 · 에어프랑스 운항" }
 ];
-var SEED_STAYS = [];
+/* 예약된 숙소. 묵는 밤으로 적혀 온 것을 체크인–체크아웃으로 옮겨 적었다. */
+var SEED_STAYS = [
+  { id:"st1", name:"비밀의 안뜰 - 트라스테베레", area:"이탈리아 · 로마",
+    detail:"11.24 (화) – 11.27 (금) · 3박" },
+  { id:"st2", name:"Hotel Ester", area:"이탈리아 · 피렌체",
+    detail:"11.27 (금) – 11.28 (토) · 1박" },
+  { id:"st3", name:"알펜리조트", area:"스위스 · 체르마트",
+    detail:"11.28 (토) – 11.30 (월) · 2박" },
+  { id:"st4", name:"벨베데르", area:"스위스 · 그린델발트",
+    detail:"11.30 (월) – 12.3 (목) · 3박" },
+  { id:"st5", name:"풀만", area:"프랑스 · 파리",
+    detail:"12.3 (목) – 12.5 (토) · 2박" }
+];
 var SEED_BOOKS = [
   { id:"k1", name:"좌석 · 가는 편 KE931", when:"11.23 (월)",
     detail:"KIM MINWOO 36F · KIM SOYEONG 36E" },
@@ -112,7 +135,8 @@ export function seedTrip(){
     flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
     stays: SEED_STAYS.map(function(x){ return Object.assign({}, x); }),
     books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
-    packList: SEED_PACK.map(function(t, i){ return { id: uid("k"), text: t, on: false, ord: i }; })
+    /* 아이디가 매번 달라지면 "이미 들어와 있는지"를 알 수 없다. 씨앗은 늘 같다. */
+    packList: SEED_PACK.map(function(t, i){ return { id: "pk" + (i + 1), text: t, on: false, ord: i }; })
   });
 }
 

@@ -10,29 +10,48 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter } from "../ui/shell.js";
 import {
-  Plan, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
 
-/* The trip that is already booked, written down from the airline's own
-   screen. It is offered until it is actually here, and then never again. */
-function bookedWaiting(){
-  return !Plan.tripById(seedId());
+/* 예약 화면에 적혀 있던 것 — 비행편 · 좌석 · 숙소. 비어 있는 칸만 채운다.
+   그래서 이미 만들어둔 여행에도 쓸 수 있다: 항공을 손으로 고쳐뒀다면 그 칸은 통째로
+   건너뛰고, 아직 아무것도 없는 숙소만 들어온다. 하루 한 줄(days)은 날짜가 열쇠라서
+   비어 있는 날만 채운다. */
+function bookedMissing(){
+  var map = tripToMap(seedTrip(), {});
+  var base = ROOT + "/" + seedId() + "/";
+  var have = Store.map, filled = {};
+  Object.keys(have).forEach(function(path){
+    if (path.indexOf(base) !== 0) return;
+    var p = path.slice(base.length).split("/");
+    if (p.length === 2) filled[p[0]] = true;
+  });
+  var out = {};
+  Object.keys(map).forEach(function(path){
+    if (have[path]) return;
+    var p = path.indexOf(base) === 0 ? path.slice(base.length).split("/") : [];
+    if (p.length === 2 && p[0] !== "days" && filled[p[0]]) return;
+    out[path] = map[path];
+  });
+  return out;
 }
+function bookedWaiting(){ return Object.keys(bookedMissing()).length > 0; }
 
 function loadBooked(){
-  var t = seedTrip();
-  var map = tripToMap(t, {});
+  var missing = bookedMissing(), paths = Object.keys(missing);
+  if (!paths.length) return;
   var wrote = true;
-  Object.keys(map).forEach(function(path){ if (!Store.write(path, map[path])) wrote = false; });
+  paths.forEach(function(path){ if (!Store.write(path, missing[path])) wrote = false; });
   if (!wrote) return;
-  Plan.trips.push(t);
-  Plan.open(t.id);
-  toast("예약된 일정을 불러왔어요.");
-  go({ screen:"trip", tripId: t.id, tab:"sched", meal:"all", day:0 });
+  /* 쓴 것을 다시 읽는다 — 화면은 언제나 저장된 것을 그린다. */
+  Plan.reread();
+  Plan.open(seedId());
+  toast("예약된 내용을 채웠어요.");
+  go({ screen:"trip", tripId: seedId(), tab:"sched", meal:"all", day:0 });
 }
 
 /* Nothing here yet. One tap should start a trip, and a second way in for
@@ -45,7 +64,7 @@ function emptyState(){
       '<p>날짜만 정하면 일정 · 음식 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
       (bookedWaiting() ? '<button class="btn btn-quiet" type="button" data-booked>' +
-        icon("plane") + '예약된 일정 불러오기</button>' : '') +
+        icon("plane") + '예약 내용 불러오기</button>' : '') +
     '</div>'
   );
   ripple(box.querySelector("[data-new]"), function(){ openTripEditor(null); });
@@ -53,16 +72,17 @@ function emptyState(){
   return box;
 }
 
-/* 지도 검색은 열어둔 여행의 도시를 함께 넣는다 — 같은 이름의 가게가 다른 나라에도 있다. */
-function mapUrl(q){
+/* 지도 검색은 열어둔 여행의 도시를 함께 넣는다 — 같은 이름의 가게가 다른 나라에도 있다.
+   스스로 어디인지 적어둔 것(숙소의 지역 등)은 그대로 찾는 게 낫다. */
+function mapUrl(q, exact){
   var t = trip();
   var city = (t && t.city) || "";
-  var query = city && q.indexOf(city) === -1 ? q + " " + city : q;
+  var query = !exact && city && q.indexOf(city) === -1 ? q + " " + city : q;
   return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
 }
-function placeHtml(text, place){
+function placeHtml(text, place, exact){
   if (!place) return esc(text);
-  return '<a class="placelink" href="' + esc(mapUrl(place)) + '" target="_blank" rel="noopener">' + esc(text) +
+  return '<a class="placelink" href="' + esc(mapUrl(place, exact)) + '" target="_blank" rel="noopener">' + esc(text) +
     '<svg class="pinch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></a>';
@@ -90,7 +110,7 @@ export function renderTrips(root, keepScroll){
     ripple(add, function(){ openTripEditor(null); });
     box.appendChild(add);
     if (bookedWaiting()){
-      var booked = el('<button class="addcard" type="button">' + icon("plane") + '예약된 일정 불러오기</button>');
+      var booked = el('<button class="addcard" type="button">' + icon("plane") + '예약 내용 불러오기</button>');
       ripple(booked, loadBooked);
       box.appendChild(booked);
     }
@@ -618,14 +638,16 @@ function renderInfo(root){
     title: "숙소", key: "stays", ic: "bed",
     empty: "숙소를 추가해두세요.",
     render: function(h){
+      /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
+      var where = h.area ? h.name + " " + h.area.replace(/\s*·\s*/g, " ") : h.name;
       return (h.area ? '<span class="lbl mono">' + esc(h.area) + '</span>' : '') +
-        '<b>' + placeHtml(h.name, h.name) + '</b>' +
+        '<b>' + placeHtml(h.name, where, !!h.area) + '</b>' +
         (h.detail ? '<small>' + esc(h.detail) + '</small>' : '');
     },
     fields: [
-      { key:"name", label:"이름", placeholder:"예: 더 로얄 파크 캔버스 후쿠오카 나카스", required:true },
-      { key:"area", label:"지역", placeholder:"예: 나카스" },
-      { key:"detail", label:"메모", placeholder:"예: 체크인 15:00 · 체크아웃 11:00" }
+      { key:"name", label:"이름", placeholder:"예: 알펜리조트", required:true },
+      { key:"area", label:"지역", placeholder:"예: 스위스 · 체르마트" },
+      { key:"detail", label:"기간 · 메모", placeholder:"예: 11.28 (토) – 11.30 (월) · 2박" }
     ]
   }));
 
