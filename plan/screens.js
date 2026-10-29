@@ -997,8 +997,13 @@ function openItemEditor(item, defaultDate, presets){
   body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
   var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = timeRow.querySelector(".fld-row");
-  row.appendChild(pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true }));
-  row.appendChild(pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true }));
+  var sFld = pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true });
+  /* 끝나는 시각에는 시작보다 이른 시각이 아예 보이지 않는다. 고를 때의 시작을
+     그때 읽어야 하므로, 값이 아니라 읽는 방법을 건넨다. */
+  var eFld = pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true,
+    min: function(){ return sFld.querySelector("input").value; } });
+  row.appendChild(sFld);
+  row.appendChild(eFld);
   body.appendChild(timeRow);
   body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
   var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div>' +

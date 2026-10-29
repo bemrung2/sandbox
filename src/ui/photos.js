@@ -2,7 +2,7 @@
    so each one is stored on its own and fetched by id. */
 import { el, uid, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
-import { showOverlay, closeOverlay } from "./sheet.js";
+import { showOverlay, closeTop } from "./sheet.js";
 
 var photoCache = {};
 
@@ -57,7 +57,7 @@ export function openPhoto(pid){
   loadPhoto(pid).then(function(d){
     if (!d){ toast("사진을 불러오지 못했어요."); return; }
     var v = el('<div class="photoview"><img src="' + d + '" alt="첨부 사진"></div>');
-    ripple(v, closeOverlay);
+    ripple(v, function(){ closeTop(v); });
     showOverlay(v);
   });
 }

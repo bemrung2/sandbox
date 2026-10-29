@@ -277,26 +277,49 @@
   /* "blank", not "empty": .empty is the nothing-here-yet screen, and its
      padding was landing on this box and pushing --:-- off centre. */
   .pickbox.blank .pickval{ color: var(--ink-faint); }
-  /* 시 · 분을 따로 고르는 칸. 생김새는 날짜 칸과 같게 두고, 안에서 고를 수
-     있는 것만 다르다. */
+  /* 시각을 고르는 칸. 누르면 휠이 열린다. */
   .timebox{
-    display: flex; align-items: center; justify-content: center; gap: 2px;
-    width: 100%; height: 47px; padding: 0 8px;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 47px; padding: 0 10px;
     border: 1px solid var(--line-strong); border-radius: 12px;
-    background: var(--surface);
+    background: var(--surface); cursor: pointer; overflow: hidden;
   }
-  .timebox:focus-within{ border-color: var(--signal); }
-  .timesel{
-    appearance: none; -webkit-appearance: none;
-    border: none; background: transparent; cursor: pointer;
+  .timeval{ font-size: 16px; font-weight: 600; color: var(--ink); line-height: 1; }
+  .timebox.blank .timeval{ color: var(--ink-faint); }
+  .timebox:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+
+  /* 휠. 가운데 띠에 멈춘 것이 고른 것이다. */
+  .wheels{
+    position: relative; display: flex; align-items: center; justify-content: center;
+    gap: 4px; margin: 2px 0 6px;
+  }
+  .wheel-bar{
+    position: absolute; left: 8px; right: 8px; top: 50%; height: 38px;
+    transform: translateY(-50%); border-radius: 11px;
+    background: var(--surface-2); pointer-events: none;
+  }
+  .wheel{
+    position: relative; z-index: 1;
+    width: 92px; height: 190px; overflow-y: auto;
+    scroll-snap-type: y mandatory; overscroll-behavior: contain;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .wheel::-webkit-scrollbar{ display: none; }
+  .wheel-pad{ height: 76px; }          /* (190 - 38) / 2 */
+  .wheel-item{
+    height: 38px; line-height: 38px; scroll-snap-align: center; cursor: pointer;
     font-family: "IBM Plex Mono", monospace;
-    font-size: 16px; font-weight: 600; color: var(--ink);
-    padding: 4px 2px; text-align: center; text-align-last: center;
+    font-size: 19px; font-weight: 600; text-align: center; color: var(--ink-faint);
+    transition: color 0.12s ease, opacity 0.12s ease;
+    opacity: 0.55;
   }
-  .timesel:focus{ outline: none; }
-  .timesel:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 6px; }
-  .timesep{ font-family: "IBM Plex Mono", monospace; font-size: 16px; color: var(--ink-faint); }
-  .timebox.blank .timesel, .timebox.blank .timesep{ color: var(--ink-faint); }
+  .wheel-item.on{ color: var(--ink); opacity: 1; }
+  .wheel-sep{
+    position: relative; z-index: 1;
+    font-family: "IBM Plex Mono", monospace; font-size: 19px; font-weight: 600;
+    color: var(--ink-faint);
+  }
+  @media (prefers-reduced-motion: reduce){ .wheel{ scroll-behavior: auto; } }
 
   .pickbox input{
     position: absolute; top: 0; left: 0;

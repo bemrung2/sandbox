@@ -21,6 +21,9 @@ function host(){
 }
 export function closeOverlay(){ host().innerHTML = ""; }
 export function showOverlay(node){ host().appendChild(node); }
+/* 창 위에 창을 띄울 때는 그 하나만 닫는다 — 뒤에 열려 있던 것까지 치우면
+   고치던 내용이 사라진다. */
+export function closeTop(node){ if (node && node.parentNode) node.parentNode.removeChild(node); }
 
 export function sheetShell(title, sub){
   var s = el(
@@ -181,52 +184,149 @@ export function pickerField(o){
   return wrap;
 }
 
-/* 시각은 시와 분을 따로 고른다.
-   `<input type="time" step="300">`은 폰의 시계 휠이 들은 체도 하지 않아 1분씩 돌아간다 —
-   고를 수 있는 것만 내놓는 쪽이 확실하다. 값은 같은 id의 숨은 칸에 "HH:MM"으로 들어가므로
-   읽는 쪽은 예전 그대로다. */
+/* ---------- 시각 ----------
+   시와 분을 휠로 돌려 고른다.
+   `<input type="time">`에 기대지 않는 이유는 두 가지다: 폰의 시계 휠은 step을 무시해
+   1분씩 돌아가고, 종료 시각에서 "시작보다 이른 시각"을 숨길 방법도 없다. 둘 다 고를 수
+   있는 것만 내놓으면 끝나는 일이라, 휠을 직접 돌린다.
+   값은 같은 id의 숨은 칸에 "HH:MM"으로 들어가므로 읽는 쪽은 예전 그대로다. */
 var MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+var HOURS = [];
+for (var _h = 0; _h < 24; _h++) HOURS.push(String(_h).padStart(2, "0"));
+var WHEEL_ITEM = 38;   /* .wheel-item 한 칸의 높이 — CSS와 맞춰 둔다 */
 
-function timeField(o){
-  var now = String(o.value || "");
-  var hh = /^\d\d:\d\d$/.test(now) ? now.slice(0, 2) : "";
-  var mm = /^\d\d:\d\d$/.test(now) ? now.slice(3, 5) : "";
-  /* 5분 자리가 아닌 값이 들어오면 가장 가까운 자리로 끌어다 놓는다 */
-  if (mm && MINUTES.indexOf(mm) < 0) mm = MINUTES[Math.min(11, Math.round(+mm / 5))];
+function parts(v){
+  return /^\d\d:\d\d$/.test(String(v || "")) ? [v.slice(0, 2), v.slice(3, 5)] : ["", ""];
+}
+function onFive(mm){
+  if (!mm) return "";
+  var i = MINUTES.indexOf(mm);
+  return i >= 0 ? mm : MINUTES[Math.min(11, Math.round(+mm / 5))];
+}
 
-  function opts(list, on){
-    return '<option value=""' + (on ? "" : " selected") + '>--</option>' +
-      list.map(function(v){ return '<option value="' + v + '"' + (v === on ? " selected" : "") + '>' + v + '</option>'; }).join("");
-  }
-  var hours = [];
-  for (var h = 0; h < 24; h++) hours.push(String(h).padStart(2, "0"));
-
+export function timeField(o){
+  var p = parts(o.value);
+  var hh = p[0], mm = onFive(p[1]);
   var wrap = el(
     '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
-      '<label for="' + o.id + '-h">' + esc(o.label) + '</label>' +
-      '<div class="timebox' + (hh && mm ? "" : " blank") + '">' +
-        '<select class="timesel" id="' + o.id + '-h" aria-label="시">' + opts(hours, hh) + '</select>' +
-        '<span class="timesep">:</span>' +
-        '<select class="timesel" id="' + o.id + '-m" aria-label="분">' + opts(MINUTES, mm) + '</select>' +
-        '<input id="' + o.id + '" type="hidden" value="' + esc(hh && mm ? hh + ":" + mm : "") + '">' +
-      '</div>' +
+      '<label for="' + o.id + '-open">' + esc(o.label) + '</label>' +
+      '<button class="timebox' + (hh && mm ? "" : " blank") + '" type="button" id="' + o.id + '-open">' +
+        '<span class="timeval mono">' + (hh && mm ? hh + ":" + mm : "--:--") + '</span>' +
+      '</button>' +
+      '<input id="' + o.id + '" type="hidden" value="' + esc(hh && mm ? hh + ":" + mm : "") + '">' +
     '</div>'
   );
-  var H = wrap.querySelector("#" + o.id + "-h");
-  var M = wrap.querySelector("#" + o.id + "-m");
-  var hidden = wrap.querySelector("input");
   var box = wrap.querySelector(".timebox");
+  var val = wrap.querySelector(".timeval");
+  var hidden = wrap.querySelector("input");
 
-  function sync(){
-    /* 시만 골랐으면 분은 정각으로 — 거기서 다시 고르면 된다 */
-    if (H.value && !M.value) M.value = "00";
-    if (!H.value) M.value = "";
-    hidden.value = H.value && M.value ? H.value + ":" + M.value : "";
-    box.classList.toggle("blank", !hidden.value);
-  }
-  H.addEventListener("change", sync);
-  M.addEventListener("change", sync);
+  ripple(box, function(){
+    openTimeWheel({
+      title: o.label,
+      value: hidden.value,
+      min: o.min ? o.min() : ""
+    }, function(next){
+      hidden.value = next;
+      val.textContent = next || "--:--";
+      box.classList.toggle("blank", !next);
+    });
+  });
   return wrap;
+}
+
+/* 하나의 휠. 고른 자리가 가운데 와서 멈춘다. */
+function wheel(list, on, onPick){
+  var w = el('<div class="wheel"></div>');
+  function paint(){
+    w.innerHTML = "";
+    w.appendChild(el('<div class="wheel-pad"></div>'));
+    list.forEach(function(v){
+      var it = el('<div class="wheel-item' + (v === on ? " on" : "") + '">' + esc(v) + '</div>');
+      it.addEventListener("click", function(){ set(v, true); });
+      w.appendChild(it);
+    });
+    w.appendChild(el('<div class="wheel-pad"></div>'));
+  }
+  function set(v, tell){
+    on = v;
+    var i = list.indexOf(v);
+    if (i < 0) return;
+    w.querySelectorAll(".wheel-item").forEach(function(x, n){ x.classList.toggle("on", n === i); });
+    w.scrollTop = i * WHEEL_ITEM;
+    if (tell && onPick) onPick(v);
+  }
+  var settle = null;
+  w.addEventListener("scroll", function(){
+    clearTimeout(settle);
+    settle = setTimeout(function(){
+      var i = Math.max(0, Math.min(list.length - 1, Math.round(w.scrollTop / WHEEL_ITEM)));
+      if (list[i] === on) return;
+      on = list[i];
+      w.querySelectorAll(".wheel-item").forEach(function(x, n){ x.classList.toggle("on", n === i); });
+      if (onPick) onPick(on);
+    }, 90);
+  });
+  paint();
+  return {
+    node: w,
+    get value(){ return on; },
+    set: set,
+    reload: function(next, keep){
+      list = next;
+      if (list.indexOf(keep) < 0) keep = list[0];
+      on = keep;
+      paint();
+      set(keep, false);
+    }
+  };
+}
+
+function openTimeWheel(opts, onDone){
+  var lower = parts(opts.min);
+  var lowH = lower[0], lowM = onFive(lower[1]);
+  /* 시작이 14:05면 종료에는 14시부터만, 그 14시 안에서는 05분부터만 보인다. */
+  function hours(){ return lowH ? HOURS.filter(function(h){ return h >= lowH; }) : HOURS.slice(); }
+  function minutes(h){ return lowH && h === lowH ? MINUTES.filter(function(m){ return m >= lowM; }) : MINUTES.slice(); }
+
+  var now = parts(opts.value);
+  var hh = now[0] || lowH || "12";
+  var mm = onFive(now[1]) || (hh === lowH ? lowM : "00");
+  if (hours().indexOf(hh) < 0) hh = hours()[0];
+  if (minutes(hh).indexOf(mm) < 0) mm = minutes(hh)[0];
+
+  var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
+    '<h3>' + esc(opts.title || "시각") + '</h3>' +
+    '<div class="wheels"><span class="wheel-bar"></span></div>' +
+    '<div class="dialog-actions">' +
+      '<button class="btn-text" data-a="clear">비우기</button>' +
+      '<span class="spacer"></span>' +
+      '<button class="btn-text" data-a="no">취소</button>' +
+      '<button class="btn-text go" data-a="ok">확인</button>' +
+    '</div></div></div>');
+
+  var box = scrim.querySelector(".wheels");
+  var mWheel = wheel(minutes(hh), mm, function(v){ mm = v; });
+  var hWheel = wheel(hours(), hh, function(v){
+    hh = v;
+    var next = minutes(v);
+    if (next.indexOf(mm) < 0) mm = next[0];
+    mWheel.reload(next, mm);
+  });
+  box.appendChild(hWheel.node);
+  box.appendChild(el('<span class="wheel-sep">:</span>'));
+  box.appendChild(mWheel.node);
+
+  function shut(){ closeTop(scrim); }
+  scrim.querySelector('[data-a="no"]').addEventListener("click", shut);
+  scrim.querySelector('[data-a="clear"]').addEventListener("click", function(){ shut(); onDone(""); });
+  scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
+    shut();
+    onDone(hWheel.value + ":" + mWheel.value);
+  });
+  scrim.addEventListener("click", function(e){ if (e.target === scrim) shut(); });
+  showOverlay(scrim);
+  /* 자리를 잡으려면 화면에 올라간 뒤라야 한다 */
+  requestAnimationFrame(function(){ hWheel.set(hh, false); mWheel.set(mm, false); });
 }
 
 export function pickGroup(row, options, get, set){
