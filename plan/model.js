@@ -268,6 +268,19 @@ export function byStart(a, b){
   if (x === null || y === null) return x === y ? 0 : (x === null ? -1 : 1);
   return x - y;
 }
+/* 한 분류의 일정 전부, 날짜 순으로. 일정 탭에 적은 것이 그 탭에서도 보이게 하는 데 쓴다. */
+export function itemsOfCat(cat){
+  var t = trip();
+  if (!t) return [];
+  return t.items.filter(function(i){ return i.cat === cat; })
+    .sort(function(a, b){ return a.dayDate.localeCompare(b.dayDate) || byStart(a, b); });
+}
+/* 시각이 적힌 가게 — 일정 탭의 시간표에도 함께 선다. */
+export function shopsOn(date){
+  var t = trip();
+  if (!t) return [];
+  return t.shops.filter(function(sh){ return sh.dayDate === date && sh.time; });
+}
 export function itemsOn(date){
   return trip().items.filter(function(i){ return i.dayDate === date; }).sort(byStart);
 }

@@ -559,6 +559,12 @@
     border: none; font-weight: 700;
   }
   .badge.tag{ background: var(--signal-soft); color: var(--signal); }
+  /* 다른 탭에서 온 것이라는 표시 */
+  .badge.from{
+    margin-left: 7px; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; background: var(--surface-2); color: var(--ink-faint);
+  }
+  .card.mirrored{ border-style: dashed; }
   .maplink{
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 11px; font-weight: 600;

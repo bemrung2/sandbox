@@ -13,7 +13,8 @@ import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
-  tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, timedOn, currentPair
+  tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
+  timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
 
@@ -380,6 +381,13 @@ function renderSchedule(root, days){
 
   var day = days[state.day];
   var list = timedOn(day.date);
+  /* 쇼핑 탭에 시각까지 적어둔 가게는 그 시각의 일정이기도 하다. */
+  var rows = list.map(function(it){
+    return { at: it.s, draw: function(){ return timelineItem(it, pair); } };
+  }).concat(shopsOn(day.date).map(function(sh){
+    return { at: sh.time, draw: function(){ return shopTimelineRow(sh); } };
+  }));
+  rows.sort(function(a, b){ return (mins(a.at) || 0) - (mins(b.at) || 0); });
 
   var themeRow = el(
     '<button class="theme-row" type="button">' +
@@ -401,11 +409,11 @@ function renderSchedule(root, days){
   root.appendChild(routeRow(day));
 
   var attCount = list.reduce(function(n, it){ return n + Plan.attachOf(it.id).length; }, 0);
-  root.appendChild(el('<p class="day-stat mono">' + list.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
+  root.appendChild(el('<p class="day-stat mono">' + rows.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
 
-  if (list.length){
+  if (rows.length){
     var tl = el('<div class="tl"></div>');
-    list.forEach(function(it){ tl.appendChild(timelineItem(it, pair)); });
+    rows.forEach(function(r){ tl.appendChild(r.draw()); });
     root.appendChild(tl);
   } else {
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없습니다.</p></div>'));
@@ -414,6 +422,33 @@ function renderSchedule(root, days){
   var add = el('<button class="addcard" type="button">' + icon("plus") + '일정 추가</button>');
   ripple(add, function(){ openItemEditor(null, day.date); });
   root.appendChild(add);
+}
+
+/* 쇼핑 탭의 가게가 시간표에 설 때. 고치는 일은 쇼핑 탭에서 한다. */
+function shopTimelineRow(sh){
+  var cat = CAT.shop;
+  var row = el(
+    '<div class="tl-item">' +
+      '<div class="tl-time mono">' + esc(sh.time) + '</div>' +
+      '<div class="tl-rail"><span class="tl-dot" style="border-color:' + cat.color + '"></span></div>' +
+      '<div class="tl-body"><p class="tl-title">' + placeHtml(sh.name, sh.map || sh.name) + '</p></div>' +
+    '</div>'
+  );
+  var body = row.querySelector(".tl-body");
+  var bought = sh.items.filter(function(i){ return i.got; }).length;
+  if (sh.items.length){
+    body.appendChild(el('<p class="tl-line">살 것 ' + bought + '/' + sh.items.length + '</p>'));
+  }
+  var meta = el('<div class="tl-meta"></div>');
+  meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">쇼핑</span>'));
+  if (sh.area) meta.appendChild(el('<span class="badge">' + esc(sh.area) + '</span>'));
+  var actions = el('<span class="tl-actions"></span>');
+  var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
+  ripple(edit, function(){ openShopEditor(sh); });
+  actions.appendChild(edit);
+  meta.appendChild(actions);
+  body.appendChild(meta);
+  return row;
 }
 
 /* 그날의 동선 한 줄. 칩 하나가 한 곳, 화살표로 이어진다. */
@@ -527,9 +562,13 @@ function attachStrip(itemId, atts){
 
 /* ---------- tab: food ---------- */
 function renderFood(root, days){
+  /* 분류가 '식사'면 종류를 고르지 않았어도 식사다. 일정 탭에서 적은 것이
+     여기 없으면, 두 탭이 서로 다른 계획을 들고 있는 셈이 된다. */
   var all = [];
   days.forEach(function(day, i){
-    itemsOn(day.date).forEach(function(it){ if (it.meal) all.push({ item: it, day: day, dayIndex: i }); });
+    itemsOn(day.date).forEach(function(it){
+      if (it.meal || it.cat === "food") all.push({ item: it, day: day, dayIndex: i });
+    });
   });
 
   var chips = el('<div class="chiprow"></div>');
@@ -569,8 +608,8 @@ function foodCard(f){
   var places = it.places || [];
   var card = el('<div class="card t-food"></div>');
   card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
-    (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') + ' · ' +
-    esc(MEAL_LABEL[it.meal] || "") + '</p>'));
+    (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') +
+    (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p>'));
   card.appendChild(el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
     (places.length === 1 ? placeHtml(it.title, places[0]) : esc(it.title)) + '</p></div>'));
@@ -602,33 +641,64 @@ function foodCard(f){
 
 /* ---------- tab: shopping ---------- */
 function renderShop(root, days){
-  var shops = trip().shops.slice().sort(function(a, b){
-    return a.dayDate === b.dayDate ? (mins(a.time) || 0) - (mins(b.time) || 0) : a.dayDate.localeCompare(b.dayDate);
+  /* 가게로 적어둔 것과, 일정 탭에 '쇼핑'으로 적어둔 것이 한 자리에 선다.
+     고치는 일은 각자 적힌 곳에서 하고, 여기서는 날짜 순으로 함께 보인다. */
+  var rows = trip().shops.map(function(sh){
+    return { date: sh.dayDate || "", at: sh.time || "", draw: function(){ return shopCard(sh); } };
+  }).concat(itemsOfCat("shop").map(function(it){
+    return { date: it.dayDate, at: it.s || "", draw: function(){ return fromScheduleCard(it, "t-shop"); } };
+  }));
+  rows.sort(function(a, b){
+    return a.date === b.date ? (mins(a.at) || 0) - (mins(b.at) || 0) : a.date.localeCompare(b.date);
   });
+
   var total = 0, got = 0;
-  shops.forEach(function(s){ s.items.forEach(function(i){ total++; if (i.got) got++; }); });
-
+  trip().shops.forEach(function(s){ s.items.forEach(function(i){ total++; if (i.got) got++; }); });
   root.appendChild(el('<div class="group-label"><h3>쇼핑 목록</h3>' +
-    '<span class="group-count mono">' + shops.length + '곳 · 살 것 ' + got + '/' + total + '</span></div>'));
+    '<span class="group-count mono">' + rows.length + '곳 · 살 것 ' + got + '/' + total + '</span></div>'));
 
-  if (!shops.length){
+  if (!rows.length){
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 쇼핑이 없습니다.</p></div>'));
   }
 
   var lastDay = "";
-  shops.forEach(function(s){
-    if (s.dayDate !== lastDay){
-      lastDay = s.dayDate;
-      var n = shops.filter(function(x){ return x.dayDate === s.dayDate; }).length;
-      root.appendChild(el('<div class="group-label"><h3>' + fmtMD(s.dayDate) + ' (' + dowOf(s.dayDate) + ')</h3>' +
+  rows.forEach(function(r){
+    if (r.date && r.date !== lastDay){
+      lastDay = r.date;
+      var n = rows.filter(function(x){ return x.date === r.date; }).length;
+      root.appendChild(el('<div class="group-label"><h3>' + fmtMD(r.date) + ' (' + dowOf(r.date) + ')</h3>' +
         '<span class="group-count mono">' + n + '곳</span></div>'));
     }
-    root.appendChild(shopCard(s));
+    root.appendChild(r.draw());
   });
 
   var add = el('<button class="addcard" type="button">' + icon("plus") + '쇼핑 추가</button>');
   ripple(add, function(){ openShopEditor(null, days[state.day] ? days[state.day].date : days[0].date); });
   root.appendChild(add);
+}
+
+/* 일정 탭에 적힌 것을 다른 탭에서 보여주는 카드. 읽기만 하고, 고치려면
+   적힌 곳(일정)으로 보낸다 — 같은 것을 두 군데에 적어두지 않기 위해서다. */
+function fromScheduleCard(it, tone){
+  var places = it.places || [];
+  var card = el('<div class="card ' + tone + ' mirrored"></div>');
+  card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
+    (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') +
+    '<span class="badge from">일정</span></p>'));
+  card.appendChild(el('<div class="card-top"><p class="card-name">' +
+    (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
+    (places.length === 1 ? placeHtml(it.title, places[0]) : esc(it.title)) + '</p></div>'));
+  (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
+
+  var meta = el('<div class="card-meta"></div>');
+  if (it.tag) meta.appendChild(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
+  var actions = el('<span class="tl-actions"></span>');
+  var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
+  ripple(edit, function(){ openItemEditor(it, null); });
+  actions.appendChild(edit);
+  meta.appendChild(actions);
+  card.appendChild(meta);
+  return card;
 }
 
 function shopCard(s){
@@ -700,7 +770,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "숙소", key: "stays", ic: "bed", tone: "stay",
+    title: "숙소", key: "stays", ic: "bed", tone: "stay", fromSchedule: "stay",
     empty: "아직 숙소가 없습니다.",
     render: function(h){
       /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
@@ -759,10 +829,12 @@ function renderInfo(root){
 /* One card shape for every editable list in 정보. */
 function sectionCard(o){
   var list = ordered(trip()[o.key]);
+  var mirrored = o.fromSchedule ? itemsOfCat(o.fromSchedule) : [];
+  var count = list.length + mirrored.length;
   var card = el('<div class="card t-' + (o.tone || "link") + '"></div>');
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon(o.ic) + '</span>' +
-    '<h3>' + esc(o.title) + (list.length ? '<span class="card-n">' + list.length + '</span>' : '') + '</h3></div>');
+    '<h3>' + esc(o.title) + (count ? '<span class="card-n">' + count + '</span>' : '') + '</h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
     openFormSheet({ title: o.title + " 추가", fields: o.fields }, null, function(v){
@@ -772,10 +844,21 @@ function sectionCard(o){
   head.appendChild(add);
   card.appendChild(head);
 
-  if (!list.length){
+  if (!count){
     card.appendChild(el('<p class="card-empty">' + esc(o.empty) + '</p>'));
     return card;
   }
+
+  mirrored.forEach(function(it){
+    var row = el('<div class="rowline"></div>');
+    var btn = el('<button class="rowbtn" type="button">' + icon(o.ic) +
+      '<span class="rowbody"><span class="lbl mono">' + esc(fmtMD(it.dayDate)) + ' (' + dowOf(it.dayDate) + ')' +
+      (it.s ? ' · ' + esc(it.s) : '') + '</span><b>' + esc(it.title) + '</b>' +
+      '<small>일정 탭에 적은 것입니다</small></span>' + icon("edit", "rowpen") + '</button>');
+    ripple(btn, function(){ openItemEditor(it, null); });
+    row.appendChild(btn);
+    card.appendChild(row);
+  });
 
   list.forEach(function(rec){
     var row = el('<div class="rowline"></div>');
@@ -1082,11 +1165,11 @@ function openItemEditor(item, defaultDate, presets){
     var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
     var title = titleEl.value.trim();
     if (!title){ titleEl.focus(); toast("일정을 적어 주세요."); return; }
-    /* An item with no time is off the timeline, so it needs to be a 식사 with
-       a kind — otherwise saving it would hide it everywhere. */
-    if (!sEl.value && !cur.meal){
+    /* 시간이 없는 일정은 시간표에 설 수 없다. 식사라면 식사 탭 맨 위에 모이므로
+       비워도 되고, 그 밖의 분류는 시각이 있어야 어딘가에 선다. */
+    if (!sEl.value && cur.cat !== "food"){
       sEl.focus();
-      toast(cur.cat === "food" ? "시간을 비우려면 식사 종류를 골라 주세요." : "시작 시간을 골라 주세요.");
+      toast("시작 시간을 골라 주세요.");
       return;
     }
     var lines = function(id){
