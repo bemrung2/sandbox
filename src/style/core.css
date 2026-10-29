@@ -17,7 +17,6 @@
     --travel-soft: #F7E7D3;
     --danger: #A32C22;
     --danger-line: #E6BDB7;
-    --airline: #D4541A;
 
     --c-air: #3E6FA8;
     --c-move: #667A86;
@@ -56,7 +55,6 @@
       --travel-soft: #3D2F1C;
       --danger: #FF9E92;
       --danger-line: #56302C;
-      --airline: #FF8E5E;
 
       --c-air: #8FB8E8;
       --c-move: #A3B2BC;
@@ -91,7 +89,6 @@
     --travel-soft: #3D2F1C;
     --danger: #FF9E92;
     --danger-line: #56302C;
-    --airline: #FF8E5E;
 
     --c-air: #8FB8E8;
     --c-move: #A3B2BC;
@@ -383,18 +380,36 @@
   }
 
 /* ---------- cards ---------- */
+  /* 카드마다 제 색을 하나 쥔다. 아이콘 · 머리말 · 강조가 전부 그 색에서
+     나오므로, 탭이 달라도 같은 체계로 보인다. 색은 토큰에서만 온다. */
   .card{
+    --accent: var(--signal);
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 18px; padding: 15px; margin: 0 18px 10px;
   }
+  .card.t-air{ --accent: var(--c-air); }
+  .card.t-stay{ --accent: var(--c-stay); }
+  .card.t-book{ --accent: var(--c-free); }
+  .card.t-link{ --accent: var(--signal); }
+  .card.t-pack{ --accent: var(--c-food); }   /* 숙소의 초록과 나란히 두면 구분이 안 된다 */
+  .card.t-note{ --accent: var(--c-move); }
+  .card.t-food{ --accent: var(--c-food); }
+  .card.t-shop{ --accent: var(--c-shop); }
+  .card-ic{
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 24px; height: 24px; border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+  }
+  .card-ic .icon{ width: 14px; height: 14px; }
   .card.dashed{ background: transparent; border-style: dashed; }
   .dangerfoot{ display: flex; justify-content: center; padding: 6px 18px 2px; }
   .linkbtn.danger{ color: var(--ink-faint); }
   .linkbtn.danger:hover{ color: var(--danger); background: transparent; }
   .card-top{ display: flex; align-items: flex-start; gap: 10px; }
   .card-name{ flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; margin: 0; word-break: keep-all; }
-  .card-when{ font-size: 11.5px; color: var(--ink-faint); margin: 0 0 3px; }
-  .card-when.undated{ color: var(--signal); font-weight: 600; }
+  .card-when{ font-size: 11.5px; color: var(--accent); font-weight: 600; margin: 0 0 3px; }
+  .card-when.undated{ color: var(--ink-faint); }
   .card-kind{ font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 0; }
   .card-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .card-empty{ font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 2px; }
@@ -403,8 +418,15 @@
   .card-head h3{
     flex: 1; min-width: 0; margin: 0;
     font-family: "IBM Plex Mono", monospace;
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: var(--ink-faint);
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: var(--accent);
   }
+  .card-n{
+    margin-left: 6px; padding: 1px 6px; border-radius: 6px;
+    font-size: 10.5px; color: var(--ink-faint);
+    background: var(--surface-2);
+  }
+  /* 줄 앞의 아이콘도 그 카드의 색을 따른다 */
+  .rowbtn > .icon{ color: var(--accent); flex-shrink: 0; }
 
   .group-label{ display: flex; align-items: baseline; gap: 8px; padding: 20px 18px 8px; }
   .group-label h3{
@@ -431,7 +453,7 @@
   .rowpen{ width: 13px; height: 13px; color: var(--ink-faint); opacity: 0.55; flex-shrink: 0; margin-top: 4px; }
   .rowline.on .rowbody b{ text-decoration: line-through; color: var(--ink-faint); }
 
-  .airline-name{ color: var(--airline); font-weight: 700; }
+  .airline-name{ color: var(--accent); font-weight: 700; }
   .flightno{ font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink-soft); margin-left: 6px; font-size: 13px; }
 
   .check{
@@ -463,7 +485,12 @@
     padding: 3px 9px; border-radius: 8px;
     background: var(--surface-2); color: var(--ink-soft);
   }
-  .badge.cat{ background: transparent; border: 1px solid currentColor; }
+  /* 분류는 제 색으로 옅게 칠한다 — 글자색만 바뀌면 테두리뿐인 배지가 되어
+     주변보다 오히려 무거워 보인다. 색은 인라인으로 들어온 분류 색이다. */
+  .badge.cat{
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    border: none; font-weight: 700;
+  }
   .badge.tag{ background: var(--signal-soft); color: var(--signal); }
   .maplink{
     display: inline-flex; align-items: center; gap: 4px;

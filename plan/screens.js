@@ -246,13 +246,21 @@ function renderHero(){
   );
   hero.querySelector(".hero-top").appendChild(themeButton());
   ripple(hero.querySelector(".hero-back"), function(){ go({ screen:"list" }); });
-  var dates = el('<p class="hero-dates mono">' +
-    fmtMD(t.start) + ' (' + dowOf(t.start) + ') – ' + fmtMD(t.end) + ' (' + dowOf(t.end) + ') · ' + esc(nightsLabel()) +
-    '</p>');
-  var pen = el('<button class="quietbtn" type="button" aria-label="여행 정보 수정">' + icon("edit") + '</button>');
+  /* 언제부터 언제까지를 한 줄 글자로 적어두면 아무도 읽지 않는다. 떠나는 날과
+     돌아오는 날을 양 끝에 세우고 그 사이를 이어, 여정으로 보이게 한다. */
+  var trail = el(
+    '<div class="trail">' +
+      '<span class="trail-end"><b class="mono">' + fmtMD(t.start) + '</b>' +
+        '<small>' + dowOf(t.start) + '</small></span>' +
+      '<span class="trail-rail"><span class="trail-nights">' + esc(nightsLabel()) + '</span></span>' +
+      '<span class="trail-end"><b class="mono">' + fmtMD(t.end) + '</b>' +
+        '<small>' + dowOf(t.end) + '</small></span>' +
+    '</div>'
+  );
+  var pen = el('<button class="quietbtn trail-pen" type="button" aria-label="여행 정보 수정">' + icon("edit") + '</button>');
   ripple(pen, function(){ openTripEditor(t); });
-  dates.appendChild(pen);
-  hero.appendChild(dates);
+  trail.appendChild(pen);
+  hero.appendChild(trail);
 
   hero.appendChild(pair ? nowCard(pair) : countCard(t, d));
   return hero;
@@ -522,7 +530,7 @@ function renderFood(root, days){
 function foodCard(f){
   var it = f.item;
   var places = it.places || [];
-  var card = el('<div class="card"></div>');
+  var card = el('<div class="card t-food"></div>');
   card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
     (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') + ' · ' +
     esc(MEAL_LABEL[it.meal] || "") + '</p>'));
@@ -583,8 +591,10 @@ function renderShop(root, days){
 }
 
 function shopCard(s){
-  var card = el('<div class="card"></div>');
-  var head = el('<div class="card-head"><h3>' + esc(s.time) + ' · ' + esc(s.area) + '</h3></div>');
+  var card = el('<div class="card t-shop"></div>');
+  var head = el('<div class="card-head">' +
+    '<span class="card-ic">' + icon("bag") + '</span>' +
+    '<h3>' + esc(s.time) + (s.area ? ' · ' + esc(s.area) : '') + '</h3></div>');
   var ed = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
   ripple(ed, function(){ openShopEditor(s); });
   head.appendChild(ed);
@@ -630,7 +640,7 @@ function shopCard(s){
 /* ---------- tab: info ---------- */
 function renderInfo(root){
   root.appendChild(sectionCard({
-    title: "항공", key: "flights", ic: "plane",
+    title: "항공", key: "flights", ic: "plane", tone: "air",
     empty: "항공편을 추가해두세요.",
     render: function(f){
       return '<span class="lbl mono">' + esc(f.label || "") + '</span>' +
@@ -647,7 +657,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "숙소", key: "stays", ic: "bed",
+    title: "숙소", key: "stays", ic: "bed", tone: "stay",
     empty: "숙소를 추가해두세요.",
     render: function(h){
       /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
@@ -664,7 +674,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "예약", key: "books", ic: "star",
+    title: "예약", key: "books", ic: "star", tone: "book",
     empty: "확정된 예약을 적어두세요.",
     render: function(k){
       return (k.when ? '<span class="lbl mono">' + esc(k.when) + '</span>' : '') +
@@ -679,7 +689,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "유용한 정보", key: "links", ic: "link",
+    title: "유용한 정보", key: "links", ic: "link", tone: "link",
     empty: "링크를 모아두면 여행 중에 바로 꺼내볼 수 있어요.",
     linkMode: true,
     render: function(l){
@@ -694,7 +704,7 @@ function renderInfo(root){
 
   root.appendChild(packCard());
   root.appendChild(sectionCard({
-    title: "메모", key: "notes", ic: "note",
+    title: "메모", key: "notes", ic: "note", tone: "note",
     empty: "아직 메모가 없어요.",
     simple: true,
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
@@ -706,8 +716,10 @@ function renderInfo(root){
 /* One card shape for every editable list in 정보. */
 function sectionCard(o){
   var list = ordered(trip()[o.key]);
-  var card = el('<div class="card"></div>');
-  var head = el('<div class="card-head"><h3>' + esc(o.title) + (list.length ? ' · ' + list.length : '') + '</h3></div>');
+  var card = el('<div class="card t-' + (o.tone || "link") + '"></div>');
+  var head = el('<div class="card-head">' +
+    '<span class="card-ic">' + icon(o.ic) + '</span>' +
+    '<h3>' + esc(o.title) + (list.length ? '<span class="card-n">' + list.length + '</span>' : '') + '</h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
     openFormSheet({ title: o.title + " 추가", fields: o.fields }, null, function(v){
@@ -752,8 +764,10 @@ function editRec(o, rec){
 function packCard(){
   var list = ordered(trip().packList);
   var done = list.filter(function(p){ return p.on; }).length;
-  var card = el('<div class="card"></div>');
-  var head = el('<div class="card-head"><h3>준비물 · ' + done + '/' + list.length + '</h3></div>');
+  var card = el('<div class="card t-pack"></div>');
+  var head = el('<div class="card-head">' +
+    '<span class="card-ic">' + icon("bag") + '</span>' +
+    '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
     openTextDialog({ title:"준비물 추가", placeholder:"예: 멀티탭" }, function(v){
@@ -814,8 +828,8 @@ export function openTripEditor(t){
   var inner = flagRow.querySelector(".fld-row");
   inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
     '<input id="t-emoji" type="text" maxlength="4" placeholder="🇯🇵" value="' + esc(t ? t.emoji : "") + '"></div>'));
-  inner.appendChild(el('<div class="fld-col"><label for="t-city">도시</label>' +
-    '<input id="t-city" type="text" placeholder="예: 후쿠오카" value="' + esc(t ? t.city : "") + '"></div>'));
+  inner.appendChild(el('<div class="fld-col"><label for="t-city">여행지</label>' +
+    '<input id="t-city" type="text" placeholder="예: 로마" value="' + esc(t ? t.city : "") + '"></div>'));
   body.appendChild(flagRow);
   body.appendChild(el(
     '<div class="fld"><label for="t-country">라벨</label><input id="t-country" type="text" value="' +
@@ -835,7 +849,7 @@ export function openTripEditor(t){
     var city = sheet.querySelector("#t-city").value.trim();
     var start = sheet.querySelector("#t-start").value;
     var end = sheet.querySelector("#t-end").value;
-    if (!city){ toast("도시를 적어주세요."); return; }
+    if (!city){ toast("여행지를 적어주세요."); return; }
     if (!start || !end){ toast("날짜를 골라주세요."); return; }
     if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
     var rec = {

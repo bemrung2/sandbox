@@ -4,7 +4,7 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.10.30 · r22";
+export var BUILD = "2026.10.31 · r23";
 
 /* ---------- the door ---------- */
 function kakaoMark(){
