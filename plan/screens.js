@@ -161,7 +161,6 @@ function pinnedRows(box){
 function tripCard(t, box){
   var st = tripStatus(t);
   var days = tripDaysOf(t);
-  var packOn = t.packList.filter(function(k){ return k.on; }).length;
   var theme = days.map(function(d){ return d.theme; }).filter(Boolean)[0] || "";
 
   var pinned = isPinned(t);
@@ -182,15 +181,6 @@ function tripCard(t, box){
           '<span class="td-day mono">' + esc(fmtMD(t.end)) + '<small>' + dowOf(t.end) + '</small></span>' +
           '<span class="trip-nights">' + esc(nightsOf(t)) + '</span></span>' +
         (theme ? '<span class="trip-theme">' + esc(theme) + '</span>' : '') +
-        '<span class="trip-stats">' +
-          /* 비어 있는 숫자까지 색을 달면 없는 것이 먼저 보인다 */
-          '<span class="trip-stat t-sched' + (t.items.length ? '' : ' none') + '">' +
-            '<b class="mono">' + t.items.length + '</b>일정</span>' +
-          '<span class="trip-stat t-shop' + (t.shops.length ? '' : ' none') + '">' +
-            '<b class="mono">' + t.shops.length + '</b>쇼핑</span>' +
-          '<span class="trip-stat t-pack' + (t.packList.length ? '' : ' none') + '">' +
-            '<b class="mono">' + packOn + '/' + t.packList.length + '</b>준비물</span>' +
-        '</span>' +
       '</button>' +
       '<div class="trip-acts"></div>' +
     '</div>'

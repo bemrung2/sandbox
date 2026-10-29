@@ -173,9 +173,11 @@ export var CAT = {
 export var CAT_ORDER = ["food","sight","shop","move","stay","etc"];
 export var MEALS = [
   { key:"all", label:"전체" }, { key:"breakfast", label:"아침" }, { key:"lunch", label:"점심" },
-  { key:"dinner", label:"저녁" }, { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
+  { key:"dinner", label:"저녁" }, { key:"snack", label:"간식" },
+  { key:"drink", label:"술" }, { key:"cafe", label:"카페" }
 ];
-export var MEAL_LABEL = { breakfast:"아침", lunch:"점심", dinner:"저녁", drink:"술", cafe:"카페" };
+export var MEAL_LABEL = { breakfast:"아침", lunch:"점심", dinner:"저녁", snack:"간식",
+                          drink:"술", cafe:"카페" };
 
 /* ---------- time ---------- */
 /* Every clock on screen is the one you are travelling by: the times are

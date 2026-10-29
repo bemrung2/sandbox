@@ -157,17 +157,15 @@ export function openConfirmDialog(opts, onYes){
 }
 
 export function pickerField(o){
-  function show(v){
-    if (!v) return o.type === "time" ? "--:--" : "----.--.--";
-    return o.type === "time" ? v : v.replace(/-/g, ".") + " (" + dowOf(v) + ")";
-  }
+  if (o.type === "time") return timeField(o);
+
+  function show(v){ return v ? v.replace(/-/g, ".") + " (" + dowOf(v) + ")" : "----.--.--"; }
   var wrap = el(
     '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
       '<label for="' + o.id + '">' + esc(o.label) + '</label>' +
       '<div class="pickbox' + (o.value ? "" : " blank") + '">' +
         '<span class="pickval">' + esc(show(o.value)) + '</span>' +
-        '<input id="' + o.id + '" type="' + o.type + '"' +
-          (o.type === "time" ? ' step="300"' : '') + ' value="' + esc(o.value || "") + '">' +
+        '<input id="' + o.id + '" type="date" value="' + esc(o.value || "") + '">' +
       '</div>' +
     '</div>'
   );
@@ -180,6 +178,54 @@ export function pickerField(o){
   }
   input.addEventListener("input", sync);
   input.addEventListener("change", sync);
+  return wrap;
+}
+
+/* 시각은 시와 분을 따로 고른다.
+   `<input type="time" step="300">`은 폰의 시계 휠이 들은 체도 하지 않아 1분씩 돌아간다 —
+   고를 수 있는 것만 내놓는 쪽이 확실하다. 값은 같은 id의 숨은 칸에 "HH:MM"으로 들어가므로
+   읽는 쪽은 예전 그대로다. */
+var MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+
+function timeField(o){
+  var now = String(o.value || "");
+  var hh = /^\d\d:\d\d$/.test(now) ? now.slice(0, 2) : "";
+  var mm = /^\d\d:\d\d$/.test(now) ? now.slice(3, 5) : "";
+  /* 5분 자리가 아닌 값이 들어오면 가장 가까운 자리로 끌어다 놓는다 */
+  if (mm && MINUTES.indexOf(mm) < 0) mm = MINUTES[Math.min(11, Math.round(+mm / 5))];
+
+  function opts(list, on){
+    return '<option value=""' + (on ? "" : " selected") + '>--</option>' +
+      list.map(function(v){ return '<option value="' + v + '"' + (v === on ? " selected" : "") + '>' + v + '</option>'; }).join("");
+  }
+  var hours = [];
+  for (var h = 0; h < 24; h++) hours.push(String(h).padStart(2, "0"));
+
+  var wrap = el(
+    '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
+      '<label for="' + o.id + '-h">' + esc(o.label) + '</label>' +
+      '<div class="timebox' + (hh && mm ? "" : " blank") + '">' +
+        '<select class="timesel" id="' + o.id + '-h" aria-label="시">' + opts(hours, hh) + '</select>' +
+        '<span class="timesep">:</span>' +
+        '<select class="timesel" id="' + o.id + '-m" aria-label="분">' + opts(MINUTES, mm) + '</select>' +
+        '<input id="' + o.id + '" type="hidden" value="' + esc(hh && mm ? hh + ":" + mm : "") + '">' +
+      '</div>' +
+    '</div>'
+  );
+  var H = wrap.querySelector("#" + o.id + "-h");
+  var M = wrap.querySelector("#" + o.id + "-m");
+  var hidden = wrap.querySelector("input");
+  var box = wrap.querySelector(".timebox");
+
+  function sync(){
+    /* 시만 골랐으면 분은 정각으로 — 거기서 다시 고르면 된다 */
+    if (H.value && !M.value) M.value = "00";
+    if (!H.value) M.value = "";
+    hidden.value = H.value && M.value ? H.value + ":" + M.value : "";
+    box.classList.toggle("blank", !hidden.value);
+  }
+  H.addEventListener("change", sync);
+  M.addEventListener("change", sync);
   return wrap;
 }
 

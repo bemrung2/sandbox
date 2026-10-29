@@ -13,7 +13,7 @@
   }
   .trip-open{
     display: flex; flex-direction: column;
-    width: 100%; padding: 16px 16px 13px;
+    width: 100%; padding: 16px 16px 15px;
     background: transparent; border: none; border-radius: 22px;
     font: inherit; color: inherit; text-align: left; cursor: pointer;
   }
@@ -24,7 +24,7 @@
 
   /* 핀과 손잡이. 통계 줄 오른쪽 끝을 비워두고 그 자리에 얹는다. */
   .trip-acts{
-    position: absolute; right: 9px; bottom: 8px;
+    position: absolute; right: 9px; bottom: 7px;
     display: flex; align-items: center; gap: 2px;
   }
   .trip-pin{
@@ -74,8 +74,9 @@
   /* 날짜는 여행 머리와 같은 투로 — 굵은 날짜, 흐린 요일, 물결 하나 */
   .trip-dates{
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    margin-top: 13px;
+    margin-top: 13px; padding-right: 46px;      /* 핀 · 손잡이 자리 */
   }
+  .trip-card.pinned .trip-dates{ padding-right: 84px; }
   .td-day{
     display: inline-flex; align-items: baseline; gap: 3px;
     font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
@@ -91,22 +92,10 @@
     background: var(--surface-2); color: var(--ink-faint);
   }
   .trip-theme{
-    font-size: 12.5px; color: var(--ink-soft); margin-top: 7px;
+    font-size: 12.5px; color: var(--ink-soft); margin-top: 7px; padding-right: 46px;
     word-break: keep-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .trip-stats{
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line);
-    padding-right: 42px;           /* 핀 자리 */
-  }
-  .trip-card.pinned .trip-stats{ padding-right: 80px; }
-  .trip-stat{ font-size: 11px; color: var(--ink-faint); }
-  /* 숫자는 그 탭이 쓰는 색을 그대로 쓴다 — 카드 안에서 탭이 보인다 */
-  .trip-stat b{ font-size: 13px; font-weight: 700; margin-right: 3px; color: var(--ink-soft); }
-  .trip-stat.t-sched b{ color: var(--signal); }
-  .trip-stat.t-shop b{ color: var(--c-shop); }
-  .trip-stat.t-pack b{ color: var(--c-food); }
-  .trip-stat.none b, .trip-card.past .trip-stat b{ color: var(--ink-faint); }
+  .trip-card.pinned .trip-theme{ padding-right: 84px; }
   .trip-add{ margin-top: 2px; }
 
 
