@@ -17,6 +17,7 @@
     --travel-soft: #F7E7D3;
     --danger: #A32C22;
     --danger-line: #E6BDB7;
+    --danger-on-ink: #FF9E92;   /* 토스트는 바탕이 뒤집혀 있다 — 그 위에서 읽히는 빨강 */
 
     --c-air: #3E6FA8;
     --c-move: #667A86;
@@ -55,6 +56,7 @@
       --travel-soft: #3D2F1C;
       --danger: #FF9E92;
       --danger-line: #56302C;
+      --danger-on-ink: #A32C22;
 
       --c-air: #8FB8E8;
       --c-move: #A3B2BC;
@@ -89,6 +91,7 @@
     --travel-soft: #3D2F1C;
     --danger: #FF9E92;
     --danger-line: #56302C;
+    --danger-on-ink: #A32C22;
 
     --c-air: #8FB8E8;
     --c-move: #A3B2BC;
@@ -399,7 +402,12 @@
     position: fixed; left: 50%; bottom: calc(26px + var(--safe-b));
     transform: translateX(-50%) translateY(8px);
     display: flex; align-items: center; gap: 4px;
-    background: var(--ink); color: var(--paper);
+    /* 살짝 비친다 — 아래에 무엇이 있는지 보이되 글자는 또렷하게.
+       color-mix를 모르는 브라우저는 앞줄의 불투명한 바탕을 그대로 쓴다. */
+    background: var(--ink);
+    background: color-mix(in srgb, var(--ink) 90%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    color: var(--paper);
     padding: 11px 12px 11px 20px; border-radius: 999px;
     font-size: 13px; font-weight: 600;
     z-index: 90; opacity: 0; pointer-events: none;
@@ -411,13 +419,15 @@
   .toast .toast-msg{ padding: 2px 0; }
   .toast .toast-do{ pointer-events: none; }
   .toast.show .toast-do{ pointer-events: auto; }
+  /* 되돌리기는 무를 수 있다는 뜻이고, 무르는 쪽이 빨강이다 */
   .toast .toast-do{
     flex-shrink: 0; border: none; border-radius: 999px; cursor: pointer;
     pointer-events: none;
-    background: rgba(255, 255, 255, 0.14); color: var(--paper);
+    background: color-mix(in srgb, var(--danger-on-ink) 18%, transparent);
+    color: var(--danger-on-ink);
     font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 13px;
   }
-  .toast .toast-do:hover{ background: rgba(255, 255, 255, 0.24); }
+  .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger-on-ink) 30%, transparent); }
   .toast.plain{ padding: 13px 20px; justify-content: center; }
   .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
 
