@@ -13,7 +13,7 @@ import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
-  tripName, tripUnder, spanLabel, emoPrefix, itemsOn, timedOn, currentPair
+  tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
 
@@ -99,6 +99,18 @@ function emptyState(){
   return box;
 }
 
+/* 이름 아래 한 줄: 어디로 가는지(여행지)와 그 라벨.
+   여행지는 읽으라고 있는 말이니 라벨보다 또렷하게 둔다. */
+function subLine(t, who){
+  var place = tripPlace(t), label = tripLabel(t);
+  if (!place && !label) return "";
+  return '<span class="' + who + '-sub">' +
+    (place ? '<span class="sub-place">' + icon("pin", "sub-pin") + esc(place) + '</span>' : '') +
+    (place && label ? '<span class="sub-dot">·</span>' : '') +
+    (label ? '<span class="sub-label mono">' + esc(label) + '</span>' : '') +
+  '</span>';
+}
+
 /* 지도 검색은 열어둔 여행의 도시를 함께 넣는다 — 같은 이름의 가게가 다른 나라에도 있다.
    스스로 어디인지 적어둔 것(숙소의 지역 등)은 그대로 찾는 게 낫다. */
 function mapUrl(q, exact){
@@ -169,7 +181,7 @@ function tripCard(t, box){
           '<span class="trip-flag">' + (t.emoji ? esc(t.emoji) : icon("pin")) + '</span>' +
           '<span class="trip-id">' +
             '<span class="trip-city">' + esc(tripName(t)) + '</span>' +
-            (tripUnder(t) ? '<span class="trip-country mono">' + esc(tripUnder(t)) + '</span>' : '') +
+            subLine(t, "trip") +
           '</span>' +
           '<span class="trip-status ' + st.kind + '">' + esc(st.label) + '</span>' +
         '</span>' +
@@ -256,7 +268,7 @@ function renderHero(){
       '<div class="hero-id">' +
         '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
         esc(tripName(t)) + '</h1>' +
-        (tripUnder(t) ? '<span class="hero-country mono">' + esc(tripUnder(t)) + '</span>' : '') +
+        subLine(t, "hero") +
       '</div></div>' +
     '</div>'
   );
@@ -859,7 +871,7 @@ export function openTripEditor(t){
   /* 제목이 맨 위다 — 이 여행을 뭐라고 부를지가 먼저고, 어디로 가는지가 그다음이다. */
   body.appendChild(el('<div class="fld"><label for="t-title">제목</label>' +
     '<input id="t-title" type="text" value="' + esc(t && t.title ? t.title : "") + '">' +
-    '<p class="fld-hint">비워두면 여행지가 제목이 됩니다.</p></div>'));
+    '<p class="fld-hint">여행지와 함께 보입니다. 예: 겨울 유럽 신혼여행</p></div>'));
   var flagRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var inner = flagRow.querySelector(".fld-row");
   inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
@@ -882,14 +894,16 @@ export function openTripEditor(t){
   /* 삭제는 여기 없다 — 정보 탭 맨 아래, 한 번 더 묻는 곳에 있다. */
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
   ripple(save, function(){
+    var title = sheet.querySelector("#t-title").value.trim();
     var city = sheet.querySelector("#t-city").value.trim();
     var start = sheet.querySelector("#t-start").value;
     var end = sheet.querySelector("#t-end").value;
-    if (!city){ toast("여행지를 적어 주세요."); return; }
+    if (!title){ sheet.querySelector("#t-title").focus(); toast("제목을 적어 주세요."); return; }
+    if (!city){ sheet.querySelector("#t-city").focus(); toast("여행지를 적어 주세요."); return; }
     if (!start || !end){ toast("날짜를 골라 주세요."); return; }
     if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
     var rec = {
-      title: sheet.querySelector("#t-title").value.trim(),
+      title: title,
       emoji: sheet.querySelector("#t-emoji").value.trim(),
       city: city,
       country: sheet.querySelector("#t-country").value.trim(),

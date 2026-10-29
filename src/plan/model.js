@@ -303,14 +303,17 @@ export function metaOf(t){
            country: t.country || "", start: t.start, end: t.end };
 }
 
-/* 제목을 붙였으면 그게 이 여행의 이름이고, 아니면 여행지가 대신한다. */
+/* 제목과 여행지는 서로를 대신하지 않는다. 이름은 제목이고, 어디로 가는지는
+   그 아래에 따로 선다 — 둘 다 적혀 있으면 둘 다 보인다.
+   (제목 없이 만들어둔 여행은 여행지가 이름 자리에 서고, 아래에서는 빠진다.) */
 export function tripName(t){
   return (t && (t.title || t.city)) || "이름 없는 여행";
 }
-/* 이름 아래 한 줄: 제목이 있으면 여행지까지 거기로 내려온다. */
-export function tripUnder(t){
-  if (!t) return "";
-  return [t.title ? t.city : "", t.country].filter(Boolean).join(" · ");
+export function tripPlace(t){
+  return t && t.title && t.city ? t.city : "";
+}
+export function tripLabel(t){
+  return (t && t.country) || "";
 }
 export function bodyOf(rec){
   var body = Object.assign({}, rec);
