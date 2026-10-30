@@ -1,5 +1,5 @@
 /* 여행 계획 — every screen of it. */
-import { el, esc, icon, ripple, tap, toast, toastUndo, safeUrl, hostOf, uid } from "../ui/dom.js";
+import { el, esc, icon, ripple, tap, toast, toastUndo, toastDone, safeUrl, hostOf, uid } from "../ui/dom.js";
 import { Store } from "../ui/store.js";
 import { themeButton } from "../ui/theme.js";
 import {
@@ -28,7 +28,7 @@ function mayEdit(){
 /* 지우거나 고친 뒤 몇 초 동안 되돌릴 수 있게. 되돌리고 나면 화면도 다시 그린다. */
 function undoOf(restore, said){
   if (!restore) return null;
-  return function(){ restore(); repaint(); toast(said || "되살렸습니다."); };
+  return function(){ restore(); repaint(); toastDone(said || "되살렸습니다."); };
 }
 function undoEdit(restore){ return undoOf(restore, "되돌렸습니다."); }
 function editing(fn){
@@ -79,7 +79,7 @@ function loadBooked(){
   /* 쓴 것을 다시 읽는다 — 화면은 언제나 저장된 것을 그린다. */
   Plan.reread();
   Plan.open(seedId());
-  toast("예약된 내용을 채웠습니다.");
+  toastDone("예약된 내용을 채웠습니다.");
   go({ screen:"trip", tripId: seedId(), tab:"sched", meal:"all", day:0 });
 }
 
@@ -220,15 +220,15 @@ function tripCard(t, box){
     reorder(grip, card, function(){ return pinnedRows(box); }, function(rows){
       if (!mayEdit()) return repaint();
       Plan.setPins(rows.map(function(node){ return node.dataset.trip; }));
-      toast("핀 순서를 바꿨습니다.");
+      toastDone("핀 순서를 바꿨습니다.");
       repaint();
     });
   }
   var pin = el('<button class="trip-pin' + (pinned ? ' on' : '') + '" type="button" aria-pressed="' +
     pinned + '" aria-label="' + (pinned ? "핀 해제" : "맨 위에 고정") + '">' + icon("tack") + '</button>');
   ripple(pin, editing(function(){
-    if (pinned){ Plan.unpin(t.id); toast("핀을 뺐습니다."); }
-    else { Plan.pin(t.id); toast("맨 위에 고정했습니다."); }
+    if (pinned){ Plan.unpin(t.id); toastDone("핀을 뺐습니다."); }
+    else { Plan.pin(t.id); toastDone("맨 위에 고정했습니다."); }
     repaint();
   }));
   acts.appendChild(pin);
@@ -764,7 +764,7 @@ function buyList(card, list, save){
     openTextDialog({ title:"쇼핑리스트 추가", placeholder:"예: 티셔츠" }, function(v){
       save(list.concat([{ id: uid("i"), text: v, got: false }]));
       repaint();
-      toast("추가했습니다.");
+      toastDone("추가했습니다.");
     });
   });
   card.appendChild(addBtn);
@@ -1040,7 +1040,7 @@ export function openTripEditor(t){
     if (adding){
       var made = Plan.addTrip(rec);
       Plan.open(made.id);
-      toast("여행을 만들었습니다.");
+      toastDone("여행을 만들었습니다.");
       go({ screen:"trip", tripId: made.id, tab:"sched", meal:"all", day:0 });
       return;
     }
@@ -1271,7 +1271,7 @@ function openAttachSheet(item){
         if (!v) return;
         Plan.addAttach(item.id, { type:"note", text:v });
         f.querySelector("#a-note").value = "";
-        paintList(); repaint(); toast("메모를 넣었습니다.");
+        paintList(); repaint(); toastDone("메모를 넣었습니다.");
       }));
       form.appendChild(f);
     } else if (kind === "link"){
@@ -1284,7 +1284,7 @@ function openAttachSheet(item){
         if (!u){ g.querySelector("#a-lu").focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
         Plan.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
         g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
-        paintList(); repaint(); toast("링크를 넣었습니다.");
+        paintList(); repaint(); toastDone("링크를 넣었습니다.");
       }));
       form.appendChild(g);
     } else {
@@ -1301,7 +1301,7 @@ function openAttachSheet(item){
         try{
           var pid = await storePhoto(file);
           Plan.addAttach(item.id, { type:"photo", pid: pid });
-          paintList(); repaint(); toast("사진을 넣었습니다.");
+          paintList(); repaint(); toastDone("사진을 넣었습니다.");
         }catch(e){ toast("사진을 저장하지 못했습니다."); }
         label.innerHTML = icon("image") + "사진 고르기";
         label.appendChild(fileInput);

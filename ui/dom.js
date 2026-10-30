@@ -98,7 +98,14 @@ export function toast(msg, hold){
 
 /* 지운 직후의 몇 초. 그 사이에 누르면 지우기 전으로 돌아간다 —
    "정말 지울까요"를 먼저 묻는 것보다 이쪽이 손이 덜 간다. */
-/* kind는 무엇을 했는지 — "delete"(기본)면 휴지통, "edit"이면 연필이 앞에 선다. */
+/* 됐다는 말 — 고쳤다, 더했다, 옮겼다. 초록 체크가 앞에 선다. 거절이나 부탁은 toast()로. */
+export function toastDone(msg){
+  if (Date.now() < toastHold) return;
+  toastHold = 0;
+  show(msg, null, null, 2600, "done");
+}
+
+/* kind는 무엇을 했는지 — "delete"(기본)면 휴지통, "edit"이면 초록 체크가 앞에 선다. */
 export function toastUndo(msg, undo, kind){
   toastHold = 0;
   show(msg, "되돌리기", undo, 4000, kind === "edit" ? "edit" : "delete");
@@ -108,8 +115,8 @@ function show(msg, label, run, ms, kind){
   var t = document.getElementById("toast");
   if (!t) return;
   t.innerHTML = "";
-  t.className = "toast " + (label ? kind : "plain");
-  if (label) t.appendChild(el('<span class="toast-ic" aria-hidden="true">' + icon(kind === "edit" ? "edit" : "trash") + '</span>'));
+  t.className = "toast " + (kind || "plain");
+  if (kind) t.appendChild(el('<span class="toast-ic" aria-hidden="true">' + icon(kind === "delete" ? "trash" : "check") + '</span>'));
   t.appendChild(el('<span class="toast-msg"></span>')).textContent = msg;
   if (label){
     var b = el('<button class="toast-do" type="button">' + icon("undo") + '<span></span></button>');

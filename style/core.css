@@ -38,6 +38,7 @@
     --brand-2: #1F9BD1;
 
     --toast-bg: var(--surface);
+    --ok: #1E8A57;
 
     --shadow: rgba(18, 22, 32, 0.10);
     --shadow-soft: rgba(18, 22, 32, 0.04);
@@ -83,6 +84,7 @@
       --brand-2: #6FD6EE;
 
       --toast-bg: var(--surface-3);
+      --ok: #5FD39A;
 
       --shadow: rgba(0, 0, 0, 0.5);
       --shadow-soft: rgba(0, 0, 0, 0.2);
@@ -124,6 +126,7 @@
     --brand-2: #6FD6EE;
 
     --toast-bg: var(--surface-3);
+    --ok: #5FD39A;
 
     --shadow: rgba(0, 0, 0, 0.5);
     --shadow-soft: rgba(0, 0, 0, 0.2);
@@ -481,7 +484,16 @@
   .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
   .toast.plain{ padding: 12px 20px; text-align: center; font-weight: 500; }
   .toast.delete{ --tone: var(--danger); }
-  .toast.edit{ --tone: var(--signal); }
+  /* 됐다는 알림은 초록 체크 — 체크는 그려지듯 나타난다 */
+  .toast.edit, .toast.done{ --tone: var(--ok); }
+  .toast.done{ padding-right: 18px; }
+  .toast.edit .toast-ic polyline, .toast.done .toast-ic polyline{
+    stroke-width: 2.4; stroke-dasharray: 22; stroke-dashoffset: 22;
+  }
+  .toast.show.edit .toast-ic polyline, .toast.show.done .toast-ic polyline{
+    animation: check-draw 380ms 120ms var(--ease) forwards;
+  }
+  @keyframes check-draw{ to{ stroke-dashoffset: 0; } }
   .toast-ic{
     flex-shrink: 0; width: 32px; height: 32px; border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
@@ -518,6 +530,7 @@
   @media (prefers-reduced-motion: reduce){
     .toast{ transition: none; }
     .toast-bar{ animation: none; opacity: 0; }
+    .toast .toast-ic polyline{ animation: none !important; stroke-dashoffset: 0 !important; }
     .pulse-live i{ animation: none; }
   }
   [hidden]{ display: none !important; }

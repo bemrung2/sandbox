@@ -1,10 +1,10 @@
 /* The chrome around the plan: the door you come in through, and the row at
    the foot of the list that says who you are. */
-import { el, esc, icon, ripple, toast } from "./dom.js";
+import { el, esc, icon, ripple, toast, toastDone } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.11.01 · r39";
+export var BUILD = "2026.11.01 · r40";
 
 /* 이름은 BEMTRIP. 앞은 글자색 그대로, 뒤는 색으로 — src/app.html의 기다리는
    화면에도 같은 글자가 적혀 있다. */
@@ -103,7 +103,7 @@ function openMembers(){
             m.canEdit = next;
             tog.setAttribute("aria-pressed", String(next));
             row.querySelector("small").textContent = next ? "편집 가능" : "보기만";
-            toast((m.name || "이 사람") + (next ? "님의 편집을 열었습니다." : "님은 보기만 가능합니다."));
+            toastDone((m.name || "이 사람") + (next ? "님의 편집을 열었습니다." : "님은 보기만 가능합니다."));
           }).catch(function(){ toast("바꾸지 못했습니다."); });
         });
         row.insertBefore(tog, row.firstChild);

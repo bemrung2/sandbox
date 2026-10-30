@@ -1,5 +1,5 @@
 /* Sheets, dialogs and the form controls they are made of. */
-import { el, esc, icon, ripple, safeUrl, toast, toastUndo } from "./dom.js";
+import { el, esc, icon, ripple, safeUrl, toast, toastUndo, toastDone } from "./dom.js";
 import { Store } from "./store.js";
 
 /* 고치는 창은 고칠 수 있는 사람에게만 열린다. 열어놓고 저장할 때 막으면
@@ -72,7 +72,7 @@ function objectMark(word){
 /* 고친 것도 몇 초간 되돌릴 수 있다 */
 export function savedToast(isEdit, undo){
   if (isEdit && undo) toastUndo("수정했습니다.", undo, "edit");
-  else toast(isEdit ? "수정했습니다." : "추가했습니다.");
+  else toastDone(isEdit ? "수정했습니다." : "추가했습니다.");
 }
 
 export function sheetShell(title, sub){
