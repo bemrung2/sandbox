@@ -8,9 +8,9 @@ import {
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
-import { accountFooter } from "../ui/shell.js";
+import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, stayOn, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, stayOn, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -143,7 +143,7 @@ export function renderTrips(root, keepScroll){
   var wrap = el(
     '<div class="pad">' +
       '<div class="page-head">' +
-        '<div class="page-title"><h1>여행 계획</h1></div>' +
+        '<div class="page-title">' + brandMark() + '</div>' +
       '</div>' +
     '</div>'
   );
@@ -320,7 +320,7 @@ function nowCard(pair){
     (cur ? '지금' : '여유 시간') + '</span>'));
   if (cur){
     head.appendChild(el('<span class="pulse-clock mono">' +
-      esc(cur.s) + (cur.e ? '–' + esc(cur.e) : '') + '</span>'));
+      esc(spanOf(cur)) + '</span>'));
   }
   card.appendChild(head);
 
@@ -512,7 +512,8 @@ function timelineItem(it, pair){
 
   var row = el(
     '<div class="tl-item' + (isCurrent ? " current" : "") + '">' +
-      '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) + '</small>' : '') + '</div>' +
+      '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) +
+        (overnight(it) ? '<sup class="nextday">+1</sup>' : '') + '</small>' : '') + '</div>' +
       '<div class="tl-rail"><span class="tl-dot"' +
         (isCurrent ? '' : ' style="border-color:' + cat.color + '"') + '></span></div>' +
       '<div class="tl-body"><p class="tl-title">' +
@@ -630,7 +631,7 @@ function foodCard(f){
   var places = it.places || [];
   var card = el('<div class="card t-food"></div>');
   card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
-    (it.s ? esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '시간 미정') +
+    (it.s ? esc(spanOf(it)) : '시간 미정') +
     (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p>'));
   card.appendChild(el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
@@ -711,7 +712,7 @@ function shopHead(when, onEdit){
 
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(it.s ? it.s + (it.e ? '–' + it.e : '') : "", function(){ openItemEditor(it, null); }));
+  card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }));
   card.appendChild(el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>'));
   (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
@@ -781,7 +782,7 @@ function renderInfo(root){
     },
     mirrorRow: function(it){
       return '<span class="lbl mono">' + esc(fmtMD(it.dayDate)) + ' (' + dowOf(it.dayDate) + ')' +
-        (it.s ? ' · ' + esc(it.s) + (it.e ? '–' + esc(it.e) : '') : '') + '</span>' +
+        (it.s ? ' · ' + esc(spanOf(it)) : '') + '</span>' +
         '<b><span class="airline-name">' + esc(it.title) + '</span></b>' +
         (it.lines || []).map(function(l){ return '<small>' + esc(l) + '</small>'; }).join("");
     },
@@ -1072,7 +1073,7 @@ function afterLast(date){
   var list = timedOn(date);
   if (!list.length) return "";
   var last = list[list.length - 1];
-  return step5(last.e || last.s);
+  return step5(last.e && !overnight(last) ? last.e : last.s);
 }
 
 function openItemEditor(item, defaultDate, presets){
@@ -1103,11 +1104,13 @@ function openItemEditor(item, defaultDate, presets){
   var row = timeRow.querySelector(".fld-row");
   var sFld = pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true });
   /* 끝나는 시각에는 시작보다 이른 시각이 아예 보이지 않는다. 고를 때의 시작을
-     그때 읽어야 하므로, 값이 아니라 읽는 방법을 건넨다. */
+     그때 읽어야 하므로, 값이 아니라 읽는 방법을 건넨다. 이동만은 예외다 —
+     밤을 넘는 비행은 시작보다 이른 시각에 다음 날 도착한다. */
   var eFld = pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true,
-    min: function(){ return sFld.querySelector("input").value; } });
+    min: function(){ return cur.cat === "move" ? "" : sFld.querySelector("input").value; } });
   row.appendChild(sFld);
   row.appendChild(eFld);
+  timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">이동은 시작보다 이른 종료를 고르면 다음 날 도착(+1)으로 봅니다.</p>'));
   body.appendChild(timeRow);
   body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
   var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div>' +
@@ -1156,6 +1159,7 @@ function openItemEditor(item, defaultDate, presets){
     var food = cur.cat === "food", move = cur.cat === "move";
     mealFld.hidden = !food;
     modeFld.hidden = !move;
+    timeRow.querySelector("#ed-nextday").hidden = !move;
     if (!food && cur.meal){
       cur.meal = "";
       mealRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });

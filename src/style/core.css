@@ -1,8 +1,9 @@
 :root{
-    /* 글은 고딕, 이름은 명조. 숫자는 자리가 맞는 고정폭이다. */
-    --sans: "Noto Sans KR", system-ui, -apple-system, sans-serif;
-    --serif: "Noto Serif KR", "Nanum Myeongjo", serif;
-    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    /* 글씨는 고딕 하나. 라틴과 숫자는 Inter, 한글은 Noto Sans KR이 맡는다.
+       시각처럼 자리가 맞아야 하는 숫자는 같은 글꼴의 고정폭 숫자(tnum)로 쓴다. */
+    --sans: "Inter", "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+    --mono: var(--sans);
+    --ease: cubic-bezier(0.2, 0, 0, 1);
     --paper: #F6F7F9;
     --surface: #FFFFFF;
     --surface-2: #EDEFF4;
@@ -33,8 +34,12 @@
     --c-sight: #2F7D55;
     --c-etc: #6E7583;
 
+    --brand-1: #3446B5;
+    --brand-2: #1F9BD1;
+
     --shadow: rgba(18, 22, 32, 0.10);
-    --scrim: rgba(14, 16, 24, 0.44);
+    --shadow-soft: rgba(18, 22, 32, 0.04);
+    --scrim: rgba(14, 16, 24, 0.40);
 
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-t: env(safe-area-inset-top, 0px);
@@ -72,8 +77,12 @@
       --c-sight: #7FD6A3;
       --c-etc: #9AA2B1;
 
+      --brand-1: #A3AFFF;
+      --brand-2: #6FD6EE;
+
       --shadow: rgba(0, 0, 0, 0.5);
-      --scrim: rgba(0, 0, 0, 0.62);
+      --shadow-soft: rgba(0, 0, 0, 0.2);
+      --scrim: rgba(0, 0, 0, 0.58);
     }
   }
   :root[data-theme="dark"]{
@@ -107,8 +116,12 @@
     --c-sight: #7FD6A3;
     --c-etc: #9AA2B1;
 
+    --brand-1: #A3AFFF;
+    --brand-2: #6FD6EE;
+
     --shadow: rgba(0, 0, 0, 0.5);
-    --scrim: rgba(0, 0, 0, 0.62);
+    --shadow-soft: rgba(0, 0, 0, 0.2);
+    --scrim: rgba(0, 0, 0, 0.58);
   }
 
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -123,6 +136,9 @@
     font-family: var(--sans);
     font-size: 15px;
     line-height: 1.55;
+    letter-spacing: -0.012em;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     display: flex;
     justify-content: center;
     /* the page scrolls one way only */
@@ -154,7 +170,7 @@
   .rip{ position: relative; overflow: hidden; isolation: isolate; }
   .rip > .ink{
     position: absolute; border-radius: 50%; pointer-events: none;
-    background: currentColor; opacity: 0.16;
+    background: currentColor; opacity: 0.12;
     transform: scale(0);
     animation: ink-in 420ms cubic-bezier(0.2, 0, 0.1, 1) forwards;
     z-index: 0;
@@ -168,23 +184,37 @@
   .rip > *:not(.ink){ position: relative; z-index: 1; }
 
   /* a press also sinks, which reads as weight rather than as a highlight */
-  .btn, .trip-open, .kakao, .daybtn, .chip, .pick{
-    transition: transform 120ms ease, box-shadow 160ms ease;
+  /* 눌리면 살짝 가라앉고, 색은 한 번에 바뀌지 않고 번지듯 옮겨 간다 */
+  .btn, .trip-open, .kakao, .daybtn, .chip, .pick, .tab, .check, .quietbtn, .linkbtn,
+  .icon-btn, .btn-text, .addcard, .trip-pin, .theme-row, .routerow, .rowbtn, .timebox, .attpick button{
+    transition: transform 140ms var(--ease), background-color 180ms ease, color 180ms ease,
+                border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
   }
-  .btn:active, .trip-open:active, .kakao:active{ transform: scale(0.985); }
+  .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active,
+  .routerow:active{ transform: scale(0.985); }
+  .pick:active, .chip:active, .daybtn:active, .check:active, .btn-text:active,
+  .icon-btn:active, .trip-pin:active, .quietbtn:active{ transform: scale(0.95); }
 
   @media (prefers-reduced-motion: reduce){
     .rip > .ink{ animation-duration: 1ms; }
-    .btn:active, .trip-open:active, .kakao:active{ transform: none; }
+    .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active, .routerow:active,
+    .pick:active, .chip:active, .daybtn:active, .check:active, .btn-text:active,
+    .icon-btn:active, .trip-pin:active, .quietbtn:active{ transform: none; }
   }
 
 /* ---------- the page ---------- */
   .pad{ padding: calc(var(--safe-t) + 18px) 18px 0; }
-  .wordmark{
-    flex: 1; min-width: 0;
-    font-family: var(--mono);
-    font-size: 21px; font-weight: 700; letter-spacing: 0.18em;
-    margin: 0 0 2px;
+  /* BEMTRIP — 앞은 글자색, 뒤는 이름의 색. 색은 토큰에서만 온다. */
+  .brand{
+    margin: 0; font-size: 25px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.035em; white-space: nowrap;
+  }
+  .brand-a{ color: var(--ink); }
+  .brand-b{
+    color: var(--brand-1);
+    background: linear-gradient(100deg, var(--brand-1), var(--brand-2));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   .build-stamp{ margin: 18px 0 30px; font-size: 10.5px; color: var(--ink-faint); text-align: center; }
   .account-row{ display: flex; justify-content: center; gap: 4px; margin-top: 26px; flex-wrap: wrap; }
@@ -209,16 +239,16 @@
   .sheet{
     width: 100%; max-width: 440px; min-width: 0;
     background: var(--paper);
-    border-radius: 28px 28px 0 0;
+    border-radius: 26px 26px 0 0;
     max-height: 90vh;
     display: flex; flex-direction: column;
-    box-shadow: 0 -8px 30px var(--shadow);
+    box-shadow: 0 -12px 40px -8px var(--shadow);
     overflow: hidden;
   }
   @supports (max-height: 90dvh){ .sheet{ max-height: 90dvh; } }
   .sheet-grip{ width: 34px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 10px auto 0; flex-shrink: 0; }
   .sheet-head{ display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 18px; flex-shrink: 0; }
-  .sheet-title{ flex: 1; min-width: 0; font-family: var(--serif); font-size: 17.5px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .sheet-title{ flex: 1; min-width: 0; font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.025em; }
   .sheet-sub{ font-size: 11.5px; color: var(--ink-faint); margin: 1px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sheet-body{
     flex: 1; min-height: 0;
@@ -235,7 +265,7 @@
 
   .fld{ margin-bottom: 14px; }
   .fld > label, .fld-col > label{
-    display: block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em;
+    display: block; font-size: 12px; font-weight: 600; letter-spacing: -0.005em;
     color: var(--ink-soft); margin-bottom: 6px;
   }
   .fld input, .fld textarea{
@@ -247,12 +277,16 @@
        box honour its container instead. */
     -webkit-appearance: none;
     appearance: none;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
   }
   /* one fixed height for every single-line control, so a box never changes
      size with what is (or is not) typed in it */
   .fld input{ height: 47px; padding: 0 13px; }
   .fld textarea{ resize: vertical; min-height: 66px; padding: 12px 13px; line-height: 1.5; }
-  .fld input:focus, .fld textarea:focus{ outline: none; border-color: var(--signal); }
+  .fld input:focus, .fld textarea:focus{
+    outline: none; border-color: var(--signal);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 18%, transparent);
+  }
   .fld-hint{ font-size: 11.5px; color: var(--ink-faint); margin: 6px 0 0; }
 
   .fld-row{ display: flex; gap: 10px; }
@@ -277,7 +311,7 @@
   }
   .pickbox:focus-within{ border-color: var(--signal); }
   .pickbox .pickval{
-    font-family: var(--mono);
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
     font-size: 16px; color: var(--ink);
     line-height: 1; white-space: nowrap; text-align: center;
   }
@@ -313,7 +347,7 @@
   .wheel-pad{ height: 76px; }          /* (190 - 38) / 2 */
   .wheel-item{
     height: 38px; line-height: 38px; scroll-snap-align: center; cursor: pointer;
-    font-family: var(--mono);
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
     font-size: 19px; font-weight: 600; text-align: center; color: var(--ink-faint);
     transition: color 0.12s ease, opacity 0.12s ease;
     opacity: 0.55;
@@ -321,7 +355,7 @@
   .wheel-item.on{ color: var(--ink); opacity: 1; }
   .wheel-sep{
     position: relative; z-index: 1;
-    font-family: var(--mono); font-size: 19px; font-weight: 600;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600;
     color: var(--ink-faint);
   }
   @media (prefers-reduced-motion: reduce){ .wheel{ scroll-behavior: auto; } }
@@ -375,25 +409,37 @@
   .attlist-body small{ display: block; font-size: 11px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .attlist-body p{ margin: 0; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word; }
 
+  /* 가운데 뜨는 창. 글은 넉넉한 폭으로 한두 줄에 끝나고, 단추는 손가락 크기의
+     알약이다 — 하려는 일은 색으로, 물러서는 일은 옅은 면으로. */
   .dialog{
-    background: var(--surface); border-radius: 26px; padding: 22px;
-    width: 100%; max-width: 340px; box-shadow: 0 18px 40px var(--shadow);
+    background: var(--surface); border-radius: 22px; padding: 22px 20px 18px;
+    width: 100%; max-width: 380px;
+    border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    box-shadow: 0 28px 64px -16px var(--shadow), 0 2px 8px var(--shadow-soft);
   }
-  .dialog h3{ margin: 0 0 14px; font-family: var(--serif); font-size: 17.5px; font-weight: 700; letter-spacing: -0.01em; }
-  .dialog.ask{ max-width: 300px; }
+  .dialog h3{ margin: 0 2px 14px; font-size: 18px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.35; }
   .dialog-body{
-    font-size: 13px; line-height: 1.55; color: var(--ink-soft);
-    margin: -6px 0 16px; word-break: keep-all;
+    font-size: 14px; line-height: 1.6; color: var(--ink-soft);
+    margin: -8px 2px 18px; word-break: keep-all;
   }
+  .dialog .fld{ margin-bottom: 4px; }
   .btn-text[disabled]{ opacity: 0.4; cursor: default; }
-  .dialog-actions{ display: flex; justify-content: flex-end; gap: 2px; align-items: center; margin-top: 4px; }
+  .dialog-actions{ display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 16px; }
   .dialog-actions .spacer{ flex: 1; }
   .btn-text{
-    background: transparent; border: none; color: var(--ink-soft);
-    font: inherit; font-size: 14px; font-weight: 700; padding: 10px 12px; cursor: pointer; border-radius: 999px;
+    min-height: 44px; padding: 0 18px;
+    background: var(--surface-2); border: none; color: var(--ink);
+    font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; border-radius: 13px;
   }
-  .btn-text.go{ color: var(--signal); }
-  .btn-text.danger{ color: var(--danger); }
+  .btn-text:hover{ background: var(--surface-3); }
+  .btn-text.go{ background: var(--signal); color: var(--on-signal); }
+  .btn-text.go:hover{ background: color-mix(in srgb, var(--signal) 88%, var(--ink)); }
+  .btn-text.danger{ background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+  .btn-text.danger:hover{ background: color-mix(in srgb, var(--danger) 18%, transparent); }
+  /* 묻는 창은 두 단추가 반씩 나눠 선다 */
+  .dialog.ask{ max-width: 360px; }
+  .dialog.ask .spacer{ display: none; }
+  .dialog.ask .btn-text{ flex: 1 1 0; }
 
   .photoview{
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -403,39 +449,43 @@
   }
   .photoview img{ max-width: 100%; max-height: 100%; border-radius: 10px; }
 
+  /* 알림 한 줄. 폭은 글이 정한다 — left:50%에 그냥 두면 화면 반쪽 폭에서
+     접혀 짧은 말도 두 줄이 된다. 그래서 max-content로 재고, 화면 폭에서 멈춘다. */
   .toast{
-    position: fixed; left: 50%; bottom: calc(26px + var(--safe-b));
-    transform: translateX(-50%) translateY(8px);
-    display: flex; align-items: center; gap: 4px;
+    position: fixed; left: 50%; bottom: calc(24px + var(--safe-b));
+    transform: translateX(-50%) translateY(14px) scale(0.97);
+    width: max-content; max-width: min(calc(100vw - 32px), 420px);
+    display: flex; align-items: center; gap: 14px;
     /* 살짝 비친다 — 아래에 무엇이 있는지 보이되 글자는 또렷하게.
        color-mix를 모르는 브라우저는 앞줄의 불투명한 바탕을 그대로 쓴다. */
     background: var(--ink);
-    background: color-mix(in srgb, var(--ink) 82%, transparent);
-    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--ink) 88%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
     color: var(--paper);
-    padding: 10px 11px 10px 16px; border-radius: 15px;
-    box-shadow: 0 10px 26px var(--shadow);
-    font-size: 13px; font-weight: 600;
+    padding: 12px 12px 12px 18px; border-radius: 16px;
+    box-shadow: 0 18px 40px -12px var(--shadow), 0 2px 6px var(--shadow-soft);
+    font-size: 14px; font-weight: 500; line-height: 1.45; letter-spacing: -0.015em;
     z-index: 90; opacity: 0; pointer-events: none;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    max-width: 88%; text-align: center;
+    transition: opacity 220ms ease, transform 300ms var(--ease);
+    text-align: left; word-break: keep-all;
   }
   /* 토스트 자체는 끝까지 손가락을 막지 않는다. 받는 것은 떠 있는 동안의
      되돌리기 단추 하나뿐이다 — 사라진 뒤에도 남아 있으면 그 아래가 눌리지 않는다. */
-  .toast .toast-msg{ padding: 2px 0; }
+  .toast .toast-msg{ flex: 1 1 auto; min-width: 0; padding: 2px 0; }
   .toast .toast-do{ pointer-events: none; }
   .toast.show .toast-do{ pointer-events: auto; }
   /* 되돌리기는 무를 수 있다는 뜻이고, 무르는 쪽이 빨강이다 */
   .toast .toast-do{
-    flex-shrink: 0; border: none; border-radius: 10px; cursor: pointer;
+    flex-shrink: 0; border: none; border-radius: 11px; cursor: pointer;
     pointer-events: none;
-    background: color-mix(in srgb, var(--danger-on-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--danger-on-ink) 16%, transparent);
     color: var(--danger-on-ink);
-    font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 13px;
+    font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 14px;
+    transition: background-color 160ms ease;
   }
-  .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger-on-ink) 30%, transparent); }
-  .toast.plain{ padding: 12px 17px; justify-content: center; }
-  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger-on-ink) 28%, transparent); }
+  .toast.plain{ padding: 13px 22px; text-align: center; }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
 
@@ -457,7 +507,8 @@
   .card{
     --accent: var(--signal);
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: 18px; padding: 15px; margin: 0 18px 10px;
+    border-radius: 20px; padding: 16px; margin: 0 18px 10px;
+    box-shadow: 0 1px 2px var(--shadow-soft);
   }
   .card.t-air{ --accent: var(--c-air); }
   .card.t-stay{ --accent: var(--c-stay); }
@@ -474,12 +525,12 @@
     color: var(--accent);
   }
   .card-ic .icon{ width: 14px; height: 14px; }
-  .card.dashed{ background: transparent; border-style: dashed; }
+  .card.dashed{ background: transparent; border-style: dashed; box-shadow: none; }
   .dangerfoot{ display: flex; justify-content: center; padding: 6px 18px 2px; }
   .linkbtn.danger{ color: var(--ink-faint); }
   .linkbtn.danger:hover{ color: var(--danger); background: transparent; }
   .card-top{ display: flex; align-items: flex-start; gap: 10px; }
-  .card-name{ flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; margin: 0; word-break: keep-all; }
+  .card-name{ flex: 1; min-width: 0; font-size: 16px; font-weight: 700; margin: 0; word-break: keep-all; letter-spacing: -0.02em; }
   .card-when{ font-size: 11.5px; color: var(--accent); font-weight: 600; margin: 0 0 3px; }
   .card-when.undated{ color: var(--ink-faint); }
   .card-head h3.undated{ color: var(--ink-faint); }
@@ -498,8 +549,8 @@
   .card-head{ display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
   .card-head h3{
     flex: 1; min-width: 0; margin: 0;
-    font-family: var(--mono);
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: var(--accent);
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.01em; color: var(--accent);
   }
   .card-n{
     margin-left: 6px; padding: 1px 6px; border-radius: 6px;
@@ -511,7 +562,7 @@
 
   .group-label{ display: flex; align-items: baseline; gap: 8px; padding: 20px 18px 8px; }
   .group-label h3{
-    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
     text-transform: uppercase; color: var(--ink-faint); margin: 0;
   }
   .group-count{ font-size: 11px; color: var(--ink-faint); }
@@ -530,12 +581,12 @@
   .rowbody{ flex: 1; min-width: 0; }
   .rowbody b{ display: block; font-size: 14px; font-weight: 600; word-break: keep-all; }
   .rowbody small{ display: block; font-size: 12px; font-weight: 400; color: var(--ink-soft); margin-top: 2px; word-break: keep-all; }
-  .rowbody .lbl{ display: block; font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 2px; }
+  .rowbody .lbl{ display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.01em; color: var(--ink-faint); margin-bottom: 2px; }
   .rowpen{ width: 13px; height: 13px; color: var(--ink-faint); opacity: 0.55; flex-shrink: 0; margin-top: 4px; }
   .rowline.on .rowbody b{ text-decoration: line-through; color: var(--ink-faint); }
 
   .airline-name{ color: var(--accent); font-weight: 700; }
-  .flightno{ font-family: var(--mono); font-weight: 600; color: var(--ink-soft); margin-left: 6px; font-size: 13px; }
+  .flightno{ font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink-soft); margin-left: 6px; font-size: 13px; }
 
   .check{
     width: 28px; height: 28px; flex-shrink: 0; margin-top: 9px;
@@ -597,7 +648,7 @@
     font: inherit; font-size: 13.5px; font-weight: 600; padding: 15px; cursor: pointer;
   }
   .addcard .icon{ width: 16px; height: 16px; }
-  .addcard:hover{ color: var(--signal); border-color: var(--signal); }
+  .addcard:hover{ color: var(--signal); border-color: var(--signal); background: var(--signal-tint); }
 
 
 /* ---------- attachments ---------- */
@@ -645,14 +696,14 @@
   @keyframes sink-out{ to{ transform: translateY(26px); opacity: 0; } }
   @keyframes pop-in{ from{ transform: scale(0.94); opacity: 0; } }
   @keyframes pop-out{ to{ transform: scale(0.96); opacity: 0; } }
-  .scrim, .photoview{ animation: fade-in 200ms ease-out; }
-  .scrim > .sheet{ animation: rise-in 260ms cubic-bezier(0.2, 0, 0, 1); }
-  .scrim > .dialog{ animation: pop-in 200ms cubic-bezier(0.2, 0, 0, 1); }
+  .scrim, .photoview{ animation: fade-in 220ms ease-out; }
+  .scrim > .sheet{ animation: rise-in 320ms var(--ease); }
+  .scrim > .dialog{ animation: pop-in 240ms var(--ease); }
   .scrim.leaving, .photoview.leaving{ animation: fade-out 170ms ease-in forwards; pointer-events: none; }
   .scrim.leaving > .sheet{ animation: sink-out 170ms ease-in forwards; }
   .scrim.leaving > .dialog{ animation: pop-out 170ms ease-in forwards; }
   /* 탭을 옮기면 내용이 제자리에서 서서히 떠오른다. 움직이지는 않는다. */
-  .tab-in{ animation: fade-in 220ms ease-out; }
+  .tab-in{ animation: fade-in 260ms ease-out; }
   @media (prefers-reduced-motion: reduce){
     .scrim, .photoview, .scrim > .sheet, .scrim > .dialog, .tab-in{ animation: none; }
     .scrim.leaving, .photoview.leaving{ animation: fade-out 1ms forwards; }
@@ -703,7 +754,7 @@
   :root[data-theme="dark"] .signin-art .orb{ opacity: 0.32; }
 
   .signin-main{ position: relative; }
-  .signin .wordmark{ flex: 0 0 auto; font-size: 30px; letter-spacing: 0.14em; margin: 0 0 26px; }
+  .signin .brand{ font-size: 38px; margin: 0 0 26px; }
   .kakao{
     display: flex; align-items: center; justify-content: center; gap: 9px;
     width: 100%; padding: 17px 20px;

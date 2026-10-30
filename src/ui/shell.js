@@ -4,7 +4,13 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.11.01 · r37";
+export var BUILD = "2026.11.01 · r38";
+
+/* 이름은 BEMTRIP. 앞은 글자색 그대로, 뒤는 색으로 — src/app.html의 기다리는
+   화면에도 같은 글자가 적혀 있다. */
+export function brandMark(){
+  return '<h1 class="brand"><span class="brand-a">BEM</span><span class="brand-b">TRIP</span></h1>';
+}
 
 /* ---------- the door ---------- */
 function kakaoMark(){
@@ -20,7 +26,7 @@ export function paintSignIn(view){
         '<span class="orb orb-a"></span><span class="orb orb-b"></span><span class="orb orb-c"></span>' +
       '</div>' +
       '<div class="signin-main">' +
-        '<h1 class="wordmark">여행 계획</h1>' +
+        brandMark() +
         '<button class="kakao rip" type="button">' + kakaoMark() + '카카오로 로그인</button>' +
       '</div>' +
     '</div>'

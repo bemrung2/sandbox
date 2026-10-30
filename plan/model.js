@@ -89,7 +89,7 @@ var SEED_ITEMS = [
     places:["인천국제공항 제2여객터미널", "로마 피우미치노 공항 제3터미널"],
     lines:["가는 편 · A350-900 · 일반석(K)", "14:05 인천 T2 — 19:35 로마 T3 · 13시간 30분",
            "KIM MINWOO 36F · KIM SOYEONG 36E"] },
-  { id:"fl-f2", d:"2026-12-05", s:"15:05", cat:"move", mode:"plane", emo:"✈️",
+  { id:"fl-f2", d:"2026-12-05", s:"15:05", e:"11:15", cat:"move", mode:"plane", emo:"✈️",
     t:"대한항공 KE5902",
     places:["파리 샤를 드 골 공항 제2E터미널", "인천국제공항 제2여객터미널"],
     lines:["오는 편 · A350-900 · 일반석(U) · 에어프랑스 운항",
@@ -282,8 +282,8 @@ function mdToIso(text, t){
 function flightToItem(f, t){
   var times = (f.detail || "").match(/\b\d{1,2}:\d{2}\b/g) || [];
   var s = times[0] || null;
-  /* 도착이 출발보다 이르면 다음 날 도착이다 — 끝 시각으로 적지 않고 줄에 남긴다 */
-  var e = times[1] && mins(times[1]) > mins(times[0]) ? times[1] : null;
+  /* 도착이 출발보다 이르면 다음 날 도착이다 (overnight) — 그래도 끝 시각이다 */
+  var e = times[1] || null;
   var kind = String(f.label || "").split("·")[0].trim();
   return {
     dayDate: mdToIso(f.label, t) || mdToIso(f.detail, t) || t.start,
@@ -336,6 +336,16 @@ export function itemsOn(date){
 export function timedOn(date){
   return itemsOn(date).filter(function(i){ return !!i.s; });
 }
+/* 끝이 시작보다 이르면 다음 날 끝난다. 밤을 넘는 비행이 그렇다. */
+export function overnight(it){
+  return !!(it && it.s && it.e && mins(it.e) < mins(it.s));
+}
+/* "14:05–19:35", 다음 날 끝나면 "15:05–11:15 +1" */
+export function spanOf(it){
+  if (!it || !it.s) return "";
+  return it.s + (it.e ? "–" + it.e + (overnight(it) ? " +1" : "") : "");
+}
+
 export function currentPair(){
   var days = tripDays(), today = todayISO(), di = -1;
   if (!days.length) return null;
@@ -344,6 +354,7 @@ export function currentPair(){
   var list = timedOn(days[di].date), n = nowMins(), cur = null, next = null, from = null, to = null;
   for (var i = 0; i < list.length; i++){
     var s = mins(list[i].s), e = list[i].e ? mins(list[i].e) : null;
+    if (e !== null && e < s) e = 24 * 60;          /* 다음 날 끝나는 것은 오늘 내내 */
     if (e === null){
       for (var j = i + 1; j < list.length; j++){
         var ns = mins(list[j].s);
@@ -563,6 +574,15 @@ export var Plan = {
       self.write(self.path("shops") + "/" + sh.id, null);
     });
     t.shops = [];
+    /* 예전에 옮겨 온 항공편은 다음 날 도착을 끝 시각으로 적지 않았다. 줄에 적힌
+       '출발 — 도착'에서 도착을 찾아 채운다 (조용히, 한 번). */
+    t.items.forEach(function(it){
+      if (!isFlight(it) || !it.s || it.e) return;
+      var times = (it.lines || []).join(" ").match(/\b\d{1,2}:\d{2}\b/g) || [];
+      if (times.length < 2 || times[0] !== it.s) return;
+      it.e = times[1].length === 4 ? "0" + times[1] : times[1];
+      self.write(items + "/" + it.id, bodyOf(it));
+    });
     return moved;
   },
   /* A pin is a number: nonzero means pinned, and the order among the pinned

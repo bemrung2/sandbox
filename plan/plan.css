@@ -1,7 +1,7 @@
 /* ---------- the trips ---------- */
   .page-head{ display: flex; align-items: center; gap: 4px; margin: 0 0 22px; }
   .page-title{ flex: 1; min-width: 0; }
-  .page-title h1{ font-family: var(--serif); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .page-title .brand{ font-size: 26px; }
 
   .trip-list{ display: flex; flex-direction: column; gap: 12px; }
   /* The card is a frame: the whole of it opens the trip, and the two controls
@@ -10,6 +10,7 @@
     position: relative;
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 22px; overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow-soft), 0 8px 24px -16px var(--shadow);
   }
   /* 카드 한 장에 남은 것은 어디로, 언제뿐이다. 그 둘이 잘 보이도록
      바탕을 아주 옅게 물들이고 — 지난 여행은 물들이지 않는다. */
@@ -71,7 +72,7 @@
   .trip-card.soon .trip-flag{ background: var(--signal-soft); }
   .trip-card.live .trip-flag{ background: var(--travel-soft); }
   .trip-id{ flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .trip-city{ font-family: var(--serif); font-size: 19.5px; font-weight: 700; letter-spacing: -0.02em; }
+  .trip-city{ font-size: 19px; font-weight: 700; letter-spacing: -0.03em; }
   /* 이름 아래 한 줄. 여행지는 읽는 말이라 또렷하게, 라벨은 배경처럼. */
   .trip-sub, .hero-sub{
     display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0;
@@ -137,8 +138,7 @@
   .hero-top .icon-btn:last-child{ margin-left: auto; }
   .hero-flag{ margin-right: 6px; }
   .hero-city{
-    font-family: var(--serif);
-    font-size: 26px; font-weight: 700; letter-spacing: -0.03em;
+    font-size: 26px; font-weight: 800; letter-spacing: -0.04em;
     margin: 0; line-height: 1.2; word-break: keep-all;
   }
 
@@ -172,7 +172,7 @@
   .pulse-head{ display: flex; align-items: center; gap: 10px; }
   .pulse-live{
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
     color: var(--signal); text-transform: uppercase;
   }
   .pulse-live i{
@@ -212,7 +212,7 @@
   .pulse-in{ font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
 
   .pulse.count{ padding-bottom: 15px; }
-  .count-big{ font-size: 30px; font-weight: 700; letter-spacing: -0.03em; margin: 6px 0 0; line-height: 1.05; }
+  .count-big{ font-size: 32px; font-weight: 800; letter-spacing: -0.04em; margin: 6px 0 0; line-height: 1.05; }
   .pulse.count.live .count-big{ color: var(--signal); }
   .count-sub{ font-size: 12.5px; color: var(--ink-soft); margin: 5px 0 0; word-break: keep-all; }
 
@@ -221,7 +221,10 @@
   .tabs{
     position: sticky; top: var(--safe-t); z-index: 15;
     display: flex; padding: 0 10px;
-    background: var(--paper); border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    border-bottom: 1px solid var(--line);
   }
   .tab{
     flex: 1; min-width: 0; padding: 14px 2px 12px;
@@ -310,6 +313,8 @@
     font-size: 12.5px; font-weight: 600; line-height: 1.25; text-align: right;
   }
   .tl-time small{ display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-faint); }
+  /* 다음 날 끝나는 것 — 도착 시각 옆에 작게 */
+  .nextday{ font-size: 8.5px; font-weight: 700; color: var(--signal); margin-left: 1px; vertical-align: 3px; line-height: 0; }
 
   .tl-rail{ width: 13px; flex-shrink: 0; position: relative; display: flex; justify-content: center; }
   .tl-rail::before{ content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }

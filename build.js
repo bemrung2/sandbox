@@ -55,7 +55,7 @@ const html = `<!doctype html>
 <meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="여행 계획">
+<meta name="apple-mobile-web-app-title" content="BEMTRIP">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 ${head}
 </head>
