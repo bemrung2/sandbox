@@ -20,6 +20,7 @@ export var ICONS = {
   plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   go: '<polyline points="10 5 17 12 10 19"/>',
   check: '<polyline points="5 12.5 10 17 19 7"/>',
+  undo: '<polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   compass: '<circle cx="12" cy="12" r="9"/><polygon points="15.6 8.4 10.4 10.4 8.4 15.6 13.6 13.6" fill="currentColor" stroke="none"/>',
   pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
   tack: '<line x1="8.5" y1="3.5" x2="15.5" y2="3.5"/><path d="M10 3.5l-.8 6.1L5.8 13h12.4l-3.4-3.4-.8-6.1"/><line x1="12" y1="13" x2="12" y2="20.5"/>',
@@ -97,26 +98,29 @@ export function toast(msg, hold){
 
 /* 지운 직후의 몇 초. 그 사이에 누르면 지우기 전으로 돌아간다 —
    "정말 지울까요"를 먼저 묻는 것보다 이쪽이 손이 덜 간다. */
-export function toastUndo(msg, undo){
+/* kind는 무엇을 했는지 — "delete"(기본)면 휴지통, "edit"이면 연필이 앞에 선다. */
+export function toastUndo(msg, undo, kind){
   toastHold = 0;
-  show(msg, "되돌리기", undo, 4000);
+  show(msg, "되돌리기", undo, 4000, kind === "edit" ? "edit" : "delete");
 }
 
-function show(msg, label, run, ms){
+function show(msg, label, run, ms, kind){
   var t = document.getElementById("toast");
   if (!t) return;
   t.innerHTML = "";
-  t.classList.toggle("plain", !label);
+  t.className = "toast " + (label ? kind : "plain");
+  if (label) t.appendChild(el('<span class="toast-ic" aria-hidden="true">' + icon(kind === "edit" ? "edit" : "trash") + '</span>'));
   t.appendChild(el('<span class="toast-msg"></span>')).textContent = msg;
   if (label){
-    var b = el('<button class="toast-do" type="button"></button>');
-    b.textContent = label;
+    var b = el('<button class="toast-do" type="button">' + icon("undo") + '<span></span></button>');
+    b.querySelector("span").textContent = label;
     b.addEventListener("click", function(){
       t.classList.remove("show");
       clearTimeout(toastTimer);
       if (run) run();
     });
     t.appendChild(b);
+    t.appendChild(el('<span class="toast-bar" aria-hidden="true" style="animation-duration:' + ms + 'ms"></span>'));
   }
   t.classList.add("show");
   clearTimeout(toastTimer);

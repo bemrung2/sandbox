@@ -4,7 +4,7 @@ import { el, esc, icon, ripple, toast } from "./dom.js";
 import { Store } from "./store.js";
 import { sheetShell, showOverlay } from "./sheet.js";
 
-export var BUILD = "2026.11.01 · r38";
+export var BUILD = "2026.11.01 · r39";
 
 /* 이름은 BEMTRIP. 앞은 글자색 그대로, 뒤는 색으로 — src/app.html의 기다리는
    화면에도 같은 글자가 적혀 있다. */

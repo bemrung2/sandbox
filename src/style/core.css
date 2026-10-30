@@ -37,6 +37,8 @@
     --brand-1: #3446B5;
     --brand-2: #1F9BD1;
 
+    --toast-bg: var(--surface);
+
     --shadow: rgba(18, 22, 32, 0.10);
     --shadow-soft: rgba(18, 22, 32, 0.04);
     --scrim: rgba(14, 16, 24, 0.40);
@@ -80,6 +82,8 @@
       --brand-1: #A3AFFF;
       --brand-2: #6FD6EE;
 
+      --toast-bg: var(--surface-3);
+
       --shadow: rgba(0, 0, 0, 0.5);
       --shadow-soft: rgba(0, 0, 0, 0.2);
       --scrim: rgba(0, 0, 0, 0.58);
@@ -118,6 +122,8 @@
 
     --brand-1: #A3AFFF;
     --brand-2: #6FD6EE;
+
+    --toast-bg: var(--surface-3);
 
     --shadow: rgba(0, 0, 0, 0.5);
     --shadow-soft: rgba(0, 0, 0, 0.2);
@@ -449,48 +455,69 @@
   }
   .photoview img{ max-width: 100%; max-height: 100%; border-radius: 10px; }
 
-  /* 알림 한 줄. 폭은 글이 정한다 — left:50%에 그냥 두면 화면 반쪽 폭에서
-     접혀 짧은 말도 두 줄이 된다. 그래서 max-content로 재고, 화면 폭에서 멈춘다. */
+  /* 알림. 폭은 글이 정한다 — left:50%에 그냥 두면 화면 반쪽 폭에서 접혀 짧은 말도
+     두 줄이 된다. 그래서 max-content로 재고, 화면 폭에서 멈춘다.
+     바탕을 뒤집지 않고 화면 위에 한 겹 떠 있는 판으로 둔다. 되돌릴 수 있는 알림은
+     무엇을 했는지 아이콘 하나로 말하고, 되돌릴 수 있는 남은 시간을 밑줄이 줄어들며 보여준다. */
   .toast{
-    position: fixed; left: 50%; bottom: calc(24px + var(--safe-b));
-    transform: translateX(-50%) translateY(14px) scale(0.97);
+    --tone: var(--ink-soft);
+    position: fixed; left: 50%; bottom: calc(22px + var(--safe-b));
+    transform: translateX(-50%) translateY(16px) scale(0.96);
     width: max-content; max-width: min(calc(100vw - 32px), 420px);
-    display: flex; align-items: center; gap: 14px;
-    /* 살짝 비친다 — 아래에 무엇이 있는지 보이되 글자는 또렷하게.
-       color-mix를 모르는 브라우저는 앞줄의 불투명한 바탕을 그대로 쓴다. */
-    background: var(--ink);
-    background: color-mix(in srgb, var(--ink) 88%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
-    color: var(--paper);
-    padding: 12px 12px 12px 18px; border-radius: 16px;
-    box-shadow: 0 18px 40px -12px var(--shadow), 0 2px 6px var(--shadow-soft);
-    font-size: 14px; font-weight: 500; line-height: 1.45; letter-spacing: -0.015em;
-    z-index: 90; opacity: 0; pointer-events: none;
-    transition: opacity 220ms ease, transform 300ms var(--ease);
+    display: flex; align-items: center; gap: 12px;
+    /* color-mix를 모르는 브라우저는 앞줄의 불투명한 바탕을 그대로 쓴다. */
+    background: var(--toast-bg);
+    background: color-mix(in srgb, var(--toast-bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 9px 9px 9px 10px; border-radius: 18px;
+    box-shadow: 0 22px 48px -16px var(--shadow), 0 4px 14px var(--shadow-soft);
+    font-size: 14px; font-weight: 600; line-height: 1.45; letter-spacing: -0.02em;
+    z-index: 90; opacity: 0; pointer-events: none; overflow: hidden;
+    transition: opacity 220ms ease, transform 340ms var(--ease);
     text-align: left; word-break: keep-all;
   }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .toast.plain{ padding: 12px 20px; text-align: center; font-weight: 500; }
+  .toast.delete{ --tone: var(--danger); }
+  .toast.edit{ --tone: var(--signal); }
+  .toast-ic{
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--tone) 13%, transparent); color: var(--tone);
+  }
+  .toast-ic .icon{ width: 16px; height: 16px; }
+  .toast .toast-msg{ flex: 1 1 auto; min-width: 0; padding: 2px 4px 2px 0; }
   /* 토스트 자체는 끝까지 손가락을 막지 않는다. 받는 것은 떠 있는 동안의
      되돌리기 단추 하나뿐이다 — 사라진 뒤에도 남아 있으면 그 아래가 눌리지 않는다. */
-  .toast .toast-msg{ flex: 1 1 auto; min-width: 0; padding: 2px 0; }
   .toast .toast-do{ pointer-events: none; }
   .toast.show .toast-do{ pointer-events: auto; }
   /* 되돌리기는 무를 수 있다는 뜻이고, 무르는 쪽이 빨강이다 */
   .toast .toast-do{
-    flex-shrink: 0; border: none; border-radius: 11px; cursor: pointer;
-    pointer-events: none;
-    background: color-mix(in srgb, var(--danger-on-ink) 16%, transparent);
-    color: var(--danger-on-ink);
-    font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 14px;
-    transition: background-color 160ms ease;
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+    border: none; border-radius: 12px; cursor: pointer;
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+    font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 13px 8px 11px;
+    transition: background-color 160ms ease, transform 140ms var(--ease);
   }
-  .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger-on-ink) 28%, transparent); }
-  .toast.plain{ padding: 13px 22px; text-align: center; }
-  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .toast .toast-do .icon{ width: 15px; height: 15px; }
+  .toast .toast-do:hover{ background: color-mix(in srgb, var(--danger) 17%, transparent); }
+  .toast .toast-do:active{ transform: scale(0.95); }
+  /* 되돌릴 수 있는 남은 시간 */
+  .toast-bar{
+    position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+    background: var(--tone); opacity: 0.55; transform-origin: left center;
+    animation: toast-left linear forwards;
+  }
+  @keyframes toast-left{ from{ transform: scaleX(1); } to{ transform: scaleX(0); } }
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
 
   @media (prefers-reduced-motion: reduce){
     .toast{ transition: none; }
+    .toast-bar{ animation: none; opacity: 0; }
     .pulse-live i{ animation: none; }
   }
   [hidden]{ display: none !important; }

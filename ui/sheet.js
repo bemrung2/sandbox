@@ -71,7 +71,7 @@ function objectMark(word){
 }
 /* 고친 것도 몇 초간 되돌릴 수 있다 */
 export function savedToast(isEdit, undo){
-  if (isEdit && undo) toastUndo("수정했습니다.", undo);
+  if (isEdit && undo) toastUndo("수정했습니다.", undo, "edit");
   else toast(isEdit ? "수정했습니다." : "추가했습니다.");
 }
 
