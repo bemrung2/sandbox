@@ -42,6 +42,14 @@ function editing(fn){
    그래서 이미 만들어둔 여행에도 쓸 수 있다: 항공을 손으로 고쳐뒀다면 그 칸은 통째로
    건너뛰고, 아직 아무것도 없는 숙소만 들어온다. 하루 한 줄(days)은 날짜가 열쇠라서
    비어 있는 날만 채운다. */
+/* 씨앗은 묶음으로 들어온다. 묶음은 목록 이름에, 아이디가 "hm-…"처럼 앞머리를
+   달고 있으면 그 앞머리까지 — 그래서 항공편(fl-)을 이미 쓰고 있는 여행에도 나중에
+   더한 현지 일정(hm-)만 따로 들어올 수 있다. 한 묶음에서 하나라도 남아 있으면
+   그 묶음은 손댄 것으로 보고 건드리지 않는다. */
+function seedGroup(p){
+  var cut = p[1].indexOf("-");
+  return p[0] + (cut > 0 ? "/" + p[1].slice(0, cut) : "");
+}
 function bookedMissing(){
   var map = tripToMap(seedTrip(), {});
   var base = ROOT + "/" + seedId() + "/";
@@ -49,7 +57,7 @@ function bookedMissing(){
   Object.keys(have).forEach(function(path){
     if (path.indexOf(base) !== 0) return;
     var p = path.slice(base.length).split("/");
-    if (p.length === 2) filled[p[0]] = true;
+    if (p.length === 2) filled[seedGroup(p)] = true;
   });
   var out = {};
   Object.keys(map).forEach(function(path){
@@ -62,7 +70,7 @@ function bookedMissing(){
       out[path] = { theme: mine.theme || map[path].theme || "", route: map[path].route };
       return;
     }
-    if (p.length === 2 && p[0] !== "days" && filled[p[0]]) return;
+    if (p.length === 2 && p[0] !== "days" && filled[seedGroup(p)]) return;
     out[path] = map[path];
   });
   return out;

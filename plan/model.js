@@ -45,8 +45,8 @@ export function newTrip(o){
   };
 }
 
-/* 예약된 유럽 여정. 대한항공 예약 조회 화면에 적힌 것만 들어 있다 —
-   호텔과 현지 일정은 앱 안에서 채운다. */
+/* 유럽 신혼여행. 항공편은 대한항공 예약 조회 화면에서, 현지 일정은 신혼여행
+   계획표(엑셀)에서 옮겨 적었다. 첫 방문에 한 번 깔리고, 그 뒤로는 앱 안에서 고친다. */
 var SEED_TRIP = { id:"europe2026", emoji:"🇪🇺", city:"유럽", country:"ROMA · PARIS",
                   start:"2026-11-23", end:"2026-12-06" };
 var SEED_THEMES = {
@@ -94,7 +94,124 @@ var SEED_ITEMS = [
     places:["파리 샤를 드 골 공항 제2E터미널", "인천국제공항 제2여객터미널"],
     lines:["오는 편 · A350-900 · 일반석(U) · 에어프랑스 운항",
            "15:05 파리 T2E — 12.06 11:15 인천 T2 · 12시간 10분",
-           "KIM MINWOO 32D · KIM SOYEONG 32E"] }
+           "KIM MINWOO 32D · KIM SOYEONG 32E"] },
+
+  /* ---- 신혼여행 계획표(엑셀 '신혼여행계획')에서 옮겨 온 현지 일정. 아이디는 hm-로
+     시작한다 — 이미 쓰고 있는 여행에도 이 묶음만 따로 불러올 수 있게. ---- */
+  /* 11.23 로마 도착 */
+  { id:"hm-1123a", d:"2026-11-23", s:"20:00", cat:"food", meal:"dinner", t:"Mr.Clood Bistrot",
+    places:["Mr.Clood Bistrot Roma"], lines:["사과농어구이, 피스타치오 파스타"] },
+  /* 11.24 로마 — 오전 콜로세움 · 포로 로마노, 오후 트라스테베레 */
+  { id:"hm-1124a", d:"2026-11-24", s:"10:00", cat:"food", meal:"cafe", t:"Regoli Pasticceria",
+    places:["Regoli Pasticceria Roma"], lines:["커피와 빵"] },
+  { id:"hm-1124b", d:"2026-11-24", s:"10:30", e:"12:00", cat:"sight", t:"콜로세움 · 포로 로마노 · 팔라티노 언덕",
+    places:["콜로세움", "콘스탄티누스 개선문", "포로 로마노", "팔라티노 언덕", "진실의 입"],
+    lines:["콜로세움 통합권 예약", "콜로세움 → 콘스탄티누스 개선문 → 포로 로마노 → 팔라티노 언덕 · 진실의 입"] },
+  { id:"hm-1124c", d:"2026-11-24", s:"12:00", cat:"food", meal:"lunch", t:"피자" },
+  { id:"hm-1124d", d:"2026-11-24", s:"13:00", cat:"food", meal:"cafe", t:"카페" },
+  { id:"hm-1124e", d:"2026-11-24", s:"14:00", cat:"sight", t:"트라스테베레 산책", places:["트라스테베레 로마"] },
+  { id:"hm-1124f", d:"2026-11-24", s:"16:00", cat:"etc", t:"스냅 촬영" },
+  { id:"hm-1124g", d:"2026-11-24", s:"17:00", cat:"food", meal:"dinner", t:"Tonnarello",
+    places:["Tonnarello Roma"], lines:["까르보나라, 미트볼, 아마트리치아나"] },
+  { id:"hm-1124h", d:"2026-11-24", s:"18:00", cat:"food", meal:"snack", t:"Fiordiluna",
+    places:["Fiordiluna Roma"], lines:["젤라또"] },
+  { id:"hm-1124i", d:"2026-11-24", s:"20:00", cat:"food", meal:"drink", t:"마트에서 장보고 2차" },
+  /* 11.25 로마 — 바티칸, 천사의 성 */
+  { id:"hm-1125a", d:"2026-11-25", s:"07:40", cat:"sight", t:"바티칸 투어",
+    places:["바티칸 박물관"], lines:["07:40 시작"] },
+  { id:"hm-1125b", d:"2026-11-25", s:"14:00", cat:"food", meal:"lunch", t:"Ristorante Arlù", tag:"예약완료",
+    places:["Ristorante Arlù Roma"],
+    lines:["까르보나라, 아마트리치아나, 티라미수", "Soyeong Kim 이름으로 14시 예약 · 15분 지나면 취소"] },
+  { id:"hm-1125c", d:"2026-11-25", s:"15:00", cat:"food", meal:"cafe", t:"카페" },
+  { id:"hm-1125d", d:"2026-11-25", s:"16:00", cat:"food", meal:"snack", t:"Supplizio",
+    places:["Supplizio Roma"], lines:["수플리 간식 — 맥주랑 같이"] },
+  { id:"hm-1125e", d:"2026-11-25", s:"17:00", cat:"sight", t:"야경 투어",
+    places:["천사의 성"], lines:["17:00 천사의 성 정문 앞"] },
+  { id:"hm-1125f", d:"2026-11-25", s:"20:00", cat:"food", meal:"dinner", t:"저녁" },
+  { id:"hm-1125g", d:"2026-11-25", s:"21:00", cat:"food", meal:"drink", t:"마트에서 장보고 2차" },
+  /* 11.26 로마 — 트레비 · 판테온 · 나보나 · 스페인 계단 */
+  { id:"hm-1126a", d:"2026-11-26", s:"08:30", cat:"food", meal:"cafe", t:"La Casa del Caffè Tazza d'Oro",
+    places:["La Casa del Caffè Tazza d'Oro Roma"], lines:["커피, 피스타치오 크루아상"] },
+  { id:"hm-1126b", d:"2026-11-26", s:"09:00", cat:"sight", t:"트레비 분수", places:["트레비 분수"], lines:["예약 필요"] },
+  { id:"hm-1126c", d:"2026-11-26", s:"10:00", cat:"sight", t:"판테온", places:["판테온 로마"], lines:["예약 필요"] },
+  { id:"hm-1126d", d:"2026-11-26", s:"11:00", cat:"sight", t:"나보나 광장", places:["나보나 광장"] },
+  { id:"hm-1126e", d:"2026-11-26", s:"12:00", cat:"sight", t:"스페인 계단", places:["스페인 계단"] },
+  { id:"hm-1126f", d:"2026-11-26", s:"13:00", cat:"food", meal:"lunch", t:"Osteria da Fortunata - Pantheon",
+    places:["Osteria da Fortunata Pantheon Roma"] },
+  { id:"hm-1126g", d:"2026-11-26", s:"14:00", cat:"food", meal:"snack", t:"Giolitti",
+    places:["Giolitti Roma"], lines:["젤라또"] },
+  { id:"hm-1126h", d:"2026-11-26", s:"15:00", cat:"food", meal:"drink", t:"Dar Filettaro a Santa Barbara",
+    places:["Dar Filettaro a Santa Barbara Roma"], lines:["대구튀김 & 맥주"] },
+  { id:"hm-1126i", d:"2026-11-26", s:"19:00", cat:"food", meal:"dinner", t:"저녁" },
+  { id:"hm-1126j", d:"2026-11-26", s:"21:00", cat:"food", meal:"drink", t:"마트에서 장보고 2차" },
+  /* 11.27 피렌체 */
+  { id:"hm-1127a", d:"2026-11-27", s:"11:00", cat:"food", meal:"cafe", t:"Caffè Gilli",
+    places:["Caffè Gilli Firenze"] },
+  { id:"hm-1127b", d:"2026-11-27", s:"12:00", cat:"food", meal:"lunch", t:"Bottega di Fattoria - Trattoria Toscana",
+    tag:"예약완료", places:["Bottega di Fattoria Trattoria Toscana Firenze"],
+    lines:["12시 2명 예약완료", "또는 NUTI Il Grande Nuti Trattoria"] },
+  { id:"hm-1127c", d:"2026-11-27", s:"13:00", cat:"food", meal:"drink", t:"View on Art Rooftop Cocktail Bar",
+    places:["View on Art Rooftop Cocktail Bar Firenze"] },
+  { id:"hm-1127d", d:"2026-11-27", s:"14:15", cat:"sight", t:"두오모 쿠폴라", tag:"예약완료",
+    places:["Cupola del Brunelleschi Firenze"], lines:["14:15 쿠폴라 예약 완료"] },
+  { id:"hm-1127e", d:"2026-11-27", s:"15:00", cat:"food", meal:"cafe", t:"Vivoli",
+    places:["Vivoli Firenze"], lines:["피스타치오 커피"] },
+  { id:"hm-1127f", d:"2026-11-27", s:"16:00", cat:"sight", t:"베키오 궁전 전망대 · 우피치 미술관",
+    places:["베키오 궁전", "우피치 미술관"] },
+  { id:"hm-1127g", d:"2026-11-27", s:"17:00", cat:"sight", t:"미켈란젤로 언덕", places:["미켈란젤로 광장 피렌체"] },
+  { id:"hm-1127h", d:"2026-11-27", s:"18:00", cat:"shop", t:"피렌체 쇼핑" },
+  { id:"hm-1127i", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Dalloste", tag:"예약완료",
+    places:["Trattoria Dalloste Firenze"], lines:["19시 2명 예약완료 (The Fork 앱)"] },
+  { id:"hm-1127j", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Zà Zà", tag:"예약완료",
+    places:["Trattoria Zà Zà Firenze"], lines:["19시 2명 예약완료"] },
+  { id:"hm-1127k", d:"2026-11-27", s:"20:00", cat:"food", meal:"drink", t:"Buca San Giovanni Frigest",
+    places:["Buca San Giovanni Firenze"], lines:["두오모 성당 야경 보면서 와인 한잔"] },
+  /* 11.28 피렌체 → 체르마트 */
+  { id:"hm-1128a", d:"2026-11-28", s:"07:00", cat:"food", meal:"breakfast", t:"All'Antico Vinaio",
+    places:["All'Antico Vinaio Firenze"], lines:["아침 샌드위치"] },
+  { id:"hm-1128b", d:"2026-11-28", s:"09:00", e:"15:00", cat:"move", mode:"other", t:"피렌체 → 밀라노 → 체르마트",
+    lines:["15:00 체르마트 도착 예상"] },
+  { id:"hm-1128c", d:"2026-11-28", s:"16:00", cat:"stay", t:"알펜리조트 체크인",
+    places:["알펜리조트 체르마트"], lines:["근처 3분 거리에 마트 — 토블론 초콜릿 구매"] },
+  { id:"hm-1128d", d:"2026-11-28", s:"17:00", cat:"sight", t:"반호프슈트라세 산책",
+    places:["Bahnhofstrasse Zermatt"] },
+  { id:"hm-1128e", d:"2026-11-28", s:"18:00", cat:"shop", t:"쿱마트 장보기",
+    places:["Coop Zermatt"], lines:["쿱마트는 20시까지"] },
+  { id:"hm-1128f", d:"2026-11-28", s:"19:00", cat:"food", meal:"dinner", t:"저녁" },
+  { id:"hm-1128g", d:"2026-11-28", s:"20:00", cat:"etc", t:"수영장 · 루프탑 자쿠지",
+    lines:["실내 수영장, 실내 자쿠지, 루프탑 자쿠지 (07:00–22:00)"] },
+  /* 11.29 체르마트 — 고르너그라트 */
+  { id:"hm-1129a", d:"2026-11-29", s:"06:00", cat:"sight", t:"일출 — 황금 호른 보기",
+    map:"https://www.google.com/maps?q=46.019271,7.748542",
+    lines:["뷰포인트 46° 1' 9.3756\" N 7° 44' 54.7512\" E", "또는 키르히다리"] },
+  { id:"hm-1129b", d:"2026-11-29", s:"08:00", cat:"food", meal:"breakfast", t:"호텔 조식",
+    lines:["주문 가능한 에그 메뉴 — 알펜 리조트 스페셜 추천"] },
+  { id:"hm-1129c", d:"2026-11-29", s:"09:00", cat:"move", mode:"walk", t:"조식 후 역으로 이동" },
+  { id:"hm-1129d", d:"2026-11-29", s:"10:00", cat:"sight", t:"고르너그라트 전망대",
+    places:["고르너그라트"],
+    lines:["체르마트 → 고르너그라트 (열차)", "고르너그라트 → 로텐보덴역 (열차)",
+           "로텐보덴역 → 리펠제 호수 → 리펠베르크역 (하이킹 — 당일 날씨 보고 결정)",
+           "리펠베르크역 → 체르마트 (열차)",
+           "스위스 패스 있으면 반값 · 입구 쪽 오른편 창가에 앉아야 마테호른이 잘 보임",
+           "점심은 피크닉 — 마트에서 장봐서 도시락"] },
+  { id:"hm-1129e", d:"2026-11-29", s:"14:00", cat:"sight", t:"체르마트 마을 산책",
+    places:["Hinterdorf Zermatt", "Kirchbrücke Zermatt", "Fuchs Bakery Zermatt"],
+    lines:["구시가지 힌터도르프 — 오래된 목조 가옥", "키르히브뤼케 — 전망 포인트",
+           "쿱마트 장보기", "Fuchs Bakery & Cafe — 맛있는 빵집"] },
+  { id:"hm-1129f", d:"2026-11-29", s:"18:00", cat:"food", meal:"dinner", t:"Restaurant Pinte", tag:"예약완료",
+    places:["Restaurant Pinte Zermatt"], lines:["18시 예약완료", "베이컨 & 에그 뢰스티 (25프랑) · 라클렛"] },
+  { id:"hm-1129g", d:"2026-11-29", s:"20:00", cat:"etc", t:"수영장 · 루프탑 자쿠지",
+    lines:["실내 수영장, 실내 자쿠지, 루프탑 자쿠지 (07:00–22:00)"] },
+  { id:"hm-1129h", d:"2026-11-29", cat:"food", meal:"drink", t:"Brown Cow Pub",
+    places:["Brown Cow Pub Zermatt"], lines:["맥주"] },
+  /* 11.30 체르마트 → 그린델발트 */
+  { id:"hm-1130a", d:"2026-11-30", s:"08:00", cat:"food", meal:"breakfast", t:"호텔 조식" },
+  { id:"hm-1130b", d:"2026-11-30", s:"09:30", cat:"move", mode:"other", t:"그린델발트로 이동",
+    lines:["체크아웃 후 기차역으로", "체르마트 → 비스프(Visp) → 슈피츠(Spiez) → 인터라켄 오스트 → 그린델발트"] },
+  /* 12.1 · 12.2 그린델발트 */
+  { id:"hm-1201a", d:"2026-12-01", s:"09:00", cat:"sight", t:"융프라우", places:["융프라우요흐"], lines:["VIP 패스 구매"] },
+  { id:"hm-1202a", d:"2026-12-02", s:"09:00", cat:"sight", t:"피르스트", places:["피르스트 그린델발트"],
+    lines:["플라이어 · 글라이더"] }
 ];
 var SEED_SHOPS = [];
 var SEED_FLIGHTS = [];   /* 항공편은 일정(SEED_ITEMS)에 있다 */
@@ -135,7 +252,8 @@ export function seedTrip(){
       return {
         id: s.id, dayDate: s.d, s: s.s, e: s.e || null, cat: s.cat, meal: s.meal || null,
         mode: s.mode || null, title: s.t, emo: s.emo || "", tag: s.tag || null,
-        places: (s.places || []).slice(), lines: (s.lines || []).slice()
+        places: (s.places || []).slice(), lines: (s.lines || []).slice(),
+        mapUrl: s.map || null, buys: []
       };
     }),
     shops: SEED_SHOPS.map(function(s){
