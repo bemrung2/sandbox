@@ -278,6 +278,42 @@ export function renderTrip(root, keepScroll){
   else renderInfo(body);
 
   if (!keepScroll) window.scrollTo(0, 0);
+  if (focusId) landOn(root);
+}
+
+/* 머리의 '지금 · 출발까지' 카드를 누르면 그 일정이 있는 날의 시간표로 내려가
+   그 줄을 짚는다. 주소가 바뀌어 화면을 새로 그린 뒤에 찾아야 하므로, 무엇을 찾을지만
+   적어두고 그리고 나서 내려간다. */
+var focusId = null;
+function focusItem(it){
+  var di = tripDays().findIndex(function(d){ return d.date === it.dayDate; });
+  if (di < 0) return;
+  focusId = it.id;
+  go({ tab: "sched", day: di });
+}
+function landOn(root){
+  var id = focusId;
+  focusId = null;
+  var row = [].filter.call(root.querySelectorAll(".tl-item[data-id]"), function(r){ return r.dataset.id === id; })[0];
+  if (!row) return;
+  requestAnimationFrame(function(){
+    var tabs = root.querySelector(".tabs");
+    var top = row.getBoundingClientRect().top + window.scrollY - (tabs ? tabs.offsetHeight : 0) - 14;
+    var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: Math.max(0, top), behavior: still ? "auto" : "smooth" });
+    row.classList.add("focus");
+    setTimeout(function(){ row.classList.remove("focus"); }, 1800);
+  });
+}
+/* 카드가 가리키는 일정이 있을 때만 누를 수 있다 */
+function pointsAt(card, it){
+  if (!it) return card;
+  card.classList.add("tappable");
+  card.setAttribute("role", "button");
+  card.setAttribute("aria-label", it.title + " 일정으로 이동");
+  card.appendChild(el(icon("go", "pulse-go")));
+  ripple(card, function(){ focusItem(it); });
+  return card;
 }
 
 function renderHero(){
@@ -354,7 +390,7 @@ function nowCard(pair){
       '</div>'
     ));
   }
-  return card;
+  return pointsAt(card, cur || nx);
 }
 
 function countCard(t, d){
@@ -371,7 +407,7 @@ function countCard(t, d){
       '<p class="count-sub">' + esc(sub) + '</p>' +
     '</div>'
   );
-  return card;
+  return pointsAt(card, d >= 0 ? first : null);
 }
 
 /* The row of days. */
@@ -519,7 +555,7 @@ function timelineItem(it, pair){
   var places = it.places || [];
 
   var row = el(
-    '<div class="tl-item' + (isCurrent ? " current" : "") + '">' +
+    '<div class="tl-item' + (isCurrent ? " current" : "") + '" data-id="' + esc(it.id) + '">' +
       '<div class="tl-time mono">' + esc(it.s) + (it.e ? '<small>' + esc(it.e) +
         (overnight(it) ? '<sup class="nextday">+1</sup>' : '') + '</small>' : '') + '</div>' +
       '<div class="tl-rail"><span class="tl-dot"' +

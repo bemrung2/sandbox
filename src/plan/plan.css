@@ -170,6 +170,16 @@
     border-radius: 18px;
   }
   .pulse-head{ display: flex; align-items: center; gap: 10px; }
+  /* 누르면 그 일정으로 내려간다 — 오른쪽 위의 작은 화살표가 그 뜻이다 */
+  .pulse.tappable{ position: relative; cursor: pointer; transition: transform 140ms var(--ease), border-color 180ms ease; }
+  .pulse.tappable:active{ transform: scale(0.985); }
+  .pulse.tappable:hover{ border-color: color-mix(in srgb, var(--signal) 35%, var(--line)); }
+  .pulse.tappable .pulse-head, .pulse.count.tappable .pulse-live{ padding-right: 22px; }
+  .pulse > .pulse-go{
+    position: absolute; top: 13px; right: 12px;
+    width: 16px; height: 16px; color: var(--ink-faint);
+    transform: rotate(90deg);            /* 아래로 — 시간표가 아래에 있다 */
+  }
   .pulse-live{
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
@@ -340,6 +350,15 @@
     border-radius: 12px; border-bottom-color: transparent;
   }
   .tl-item.current .tl-time{ color: var(--signal); }
+  /* 머리 카드에서 내려와 닿은 줄 — 한 번 옅게 물들었다가 빠진다 */
+  .tl-item.focus .tl-body{ animation: land 1.8s var(--ease); border-radius: 12px; }
+  @keyframes land{
+    0%, 35%{ background: color-mix(in srgb, var(--signal) 14%, transparent);
+             box-shadow: -10px 0 0 color-mix(in srgb, var(--signal) 14%, transparent),
+                         10px 0 0 color-mix(in srgb, var(--signal) 14%, transparent); }
+    100%{ background: transparent; box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce){ .tl-item.focus .tl-body{ animation: none; } }
   .tl-item.current .tl-dot{
     background: var(--signal); border-color: var(--signal);
     box-shadow: 0 0 0 4px var(--signal-tint);
