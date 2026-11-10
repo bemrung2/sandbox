@@ -4,7 +4,7 @@ import { Store } from "../ui/store.js";
 import { themeButton } from "../ui/theme.js";
 import {
   sheetShell, openFormSheet, openTextDialog, openConfirmDialog, openAskDialog, askThenDelete,
-  savedToast, pickerField, pickGroup, showOverlay, closeOverlay, closeTop
+  savedToast, pickerField, pickGroup, showOverlay, closeOverlay, closeTop, flag
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
@@ -87,7 +87,7 @@ function loadBooked(){
   /* 쓴 것을 다시 읽는다 — 화면은 언제나 저장된 것을 그린다. */
   Plan.reread();
   Plan.open(seedId());
-  toastDone("예약된 내용을 채웠습니다.");
+  toastDone("불러왔습니다.");
   go({ screen:"trip", tripId: seedId(), tab:"sched", meal:"all", day:0 });
 }
 
@@ -97,8 +97,7 @@ function emptyState(){
   var box = el(
     '<div class="blankstate">' +
       '<div class="blankstate-mark">' + icon("compass") + '</div>' +
-      '<h2>아직 여행이 없습니다</h2>' +
-      '<p>날짜만 정하면 일정 · 식사 · 쇼핑 · 정보가 한 세트로 따라옵니다.</p>' +
+      '<h2>아직 여행이 없습니다.</h2>' +
       '<button class="btn btn-primary" type="button" data-new>' + icon("plus") + '여행 만들기</button>' +
       (bookedWaiting() ? '<button class="btn btn-quiet" type="button" data-booked>' +
         icon("plane") + '예약 내용 불러오기</button>' : '') +
@@ -248,10 +247,16 @@ function tripCard(t, box){
 /* ---------- trip ---------- */
 /* 탭을 옮길 때는 내용이 제자리에서 서서히 떠오른다. 밀리지 않는다 — 움직이는
    것은 목록과 여행 사이뿐이다. */
-var lastTab = "";
+var lastTab = "", lastTrip = "";
 export function renderTrip(root, keepScroll){
   var days = tripDays();
   var tabTurned = lastTab && lastTab !== state.tripId + "/" + state.tab && lastTab.split("/")[0] === state.tripId;
+  /* 같은 여행 안에서 탭 · 날짜 · 끼니만 바꿨다면 보던 자리를 지킨다. 맨 위로 튀어
+     오르면 방금 누른 것이 화면 밖으로 달아난다. 탭 줄 아래로 내려가 있었다면 탭 줄이
+     맨 위에 붙는 자리까지만 올린다. */
+  var sameTrip = lastTrip === state.tripId && !!root.querySelector(".tabs");
+  var wasAt = window.scrollY;
+  lastTrip = state.tripId;
   lastTab = state.tripId + "/" + state.tab;
   if (state.day >= days.length) state.day = days.length - 1;
 
@@ -277,9 +282,14 @@ export function renderTrip(root, keepScroll){
   else if (state.tab === "shop") renderShop(body, days);
   else renderInfo(body);
 
-  if (!keepScroll) window.scrollTo(0, 0);
+  if (!keepScroll){
+    var pin = sameTrip ? Math.max(0, tabs.offsetTop - (parseFloat(getComputedStyle(tabs).top) || 0)) : 0;
+    window.scrollTo(0, sameTrip ? Math.min(wasAt, pin) : 0);
+  }
   if (focusId) landOn(root);
 }
+/* 목록으로 나가면 다음에 여는 여행은 처음부터 본다 */
+export function leftTrip(){ lastTrip = ""; }
 
 /* 머리의 '지금 · 출발까지' 카드를 누르면 그 일정이 있는 날의 시간표로 내려가
    그 줄을 짚는다. 주소가 바뀌어 화면을 새로 그린 뒤에 찾아야 하므로, 무엇을 찾을지만
@@ -455,7 +465,7 @@ function renderSchedule(root, days){
     '</button>'
   );
   ripple(themeRow, function(){
-    openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 하카타 → 나카스 → 텐진" },
+    openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 로마 시내" },
       function(v){ var undo = undoEdit(Plan.setDay(day.date, { theme: v })); repaint(); return undo; },
       day.theme ? function(){
         var undo = undoOf(Plan.setDay(day.date, { theme: "" }));
@@ -603,7 +613,7 @@ function timelineItem(it, pair){
 }
 function shortPlace(p){
   var city = trip().city;
-  return p.replace(new RegExp("\\s*" + city + "$"), "").replace(/\s*(텐진|하카타)$/, "");
+  return city ? p.replace(new RegExp("\\s*" + city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), "") : p;
 }
 
 function attachStrip(itemId, atts){
@@ -777,30 +787,24 @@ function shopCard(s){
 /* 가게 하나의 쇼핑리스트. save(다음 목록)는 되살리는 함수를 돌려준다. */
 function buyList(card, list, save){
   list.forEach(function(i){
-    var row = el('<div class="rowline' + (i.got ? " on" : "") + '"></div>');
-    var cb = el('<button class="check" type="button" aria-pressed="' + !!i.got + '" aria-label="샀음 표시">' + icon("check") + '</button>');
-    ripple(cb, editing(function(){
-      save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { got: !x.got }) : x; }));
-      repaint();
-    }));
-    row.appendChild(cb);
-    var btn = el('<button class="rowbtn" type="button"><span class="rowbody"><b>' + esc(i.text) + '</b></span>' +
-      icon("edit", "rowpen") + '</button>');
-    ripple(btn, function(){
-      openTextDialog({ title:"쇼핑리스트 수정", value:i.text },
-        function(v){
-          var undo = undoEdit(save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { text: v }) : x; })));
-          repaint();
-          return undo;
-        },
-        function(){
-          var undo = undoOf(save(list.filter(function(x){ return x.id !== i.id; })));
-          repaint();
-          return undo;
-        });
-    });
-    row.appendChild(btn);
-    card.appendChild(row);
+    card.appendChild(checkRow(i.text, i.got,
+      function(){
+        save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { got: !x.got }) : x; }));
+        repaint();
+      },
+      function(){
+        openTextDialog({ title:"쇼핑리스트 수정", value:i.text },
+          function(v){
+            var undo = undoEdit(save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { text: v }) : x; })));
+            repaint();
+            return undo;
+          },
+          function(){
+            var undo = undoOf(save(list.filter(function(x){ return x.id !== i.id; })));
+            repaint();
+            return undo;
+          });
+      }));
   });
 
   var addBtn = el('<button class="quietbtn buyadd" type="button">' + icon("plus") + '쇼핑리스트 추가하기</button>');
@@ -838,10 +842,10 @@ function renderInfo(root){
         (f.detail ? '<small>' + esc(f.detail) + '</small>' : '');
     },
     fields: [
-      { key:"label", label:"구분", placeholder:"예: 가는 편 · 9.12 (토)" },
-      { key:"airline", label:"항공사", placeholder:"예: 제주항공", required:true },
-      { key:"no", label:"편명", placeholder:"예: 7C1471" },
-      { key:"detail", label:"시간", placeholder:"예: 11:10 한국 출발 — 12:40 후쿠오카 도착" }
+      { key:"label", label:"구분", placeholder:"예: 가는 편 · 11.23 (월)" },
+      { key:"airline", label:"항공사", required:true },
+      { key:"no", label:"편명" },
+      { key:"detail", label:"시간", placeholder:"예: 14:05 인천 — 19:35 로마" }
     ]
   }));
 
@@ -851,7 +855,7 @@ function renderInfo(root){
     mirrorRow: function(it){
       return '<span class="lbl mono">' + esc(fmtMD(it.dayDate)) + ' (' + dowOf(it.dayDate) + ')' +
         (it.s ? ' · ' + esc(it.s) : '') + '</span><b>' + esc(it.title) + '</b>' +
-        '<small>일정 탭에 적은 것입니다</small>';
+        '<small>일정에서 추가</small>';
     },
     empty: "아직 숙소가 없습니다.",
     render: function(h){
@@ -877,9 +881,9 @@ function renderInfo(root){
         (k.detail ? '<small>' + esc(k.detail) + '</small>' : '');
     },
     fields: [
-      { key:"name", label:"이름", placeholder:"예: 야키니쿠 카쿠라 니시나카스점", required:true },
-      { key:"when", label:"일시", placeholder:"예: 9.13 (일) 17:15 · 2명" },
-      { key:"detail", label:"메모", placeholder:"예: 16:30 니시나카스 방향 이동" }
+      { key:"name", label:"이름", placeholder:"예: 바티칸 투어", required:true },
+      { key:"when", label:"일시", placeholder:"예: 11.25 (수) 07:40 · 2명" },
+      { key:"detail", label:"메모" }
     ]
   }));
 
@@ -902,7 +906,7 @@ function renderInfo(root){
     empty: "아직 메모가 없습니다.",
     simple: true,
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
-    fields: [{ key:"text", label:"메모", placeholder:"기억해둘 것", required:true, area:true }]
+    fields: [{ key:"text", label:"메모", required:true, area:true }]
   }));
   root.appendChild(packCard());
   root.appendChild(dangerCard());
@@ -932,15 +936,6 @@ function sectionCard(o){
     return card;
   }
 
-  mirrored.forEach(function(it){
-    var row = el('<div class="rowline"></div>');
-    var btn = el('<button class="rowbtn" type="button">' + icon(o.ic) +
-      '<span class="rowbody">' + o.mirrorRow(it) + '</span>' + icon("edit", "rowpen") + '</button>');
-    ripple(btn, function(){ openItemEditor(it, null); });
-    row.appendChild(btn);
-    card.appendChild(row);
-  });
-
   list.forEach(function(rec){
     var row = el('<div class="rowline"></div>');
     var inner = '<span class="rowbody">' + o.render(rec) + '</span>' + icon("edit", "rowpen");
@@ -960,6 +955,15 @@ function sectionCard(o){
     }
     card.appendChild(row);
   });
+  mirrored.forEach(function(it){
+    var row = el('<div class="rowline"></div>');
+    var btn = el('<button class="rowbtn" type="button">' + icon(o.ic) +
+      '<span class="rowbody">' + o.mirrorRow(it) + '</span>' + icon("edit", "rowpen") + '</button>');
+    ripple(btn, function(){ openItemEditor(it, null); });
+    row.appendChild(btn);
+    card.appendChild(row);
+  });
+
   return card;
 }
 function editRec(o, rec){
@@ -990,25 +994,34 @@ function packCard(){
   card.appendChild(head);
 
   list.forEach(function(p){
-    var row = el('<div class="rowline' + (p.on ? " on" : "") + '"></div>');
-    var cb = el('<button class="check" type="button" aria-pressed="' + p.on + '" aria-label="챙김 표시">' + icon("check") + '</button>');
-    ripple(cb, editing(function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); }));
-    row.appendChild(cb);
-    var btn = el('<button class="rowbtn" type="button"><span class="rowbody"><b>' + esc(p.text) + '</b></span>' +
-      icon("edit", "rowpen") + '</button>');
-    ripple(btn, function(){
-      openTextDialog({ title:"준비물 수정", value:p.text },
-        function(v){ var undo = undoEdit(Plan.listEdit("packList", p.id, { text: v })); repaint(); return undo; },
-        function(){
-          var undo = undoOf(Plan.listRemove("packList", p.id));
-          repaint();
-          return undo;
-        });
-    });
-    row.appendChild(btn);
-    card.appendChild(row);
+    card.appendChild(checkRow(p.text, p.on,
+      function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); },
+      function(){
+        openTextDialog({ title:"준비물 수정", value:p.text },
+          function(v){ var undo = undoEdit(Plan.listEdit("packList", p.id, { text: v })); repaint(); return undo; },
+          function(){
+            var undo = undoOf(Plan.listRemove("packList", p.id));
+            repaint();
+            return undo;
+          });
+      }));
   });
   return card;
+}
+
+/* 체크하는 줄. 줄 어디를 눌러도 체크가 바뀐다 — 가장 자주 하는 일이 가장 큰 자리를
+   가진다. 글을 고치는 것은 끝의 연필이다. */
+function checkRow(text, on, toggle, edit){
+  var row = el('<div class="rowline checkrow' + (on ? " on" : "") + '"></div>');
+  var main = el('<button class="rowbtn" type="button" role="checkbox" aria-checked="' + !!on + '">' +
+    '<span class="check" aria-pressed="' + !!on + '">' + icon("check") + '</span>' +
+    '<span class="rowbody"><b>' + esc(text) + '</b></span></button>');
+  ripple(main, editing(toggle));
+  row.appendChild(main);
+  var pen = el('<button class="quietbtn rowedit" type="button" aria-label="' + esc(text) + ' 수정">' + icon("edit") + '</button>');
+  ripple(pen, edit);
+  row.appendChild(pen);
+  return row;
 }
 
 /* 정보의 맨 끝. 작은 글씨 하나 — 경고는 누른 다음에 나온다. */
@@ -1019,16 +1032,15 @@ function dangerCard(){
   ripple(btn, function(){
     if (!Store.canEdit()){ Store.deny(); return; }
     openConfirmDialog({
-      title: "정말 삭제하시겠습니까?",
-      body: "'" + tripName(t) + "' 여행의 일정 · 식사 · 쇼핑 · 정보가 모두 사라집니다. " +
-            "되돌릴 수 없고, 함께 보는 사람들의 화면에서도 없어집니다.",
-      label: "확인을 위해 아래 칸에 '삭제하기'를 적어 주세요",
+      title: "여행을 삭제하시겠습니까?",
+      body: "'" + tripName(t) + "'의 모든 내용이 삭제되며 되돌릴 수 없습니다.",
+      label: "'삭제하기'를 입력해 주세요",
       phrase: "삭제하기",
       okLabel: "삭제하기"
     }, function(){
       var undo = undoOf(Plan.removeTrip(t.id));
       go({ screen:"list", tripId: null });
-      if (undo) toastUndo("'" + tripName(t) + "'을 삭제했습니다.", undo);
+      if (undo) toastUndo("여행을 삭제했습니다.", undo);
     });
   });
   box.appendChild(btn);
@@ -1046,20 +1058,30 @@ export function openTripEditor(t){
   var flagRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var inner = flagRow.querySelector(".fld-row");
   inner.appendChild(el('<div class="fld-col flag-col"><label for="t-emoji">아이콘</label>' +
-    '<input id="t-emoji" type="text" maxlength="4" placeholder="🇯🇵" value="' + esc(t ? t.emoji : "") + '"></div>'));
+    '<input id="t-emoji" type="text" maxlength="4" placeholder="없음" value="' + esc(t ? t.emoji : "") + '"></div>'));
   inner.appendChild(el('<div class="fld-col"><label for="t-city">여행지</label>' +
     '<input id="t-city" type="text" placeholder="예: 로마" value="' + esc(t ? t.city : "") + '"></div>'));
   body.appendChild(flagRow);
   body.appendChild(el(
-    '<div class="fld"><label for="t-country">라벨</label><input id="t-country" type="text" value="' +
-    esc(t ? t.country : "") + '" placeholder="예: JAPAN"></div>'
+    '<div class="fld"><label for="t-country">라벨 <span class="opt">선택</span></label><input id="t-country" type="text" value="' +
+    esc(t ? t.country : "") + '" placeholder="예: ROMA · PARIS"></div>'
   ));
   var dateRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var dr = dateRow.querySelector(".fld-row");
   dr.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t ? t.start : "", col:true }));
   dr.appendChild(pickerField({ type:"date", id:"t-end", label:"종료일", value: t ? t.end : "", col:true }));
   body.appendChild(dateRow);
-  body.appendChild(el('<p class="fld-hint">날짜를 줄여도 그 날의 일정은 지워지지 않고 숨겨집니다.</p>'));
+  /* 돌아오는 날이 떠나는 날보다 앞설 수는 없다 — 시작을 고르면 종료가 따라온다 */
+  var startEl = dateRow.querySelector("#t-start"), endEl = dateRow.querySelector("#t-end");
+  function follow(){
+    endEl.min = startEl.value;
+    if (startEl.value && (!endEl.value || endEl.value < startEl.value)){
+      endEl.value = startEl.value;
+      endEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+  startEl.addEventListener("change", follow);
+  endEl.min = startEl.value;
 
   var foot = sheet.querySelector(".sheet-foot");
   /* 삭제는 여기 없다 — 정보 탭 맨 아래, 한 번 더 묻는 곳에 있다. */
@@ -1069,10 +1091,11 @@ export function openTripEditor(t){
     var city = sheet.querySelector("#t-city").value.trim();
     var start = sheet.querySelector("#t-start").value;
     var end = sheet.querySelector("#t-end").value;
-    if (!title){ sheet.querySelector("#t-title").focus(); toast("제목을 적어 주세요."); return; }
-    if (!city){ sheet.querySelector("#t-city").focus(); toast("여행지를 적어 주세요."); return; }
-    if (!start || !end){ toast("날짜를 골라 주세요."); return; }
-    if (end < start){ toast("종료일이 시작일보다 빠릅니다."); return; }
+    if (!title) return flag(sheet.querySelector("#t-title"), "제목을 적어 주세요.");
+    if (!city) return flag(sheet.querySelector("#t-city"), "여행지를 적어 주세요.");
+    if (!start) return flag(startEl, "날짜를 골라 주세요.");
+    if (!end) return flag(endEl, "날짜를 골라 주세요.");
+    if (end < start) return flag(endEl, "종료일이 시작일보다 빠릅니다.");
     var rec = {
       title: title,
       emoji: sheet.querySelector("#t-emoji").value.trim(),
@@ -1095,6 +1118,7 @@ export function openTripEditor(t){
   });
   foot.appendChild(save);
   showOverlay(sheet);
+  if (adding) setTimeout(function(){ sheet.querySelector("#t-title").focus(); }, 60);
 }
 
 /* 예전에 가게로 따로 적어둔 쇼핑은, 고치려는 순간 일정으로 옮겨 일정 편집기로 연다.
@@ -1143,7 +1167,8 @@ function openItemEditor(item, defaultDate, presets){
   nameInner.appendChild(el('<div class="fld-col"><label for="ed-title">일정</label>' +
     '<input id="ed-title" type="text" value="' + esc(item ? item.title : "") + '"></div>'));
   body.appendChild(nameRow);
-  body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow" id="ed-day"></div></div>'));
+  /* 날짜는 한 줄로 흐른다 — 열나흘이 네 줄을 차지하면 그 아래 칸들이 화면 밖으로 밀린다 */
+  body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow scroll" id="ed-day"></div></div>'));
   var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = timeRow.querySelector(".fld-row");
   var sFld = pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true });
@@ -1154,29 +1179,26 @@ function openItemEditor(item, defaultDate, presets){
     min: function(){ return cur.cat === "move" ? "" : sFld.querySelector("input").value; } });
   row.appendChild(sFld);
   row.appendChild(eFld);
-  timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">이동은 시작보다 이른 종료를 고르면 다음 날 도착(+1)으로 봅니다.</p>'));
+  timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
   body.appendChild(timeRow);
   body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
-  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div>' +
-    '<p class="fld-hint">식사는 시작 시간을 비워둘 수 있고, 그러면 식사 탭 맨 위에 시간 미정으로 모입니다.</p></div>');
+  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div></div>');
   body.appendChild(mealFld);
-  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow" id="ed-mode"></div>' +
-    '<p class="fld-hint">항공기는 정보 탭의 항공 칸에도 함께 보입니다.</p></div>');
+  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow" id="ed-mode"></div></div>');
   body.appendChild(modeFld);
-  body.appendChild(el('<div class="fld"><label for="ed-tag">배지</label>' +
-    '<input id="ed-tag" type="text" placeholder="예: 예약 17:15 · 2명" value="' + esc(item && item.tag ? item.tag : "") + '">' +
-    '<p class="fld-hint">짧게 강조할 한마디. 비워두면 표시되지 않습니다.</p></div>'));
   var placeFld = el('<div class="fld"><label for="ed-places">장소</label>' +
-    '<textarea id="ed-places" placeholder="한 줄에 하나씩">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea>' +
-    '<p class="fld-hint" id="ed-places-hint">한 곳이면 이름을 눌러 지도로, 여러 곳이면 장소 칩이 생깁니다.</p></div>');
+    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea>' +
+    '<p class="fld-hint" id="ed-places-hint" hidden>정보 탭의 숙소에서 가져왔습니다.</p></div>');
   body.appendChild(placeFld);
+  body.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
+    '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
+  /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
+  body.appendChild(el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
+    '<input id="ed-tag" type="text" placeholder="예: 예약완료" value="' + esc(item && item.tag ? item.tag : "") + '"></div>'));
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
   body.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
-    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="https://maps.app.goo.gl/…" value="' +
-    esc(item && item.mapUrl ? item.mapUrl : "") + '">' +
-    '<p class="fld-hint">장소 이름으로 찾아지지 않을 때만 적어 주세요.</p></div>'));
-  body.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
-    '<textarea id="ed-lines" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
+    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
+    esc(item && item.mapUrl ? item.mapUrl : "") + '"></div>'));
 
   /* 숙소로 적으면 그날 밤 묵는 곳을 장소에 채워둔다. 손으로 고친 장소는 건드리지 않는다. */
   var placesEl = placeFld.querySelector("#ed-places");
@@ -1191,9 +1213,9 @@ function openItemEditor(item, defaultDate, presets){
     var city = st && st.area ? st.area.split("·").pop().trim() : "";
     autoPlace = st ? st.name + (city ? " " + city : "") : "";
     placesEl.value = autoPlace;
-    placesHint.textContent = st ? "정보 탭의 숙소에서 가져왔습니다." :
-      "한 곳이면 이름을 눌러 지도로, 여러 곳이면 장소 칩이 생깁니다.";
+    placesHint.hidden = !st;
   }
+  placesEl.addEventListener("input", function(){ placesHint.hidden = true; });
 
   pickGroup(sheet.querySelector("#ed-day"),
     days.map(function(d){ return { key:d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
@@ -1241,17 +1263,16 @@ function openItemEditor(item, defaultDate, presets){
   ripple(save, function(){
     var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
     var title = titleEl.value.trim();
-    if (!title){ titleEl.focus(); toast("일정을 적어 주세요."); return; }
+    if (!title) return flag(titleEl, "일정을 적어 주세요.");
     /* 시간이 없는 일정은 시간표에 설 수 없다. 식사와 쇼핑은 제 탭에 '시간 미정'으로
        모이므로 비워도 되고, 그 밖의 분류는 시각이 있어야 어딘가에 선다. */
     if (!sEl.value && cur.cat !== "food" && cur.cat !== "shop"){
-      toast("시작 시간을 골라 주세요.");
-      return;
+      return flag(sheet.querySelector("#ed-s-open"), "시작 시간을 골라 주세요.");
     }
     var mapEl = sheet.querySelector("#ed-map"), mapUrlRaw = mapEl.value.trim(), mapUrl = null;
     if (mapUrlRaw){
       mapUrl = safeUrl(mapUrlRaw);
-      if (!mapUrl){ mapEl.focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
+      if (!mapUrl) return flag(mapEl, "링크를 확인해 주세요.");
     }
     var lines = function(id){
       return sheet.querySelector(id).value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
@@ -1282,7 +1303,7 @@ function openItemEditor(item, defaultDate, presets){
 
 /* ---------- attachments sheet ---------- */
 function openAttachSheet(item){
-  var sheet = sheetShell("자료", item.s + " " + item.title);
+  var sheet = sheetShell("자료", (item.s ? item.s + " " : "") + item.title);
   var body = sheet.querySelector(".sheet-body");
   sheet.querySelector(".sheet-foot").remove();
 
@@ -1308,33 +1329,34 @@ function openAttachSheet(item){
   function paintForm(){
     form.innerHTML = "";
     if (kind === "note"){
-      var f = el('<div><div class="fld"><textarea id="a-note" placeholder="예: 2층 버스 정류장, 줄이 길면 택시"></textarea></div>' +
+      var f = el('<div><div class="fld"><textarea id="a-note" rows="2" placeholder="메모"></textarea></div>' +
         '<button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
       ripple(f.querySelector("button"), editing(function(){
         var v = f.querySelector("#a-note").value.trim();
-        if (!v) return;
+        if (!v) return flag(f.querySelector("#a-note"));
         Plan.addAttach(item.id, { type:"note", text:v });
         f.querySelector("#a-note").value = "";
-        paintList(); repaint(); toastDone("메모를 넣었습니다.");
+        sheet._clean();
+        paintList(); repaint(); toastDone("추가했습니다.");
       }));
       form.appendChild(f);
     } else if (kind === "link"){
-      var g = el('<div><div class="fld"><label for="a-lt">제목</label><input id="a-lt" type="text" placeholder="예: 공항버스 후기"></div>' +
-        '<div class="fld"><label for="a-lu">링크</label><input id="a-lu" type="text" inputmode="url" placeholder="https://..."></div>' +
+      var g = el('<div><div class="fld"><label for="a-lu">링크</label><input id="a-lu" type="text" inputmode="url" placeholder="https://"></div>' +
+        '<div class="fld"><label for="a-lt">제목 <span class="opt">선택</span></label><input id="a-lt" type="text"></div>' +
         '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
       ripple(g.querySelector("button"), editing(function(){
         var t = g.querySelector("#a-lt").value.trim();
         var u = safeUrl(g.querySelector("#a-lu").value);
-        if (!u){ g.querySelector("#a-lu").focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
+        if (!u) return flag(g.querySelector("#a-lu"), "링크를 확인해 주세요.");
         Plan.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
         g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
-        paintList(); repaint(); toastDone("링크를 넣었습니다.");
+        sheet._clean();
+        paintList(); repaint(); toastDone("추가했습니다.");
       }));
       form.appendChild(g);
     } else {
       var h = el('<div><label class="btn btn-primary" style="width:100%">' + icon("image") + '사진 고르기' +
-        '<input type="file" accept="image/*" hidden></label>' +
-        '<p class="fld-hint">사진은 크기를 줄여서 저장됩니다.</p></div>');
+        '<input type="file" accept="image/*" hidden></label></div>');
       var fileInput = h.querySelector("input");
       fileInput.addEventListener("change", async function(){
         var file = fileInput.files[0];
@@ -1345,8 +1367,9 @@ function openAttachSheet(item){
         try{
           var pid = await storePhoto(file);
           Plan.addAttach(item.id, { type:"photo", pid: pid });
-          paintList(); repaint(); toastDone("사진을 넣었습니다.");
+          paintList(); repaint(); toastDone("추가했습니다.");
         }catch(e){ toast("사진을 저장하지 못했습니다."); }
+        sheet._clean();
         label.innerHTML = icon("image") + "사진 고르기";
         label.appendChild(fileInput);
         fileInput.value = "";

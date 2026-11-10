@@ -21,6 +21,7 @@ export var ICONS = {
   go: '<polyline points="10 5 17 12 10 19"/>',
   check: '<polyline points="5 12.5 10 17 19 7"/>',
   undo: '<polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="7.6" x2="12" y2="13"/><circle cx="12" cy="16.3" r="0.7" fill="currentColor"/>',
   compass: '<circle cx="12" cy="12" r="9"/><polygon points="15.6 8.4 10.4 10.4 8.4 15.6 13.6 13.6" fill="currentColor" stroke="none"/>',
   pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
   tack: '<line x1="8.5" y1="3.5" x2="15.5" y2="3.5"/><path d="M10 3.5l-.8 6.1L5.8 13h12.4l-3.4-3.4-.8-6.1"/><line x1="12" y1="13" x2="12" y2="20.5"/>',
@@ -93,7 +94,7 @@ export function toast(msg, hold){
   var now = Date.now();
   if (!hold && now < toastHold) return;
   toastHold = hold ? now + 2600 : 0;
-  show(msg, null, null, 2600);
+  show(msg, null, null, 2600, "warn");
 }
 
 /* 지운 직후의 몇 초. 그 사이에 누르면 지우기 전으로 돌아간다 —
@@ -116,7 +117,8 @@ function show(msg, label, run, ms, kind){
   if (!t) return;
   t.innerHTML = "";
   t.className = "toast " + (kind || "plain");
-  if (kind) t.appendChild(el('<span class="toast-ic" aria-hidden="true">' + icon(kind === "delete" ? "trash" : "check") + '</span>'));
+  if (kind) t.appendChild(el('<span class="toast-ic" aria-hidden="true">' +
+    icon(kind === "delete" ? "trash" : kind === "warn" ? "alert" : "check") + '</span>'));
   t.appendChild(el('<span class="toast-msg"></span>')).textContent = msg;
   if (label){
     var b = el('<button class="toast-do" type="button">' + icon("undo") + '<span></span></button>');

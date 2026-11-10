@@ -4,15 +4,15 @@
     --sans: "Inter", "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
     --mono: var(--sans);
     --ease: cubic-bezier(0.2, 0, 0, 1);
-    --paper: #F6F7F9;
+    --paper: #F4F6FA;
     --surface: #FFFFFF;
-    --surface-2: #EDEFF4;
-    --surface-3: #E1E5EC;
-    --ink: #14161B;
-    --ink-soft: #545A66;
-    --ink-faint: #6E7583;
-    --line: #E1E4EA;
-    --line-strong: #C6CBD5;
+    --surface-2: #EBEFF5;
+    --surface-3: #DDE3EC;
+    --ink: #111620;
+    --ink-soft: #4D5666;
+    --ink-faint: #687182;
+    --line: #E1E6EE;
+    --line-strong: #C5CCD8;
 
     --signal: #1F5FD6;
     --signal-soft: #E2ECFC;
@@ -39,6 +39,7 @@
 
     --toast-bg: var(--surface);
     --ok: #1E8A57;
+    --warn: #B4690A;
 
     --shadow: rgba(18, 22, 32, 0.10);
     --shadow-soft: rgba(18, 22, 32, 0.04);
@@ -50,15 +51,15 @@
 
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --paper: #101115;
-      --surface: #171A20;
-      --surface-2: #1E2129;
-      --surface-3: #282D36;
-      --ink: #E9EBF0;
-      --ink-soft: #A0A6B2;
-      --ink-faint: #717784;
-      --line: #24272F;
-      --line-strong: #373C47;
+      --paper: #0D1016;
+      --surface: #151A22;
+      --surface-2: #1C222C;
+      --surface-3: #27303C;
+      --ink: #E8ECF3;
+      --ink-soft: #9EA8B7;
+      --ink-faint: #707A8A;
+      --line: #212833;
+      --line-strong: #36404E;
 
       --signal: #5FA3FF;
       --signal-soft: #132A4D;
@@ -85,6 +86,7 @@
 
       --toast-bg: var(--surface-3);
       --ok: #5FD39A;
+      --warn: #F0B35C;
 
       --shadow: rgba(0, 0, 0, 0.5);
       --shadow-soft: rgba(0, 0, 0, 0.2);
@@ -92,15 +94,15 @@
     }
   }
   :root[data-theme="dark"]{
-    --paper: #101115;
-    --surface: #171A20;
-    --surface-2: #1E2129;
-    --surface-3: #282D36;
-    --ink: #E9EBF0;
-    --ink-soft: #A0A6B2;
-    --ink-faint: #717784;
-    --line: #24272F;
-    --line-strong: #373C47;
+    --paper: #0D1016;
+    --surface: #151A22;
+    --surface-2: #1C222C;
+    --surface-3: #27303C;
+    --ink: #E8ECF3;
+    --ink-soft: #9EA8B7;
+    --ink-faint: #707A8A;
+    --line: #212833;
+    --line-strong: #36404E;
 
     --signal: #5FA3FF;
     --signal-soft: #132A4D;
@@ -127,6 +129,7 @@
 
     --toast-bg: var(--surface-3);
     --ok: #5FD39A;
+    --warn: #F0B35C;
 
     --shadow: rgba(0, 0, 0, 0.5);
     --shadow-soft: rgba(0, 0, 0, 0.2);
@@ -264,6 +267,7 @@
     overflow-y: auto; overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding: 6px 18px 8px;
+    overscroll-behavior: contain;
   }
   .sheet-foot{
     display: flex; gap: 8px; flex-shrink: 0;
@@ -291,7 +295,18 @@
   /* one fixed height for every single-line control, so a box never changes
      size with what is (or is not) typed in it */
   .fld input{ height: 47px; padding: 0 13px; }
-  .fld textarea{ resize: vertical; min-height: 66px; padding: 12px 13px; line-height: 1.5; }
+  /* 여러 줄 칸은 한 줄 높이에서 시작해 적는 만큼 자란다 (grow) */
+  .fld textarea{ resize: none; min-height: 47px; padding: 11px 13px; line-height: 1.5; overflow-y: auto; }
+  .fld textarea[rows="2"]{ min-height: 72px; }
+  .fld input::placeholder, .fld textarea::placeholder{ color: var(--ink-faint); opacity: 0.75; }
+  /* 비었거나 틀린 칸 */
+  .fld input.bad, .fld textarea.bad, .pickbox.bad, .timebox.bad{
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 16%, transparent);
+    animation: nudge 280ms var(--ease);
+  }
+  @keyframes nudge{ 25%{ transform: translateX(-4px); } 60%{ transform: translateX(3px); } }
+  @media (prefers-reduced-motion: reduce){ .bad{ animation: none !important; } }
   .fld input:focus, .fld textarea:focus{
     outline: none; border-color: var(--signal);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 18%, transparent);
@@ -379,11 +394,18 @@
   }
 
   .pickrow{ display: flex; gap: 6px; flex-wrap: wrap; }
+  /* 고를 것이 많으면 한 줄로 흐른다. 창의 가장자리까지 닿아, 더 있다는 것이 보인다. */
+  .pickrow.scroll{
+    flex-wrap: nowrap; overflow-x: auto; margin: 0 -18px; padding: 0 18px 2px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+  }
+  .pickrow.scroll::-webkit-scrollbar{ display: none; }
+  .pickrow.scroll .pick{ flex-shrink: 0; scroll-snap-align: center; }
   .pick{
     border: 1px solid var(--line-strong); border-radius: 999px;
     background: transparent; color: var(--ink-soft);
     font: inherit; font-size: 13px; font-weight: 600;
-    padding: 8px 14px; cursor: pointer;
+    padding: 8px 13.5px; cursor: pointer; white-space: nowrap;
   }
   .pick[aria-pressed="true"]{ background: var(--signal); color: var(--on-signal); border-color: var(--signal); }
   .pick:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
@@ -393,7 +415,11 @@
     border: none; border-radius: 999px; padding: 14px 20px;
     font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
   }
-  .btn-primary{ background: var(--signal); color: var(--on-signal); flex: 1; }
+  .btn-primary{
+    background: var(--signal); color: var(--on-signal); flex: 1;
+    box-shadow: 0 8px 18px -10px var(--signal);
+  }
+  .btn .icon{ width: 18px; height: 18px; }
   
   .btn-danger{ background: transparent; color: var(--danger); border: 1px solid var(--line-strong); }
   .btn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
@@ -486,7 +512,9 @@
   .toast.delete{ --tone: var(--danger); }
   /* 됐다는 알림은 초록 체크 — 체크는 그려지듯 나타난다 */
   .toast.edit, .toast.done{ --tone: var(--ok); }
-  .toast.done{ padding-right: 18px; }
+  .toast.done, .toast.warn{ padding-right: 18px; }
+  /* 부탁이나 거절 — 틀린 것은 아니고, 봐달라는 뜻의 호박색 */
+  .toast.warn{ --tone: var(--warn); }
   .toast.edit .toast-ic polyline, .toast.done .toast-ic polyline{
     stroke-width: 2.4; stroke-dasharray: 22; stroke-dashoffset: 22;
   }
@@ -526,6 +554,11 @@
   @keyframes toast-left{ from{ transform: scaleX(1); } to{ transform: scaleX(0); } }
 
   .tabpad{ padding-bottom: calc(36px + var(--safe-b)); }
+  .tabpad > .card:first-child{ margin-top: 16px; }
+
+  /* 창이 떠 있는 동안: 뒤는 구르지 않고, 알림은 창의 단추 위로 올라선다 */
+  html.modal-open, html.modal-open body{ overflow: hidden; }
+  html.modal-open .toast{ bottom: calc(104px + var(--safe-b)); }
 
   @media (prefers-reduced-motion: reduce){
     .toast{ transition: none; }
@@ -636,6 +669,12 @@
   }
   .check .icon{ width: 16px; height: 16px; }
   .check[aria-pressed="true"]{ background: var(--signal); border-color: var(--signal); color: var(--on-signal); }
+  /* 체크하는 줄: 줄 전체가 체크이고, 끝의 연필이 수정이다 */
+  .checkrow .rowbtn{ align-items: center; gap: 12px; padding: 9px 0; }
+  .checkrow .check{ margin-top: 0; width: 26px; height: 26px; border-radius: 9px; transition: background-color 160ms ease, border-color 160ms ease; }
+  .checkrow .check .icon{ width: 15px; height: 15px; }
+  .checkrow.on .rowbody b{ font-weight: 500; }
+  .rowedit{ width: 36px; height: 36px; justify-content: center; padding: 0; flex-shrink: 0; margin-right: -8px; opacity: 0.7; }
   .check:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
 
 
@@ -718,10 +757,10 @@
   .quietbtn{
     display: inline-flex; align-items: center; gap: 4px;
     border: none; background: transparent; color: var(--ink-faint);
-    font: inherit; font-size: 11.5px; font-weight: 600;
-    padding: 4px 7px; cursor: pointer; border-radius: 8px;
+    font: inherit; font-size: 12px; font-weight: 600;
+    min-height: 32px; padding: 6px 9px; cursor: pointer; border-radius: 10px;
   }
-  .quietbtn .icon{ width: 13px; height: 13px; }
+  .quietbtn .icon{ width: 14px; height: 14px; }
   .quietbtn:hover{ color: var(--signal); background: var(--surface-2); }
   .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .quietbtn.has{ color: var(--signal); }
@@ -817,7 +856,7 @@
     background: var(--signal-soft); color: var(--signal);
   }
   .blankstate-mark .icon{ width: 28px; height: 28px; }
-  .blankstate h2{ font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+  .blankstate h2{ font-size: 18px; font-weight: 700; margin: 0 0 22px; letter-spacing: -0.02em; }
   .blankstate p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 22px; word-break: keep-all; }
   .blankstate .btn{ width: 100%; }
   .btn-quiet{

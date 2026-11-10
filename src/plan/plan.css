@@ -125,7 +125,8 @@
     font-size: 11px; padding: 2px 7px; border-radius: 7px;
     background: var(--surface-2); color: var(--ink-faint);
   }
-  .trip-add{ margin-top: 2px; }
+  /* 목록의 더하기는 카드와 같은 폭으로 선다 */
+  .trip-list .addcard{ width: 100%; margin: 0; }
 
 
 /* ---------- trip header ---------- */
@@ -222,7 +223,7 @@
   .pulse-in{ font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
 
   .pulse.count{ padding-bottom: 15px; }
-  .count-big{ font-size: 32px; font-weight: 800; letter-spacing: -0.04em; margin: 6px 0 0; line-height: 1.05; }
+  .count-big{ font-variant-numeric: normal; font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin: 6px 0 0; line-height: 1.05; }
   .pulse.count.live .count-big{ color: var(--signal); }
   .count-sub{ font-size: 12.5px; color: var(--ink-soft); margin: 5px 0 0; word-break: keep-all; }
 
@@ -242,7 +243,7 @@
     font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
     border-bottom: 2.5px solid transparent; margin-bottom: -1px;
   }
-  .tab[aria-selected="true"]{ color: var(--signal); border-bottom-color: var(--signal); }
+  .tab[aria-selected="true"]{ color: var(--signal); border-bottom-color: var(--signal); font-weight: 700; }
   .tab:focus-visible{ outline: 2px solid var(--signal); outline-offset: -3px; }
 
 

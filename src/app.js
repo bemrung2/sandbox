@@ -11,7 +11,7 @@ import { paintSignIn } from "./ui/shell.js";
 import { toastDone } from "./ui/dom.js";
 import { Plan, currentPair } from "./plan/model.js";
 import { state, wire } from "./plan/nav.js";
-import { renderTrips, renderTrip } from "./plan/screens.js";
+import { renderTrips, renderTrip, leftTrip } from "./plan/screens.js";
 
 var view = null;
 var ticking = false;
@@ -43,6 +43,7 @@ function paint(keepScroll){
   } else {
     state.screen = "list";
     slide("list");
+    leftTrip();
     renderTrips(view, keepScroll);
   }
 }

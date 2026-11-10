@@ -23,17 +23,63 @@ function host(){
    걷히는 쪽은 여기서 "떠나는 중"이라고 표시한 뒤 움직임이 끝나면 뗀다.
    떠나는 창은 손가락을 받지 않는다 — 그 사이에 새로 뜬 창은 건드리지 않는다. */
 var LEAVE_MS = 170;
+function open(){
+  return Array.prototype.filter.call(host().children, function(n){ return !n._leaving; });
+}
+/* 창이 떠 있는 동안 뒤의 화면은 구르지 않는다. 알림도 창의 단추를 가리지 않게 올라선다. */
+function lock(){ document.documentElement.classList.toggle("modal-open", open().length > 0); }
 function leave(node){
   if (!node || node._leaving) return;
   node._leaving = true;
   node.classList.add("leaving");
+  lock();
   setTimeout(function(){ if (node.parentNode) node.parentNode.removeChild(node); }, LEAVE_MS);
 }
 export function closeOverlay(){ Array.prototype.slice.call(host().children).forEach(leave); }
-export function showOverlay(node){ host().appendChild(node); }
+export function showOverlay(node){ host().appendChild(node); lock(); }
 /* 창 위에 창을 띄울 때는 그 하나만 닫는다 — 뒤에 열려 있던 것까지 치우면
    고치던 내용이 사라진다. */
 export function closeTop(node){ leave(node); }
+
+/* Esc는 맨 위의 창 하나를 닫는다 — 그 창이 닫히는 제 방식대로(적던 것이 있으면 묻는다). */
+document.addEventListener("keydown", function(e){
+  if (e.key !== "Escape") return;
+  var top = open().pop();
+  if (!top) return;
+  e.preventDefault();
+  if (top._shut) top._shut(); else leave(top);
+});
+
+/* 비어 있거나 틀린 칸은 그 칸이 말한다 — 테두리가 붉어지고 한 번 흔들린다.
+   다시 적기 시작하면 풀린다. */
+export function flag(input, said){
+  if (said) toast(said);
+  if (!input) return;
+  var box = input.closest ? (input.closest(".pickbox, .timebox") || input) : input;
+  box.classList.remove("bad");
+  void box.offsetWidth;
+  box.classList.add("bad");
+  if (input.focus && input.type !== "hidden") input.focus();
+  function clear(){ box.classList.remove("bad"); input.removeEventListener("input", clear); input.removeEventListener("change", clear); }
+  input.addEventListener("input", clear);
+  input.addEventListener("change", clear);
+}
+
+/* 여러 줄 칸은 적은 만큼 자란다. 두 줄 높이에서 잘려 보이면 무엇을 적었는지 모른다. */
+export function grow(area){
+  function fit(){
+    area.style.height = "auto";
+    area.style.height = Math.min(220, area.scrollHeight + 2) + "px";
+  }
+  area.addEventListener("input", fit);
+  requestAnimationFrame(fit);
+  return area;
+}
+function growAll(root){
+  Array.prototype.forEach.call(root.querySelectorAll("textarea"), function(a){
+    if (!a._grows){ a._grows = true; grow(a); }
+  });
+}
 
 /* 지우기 전에 한 번 묻는다. 창 위에 뜨는 작은 창이라, 아니라고 하면 그것만 닫힌다. */
 export function openAskDialog(opts, onYes){
@@ -87,9 +133,57 @@ export function sheetShell(title, sub){
       '<div class="sheet-foot"></div>' +
     '</div></div>'
   );
-  ripple(s.querySelector("[data-x]"), closeOverlay);
-  s.addEventListener("click", function(e){ if (e.target === s) closeOverlay(); });
+  /* 적던 것이 있으면 닫기 전에 한 번 묻는다. 바깥을 스친 손가락 하나에 다 적은
+     것이 사라지면 안 된다. 적은 것이 없으면 그냥 닫힌다. */
+  var dirty = false;
+  function touched(){ dirty = true; }
+  s.addEventListener("input", touched);
+  s.addEventListener("change", touched);
+  s._clean = function(){ dirty = false; };   /* 방금 저장했다 — 남은 것이 없다 */
+  s._shut = function(){
+    if (!dirty) return closeOverlay();
+    openAskDialog({ title: "닫으시겠습니까?", body: "작성 중인 내용은 저장되지 않습니다.", okLabel: "닫기" },
+      closeOverlay);
+  };
+  ripple(s.querySelector("[data-x]"), s._shut);
+  s.addEventListener("click", function(e){ if (e.target === s) s._shut(); });
+  dragToClose(s);
+  /* 칸은 나중에 채워진다 — 올라간 뒤에 여러 줄 칸을 찾아 자라게 한다 */
+  requestAnimationFrame(function(){ growAll(s); });
   return s;
+}
+
+/* 손잡이를 아래로 끌어내리면 닫힌다. 손잡이와 제목 줄에서만 잡힌다 — 내용은 굴러야 한다. */
+function dragToClose(scrim){
+  var sheet = scrim.querySelector(".sheet");
+  var from = null, dy = 0;
+  function down(e){
+    if (e.target.closest("button, input, textarea, a")) return;
+    from = e.clientY; dy = 0;
+    sheet.style.transition = "none";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+  function move(e){
+    if (from === null) return;
+    dy = Math.max(0, e.clientY - from);
+    sheet.style.transform = "translateY(" + dy + "px)";
+  }
+  function up(){
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    window.removeEventListener("pointercancel", up);
+    if (from === null) return;
+    from = null;
+    sheet.style.transition = "transform 220ms cubic-bezier(0.2, 0, 0, 1)";
+    sheet.style.transform = "";
+    if (dy > 90) scrim._shut();
+  }
+  [scrim.querySelector(".sheet-grip"), scrim.querySelector(".sheet-head")].forEach(function(n){
+    n.style.touchAction = "none";
+    n.addEventListener("pointerdown", down);
+  });
 }
 
 /* Generic record form — used by every 정보 section and 쇼핑 가게. */
@@ -122,21 +216,27 @@ export function openFormSheet(opts, rec, onSave, onDelete){
     for (var i = 0; i < opts.fields.length; i++){
       var f = opts.fields[i];
       var val = inputs[f.key].value.trim();
+      if (f.required && !val) return flag(inputs[f.key], f.label + objectMark(f.label) + " 적어 주세요.");
       if (f.url){
         var u = safeUrl(val);
-        if (!u){ inputs[f.key].focus(); toast("http로 시작하는 주소를 넣어 주세요."); return; }
+        if (!u) return flag(inputs[f.key], "링크를 확인해 주세요.");
         val = u;
       }
-      if (f.required && !val){ inputs[f.key].focus(); toast(f.label + "을(를) 적어 주세요."); return; }
       out[f.key] = val;
     }
     closeOverlay();
     savedToast(!!rec, onSave(out));
   });
   foot.appendChild(save);
+  /* 한 줄 칸에서 엔터는 저장이다 */
+  body.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && e.target.tagName === "INPUT" && !e.isComposing) save.click();
+  });
 
   showOverlay(sheet);
-  setTimeout(function(){ inputs[opts.fields[0].key].focus(); }, 60);
+  /* 새로 적을 때만 첫 칸을 잡는다. 고치러 들어왔을 때 자판이 먼저 올라오면
+     고칠 곳을 가린다. */
+  if (!rec) setTimeout(function(){ inputs[opts.fields[0].key].focus(); }, 60);
 }
 
 export function openTextDialog(opts, onSave, onDelete, onCancel){
@@ -151,9 +251,10 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
       (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
       '<span class="spacer"></span>' +
       '<button class="btn-text" data-a="no">취소</button>' +
-      '<button class="btn-text go" data-a="ok">' + esc(opts.okLabel || "확인") + '</button>' +
+      '<button class="btn-text go" data-a="ok">' + esc(opts.okLabel || "저장") + '</button>' +
     '</div></div></div>');
-  function give(){ closeOverlay(); if (onCancel) onCancel(); }
+  function give(){ closeTop(scrim); if (onCancel) onCancel(); }
+  scrim._shut = give;
   scrim.addEventListener("click", function(e){ if (e.target === scrim) give(); });
   var input = scrim.querySelector("#dlg-v");
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
@@ -162,15 +263,18 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   });
   scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
     var v = input.value.trim();
-    if (!v){ input.focus(); return; }
+    if (!v) return flag(input);
     closeOverlay();
     var undo = onSave(v);
     /* 있던 것을 바꿨을 때만 되돌리기를 내민다 — 새로 적은 것은 지우면 된다 */
     if (opts.value && undo) savedToast(true, undo);
   });
-  input.addEventListener("keydown", function(e){ if (e.key === "Enter" && !opts.multiline) scrim.querySelector('[data-a="ok"]').click(); });
+  input.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && !opts.multiline && !e.isComposing) scrim.querySelector('[data-a="ok"]').click();
+  });
+  if (opts.multiline) grow(input);
   showOverlay(scrim);
-  setTimeout(function(){ input.focus(); }, 60);
+  setTimeout(function(){ input.focus(); if (input.setSelectionRange) input.setSelectionRange(input.value.length, input.value.length); }, 60);
 }
 
 /* Something that cannot be undone asks you to write it out. A tap can happen
@@ -192,7 +296,7 @@ export function openConfirmDialog(opts, onYes){
   var ok = scrim.querySelector('[data-a="ok"]');
   function check(){ ok.disabled = input.value.trim() !== opts.phrase; }
   function done(){
-    if (ok.disabled){ input.focus(); toast('"' + opts.phrase + '"를 그대로 적어 주세요.'); return; }
+    if (ok.disabled) return flag(input);
     closeOverlay();
     onYes();
   }
@@ -208,7 +312,7 @@ export function openConfirmDialog(opts, onYes){
 export function pickerField(o){
   if (o.type === "time") return timeField(o);
 
-  function show(v){ return v ? v.replace(/-/g, ".") + " (" + dowOf(v) + ")" : "----.--.--"; }
+  function show(v){ return v ? v.replace(/-/g, ".") + " (" + dowOf(v) + ")" : "날짜 선택"; }
   var wrap = el(
     '<div class="' + (o.col ? "fld-col" : "fld") + '">' +
       '<label for="' + o.id + '">' + esc(o.label) + '</label>' +
@@ -275,6 +379,8 @@ export function timeField(o){
       hidden.value = next;
       val.textContent = next || "--:--";
       box.classList.toggle("blank", !next);
+      box.classList.remove("bad");
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
     });
   });
   return wrap;
@@ -384,7 +490,13 @@ export function pickGroup(row, options, get, set){
       row.querySelectorAll(".pick").forEach(function(x, i){
         x.setAttribute("aria-pressed", String(options[i].key === get()));
       });
+      row.dispatchEvent(new Event("change", { bubbles: true }));
     });
     row.appendChild(b);
+  });
+  /* 옆으로 구르는 줄이면 고른 것이 보이는 자리에 오게 한다 */
+  requestAnimationFrame(function(){
+    var on = row.querySelector('.pick[aria-pressed="true"]');
+    if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
   });
 }
