@@ -70,7 +70,7 @@ export function accountFooter(){
 
 /* ---------- who may edit ---------- */
 function openMembers(){
-  var sheet = sheetShell("멤버", "카카오로 로그인한 사람들");
+  var sheet = sheetShell("멤버");
   var body = sheet.querySelector(".sheet-body");
   sheet.querySelector(".sheet-foot").remove();
   body.appendChild(el('<p class="card-empty">불러오는 중…</p>'));
@@ -82,8 +82,7 @@ function openMembers(){
       return;
     }
     if (data.locked){
-      body.appendChild(el('<p class="card-empty">편집할 수 있는 사람은 서버 설정(EDITOR_IDS)에 ' +
-        '적힌 사람들입니다. 여기서는 바꿀 수 없습니다.</p>'));
+      body.appendChild(el('<p class="card-empty">편집 권한은 서버 설정(EDITOR_IDS)에서 정합니다.</p>'));
     }
     data.members.forEach(function(m){
       var row = el('<div class="rowline"><span class="rowbody"><b>' + esc(m.name || m.id) +

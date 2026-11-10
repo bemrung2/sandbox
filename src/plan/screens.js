@@ -276,6 +276,8 @@ export function renderTrip(root, keepScroll){
 
   root.innerHTML = "";
   root.appendChild(frag);
+  /* 날짜 줄은 탭 줄 바로 아래에 붙는다. 탭 줄의 높이는 글꼴에 따라 달라지니 재서 알려준다. */
+  root.style.setProperty("--tabs-h", tabs.offsetHeight + "px");
 
   if (state.tab === "sched") renderSchedule(body, days);
   else if (state.tab === "food") renderFood(body, days);
@@ -307,10 +309,13 @@ function landOn(root){
   var row = [].filter.call(root.querySelectorAll(".tl-item[data-id]"), function(r){ return r.dataset.id === id; })[0];
   if (!row) return;
   requestAnimationFrame(function(){
-    var tabs = root.querySelector(".tabs");
-    var top = row.getBoundingClientRect().top + window.scrollY - (tabs ? tabs.offsetHeight : 0) - 14;
+    var tabs = root.querySelector(".tabs"), strip = root.querySelector(".dayrow");
+    var chrome = (tabs ? tabs.offsetHeight : 0) + (strip ? strip.offsetHeight : 0);
+    var box = row.getBoundingClientRect();
+    var seen = box.top >= chrome && box.bottom <= window.innerHeight;
     var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: Math.max(0, top), behavior: still ? "auto" : "smooth" });
+    /* 이미 보이는 줄은 옮기지 않는다 — 짚어주기만 한다 */
+    if (!seen) window.scrollTo({ top: Math.max(0, box.top + window.scrollY - chrome - 10), behavior: still ? "auto" : "smooth" });
     row.classList.add("focus");
     setTimeout(function(){ row.classList.remove("focus"); }, 1800);
   });
@@ -427,7 +432,8 @@ function dayRow(days){
   days.forEach(function(day, i){
     var isToday = pair && pair.dayIndex === i;
     var b = el('<button class="daybtn' + (isToday ? " today" : "") + '" type="button" aria-pressed="' +
-      (state.day === i) + '"><b>' + fmtMD(day.date) + '</b>' + day.dow + (isToday ? " · 오늘" : "") + '</button>');
+      (state.day === i) + '"' + (isToday ? ' aria-label="' + fmtMD(day.date) + ' ' + day.dow + ' 오늘"' : '') +
+      '><b>' + fmtMD(day.date) + '</b><span>' + (isToday ? "오늘" : day.dow) + '</span></button>');
     ripple(b, function(){ go({ day: i }); });
     dayrow.appendChild(b);
   });
@@ -478,7 +484,11 @@ function renderSchedule(root, days){
   root.appendChild(routeRow(day));
 
   var attCount = list.reduce(function(n, it){ return n + Plan.attachOf(it.id).length; }, 0);
-  root.appendChild(el('<p class="day-stat mono">' + rows.length + '개 일정' + (attCount ? ' · 자료 ' + attCount : '') + '</p>'));
+  /* 긴 날은 맨 아래의 더하기까지 한참 내려가야 한다. 머리에도 하나 둔다. */
+  var stat = el('<div class="day-stat"><span class="mono">' + rows.length + '개 일정' +
+    (attCount ? ' · 자료 ' + attCount : '') + '</span></div>');
+  stat.appendChild(quickAdd(function(){ openItemEditor(null, day.date); }));
+  root.appendChild(stat);
 
   if (rows.length){
     var tl = el('<div class="tl"></div>');
@@ -657,7 +667,14 @@ function renderFood(root, days){
     ripple(b, function(){ go({ meal: m.key }); });
     chips.appendChild(b);
   });
-  root.appendChild(chips);
+  var addDate = days[state.day] ? days[state.day].date : days[0].date;
+  function addFood(){
+    openItemEditor(null, addDate, { cat:"food", meal: state.meal === "all" ? "" : state.meal });
+  }
+  var bar = el('<div class="chipbar"></div>');
+  bar.appendChild(chips);
+  bar.appendChild(quickAdd(addFood));
+  root.appendChild(bar);
 
   var list = state.meal === "all" ? all : all.filter(function(f){ return f.item.meal === state.meal; });
   var lastDay = -1;
@@ -672,21 +689,27 @@ function renderFood(root, days){
   });
   if (!list.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 식사가 없습니다.</p></div>'));
 
-  var addDate = days[state.day] ? days[state.day].date : days[0].date;
   var add = el('<button class="addcard" type="button">' + icon("plus") + '식사 추가</button>');
-  ripple(add, function(){
-    openItemEditor(null, addDate, { cat:"food", meal: state.meal === "all" ? "lunch" : state.meal });
-  });
+  ripple(add, addFood);
   root.appendChild(add);
+}
+
+/* 목록 머리의 작은 더하기. 정보 탭 카드 머리의 '추가'와 같은 것이다. */
+function quickAdd(run){
+  var b = el('<button class="quietbtn quickadd" type="button">' + icon("plus") + '추가</button>');
+  ripple(b, run);
+  return b;
 }
 
 function foodCard(f){
   var it = f.item;
   var places = it.places || [];
   var card = el('<div class="card t-food"></div>');
-  card.appendChild(el('<p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
+  /* 머리 줄: 언제인지가 왼쪽, 하는 일(자료 · 수정)이 오른쪽 — 쇼핑 카드와 같은 자리다 */
+  var head = el('<div class="card-row"><p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
     (it.s ? esc(spanOf(it)) : '시간 미정') +
-    (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p>'));
+    (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p></div>');
+  card.appendChild(head);
   card.appendChild(el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
     titleHtml(it) + '</p></div>'));
@@ -711,8 +734,8 @@ function foodCard(f){
   var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
   ripple(edit, function(){ openItemEditor(it, null); });
   actions.appendChild(edit);
-  meta.appendChild(actions);
-  card.appendChild(meta);
+  head.appendChild(actions);
+  if (meta.children.length) card.appendChild(meta);
   return card;
 }
 
@@ -731,8 +754,11 @@ function renderShop(root, days){
 
   var total = 0, got = 0;
   rows.forEach(function(r){ r.buys.forEach(function(i){ total++; if (i.got) got++; }); });
-  root.appendChild(el('<div class="group-label"><h3>쇼핑 목록</h3>' +
-    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') + '</span></div>'));
+  function addShop(){ openItemEditor(null, days[state.day] ? days[state.day].date : days[0].date, { cat: "shop" }); }
+  var head = el('<div class="group-label"><h3>쇼핑 목록</h3>' +
+    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') + '</span></div>');
+  head.appendChild(quickAdd(addShop));
+  root.appendChild(head);
 
   if (!rows.length){
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 쇼핑이 없습니다.</p></div>'));
@@ -750,7 +776,7 @@ function renderShop(root, days){
   });
 
   var add = el('<button class="addcard" type="button">' + icon("plus") + '쇼핑 추가</button>');
-  ripple(add, function(){ openItemEditor(null, days[state.day] ? days[state.day].date : days[0].date, { cat: "shop" }); });
+  ripple(add, addShop);
   root.appendChild(add);
 }
 
@@ -1285,14 +1311,16 @@ function openItemEditor(item, defaultDate, presets){
       places: lines("#ed-places"), lines: lines("#ed-lines"),
       emo: sheet.querySelector("#ed-emo").value.trim()
     };
-    var undo = null;
+    var undo = null, savedId = item ? item.id : null;
     if (item) undo = undoEdit(Plan.listEdit("items", item.id, rec));
-    else Plan.listAdd("items", Object.assign({ buys: [] }, rec));
+    else savedId = Plan.listAdd("items", Object.assign({ buys: [] }, rec)).id;
     closeOverlay();
     savedToast(!!item, undo);
-    if (!item){
+    /* 일정 탭에서는 방금 적은 줄을 찾아간다 — 날짜를 옮겼으면 그 날로 가고, 주소도 따라간다 */
+    if (state.tab === "sched"){
       var di = tripDays().findIndex(function(d){ return d.date === rec.dayDate; });
-      if (di >= 0) state.day = di;
+      if (rec.s) focusId = savedId;
+      if (di >= 0 && di !== state.day) return go({ day: di });
     }
     repaint();
   });
