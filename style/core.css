@@ -562,7 +562,7 @@
 
   /* 창이 떠 있는 동안: 뒤는 구르지 않고, 알림은 창의 단추 위로 올라선다 */
   html.modal-open, html.modal-open body{ overflow: hidden; }
-  html.modal-open .toast{ bottom: calc(104px + var(--safe-b)); }
+  html.modal-open:has(.sheet-foot) .toast{ bottom: calc(104px + var(--safe-b)); }
 
   @media (prefers-reduced-motion: reduce){
     .toast{ transition: none; }
@@ -773,6 +773,13 @@
   .quietbtn:hover{ color: var(--signal); background: var(--surface-2); }
   .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .quietbtn.has{ color: var(--signal); }
+  /* 아이콘만 있는 단추 — 네모난 손가락 자리 */
+  .quietbtn.ico{ min-width: 32px; padding: 6px; justify-content: center; }
+  .quietbtn.ico .icon{ width: 15px; height: 15px; }
+  /* 줄 아래에 붙은 첨부 (정보 탭) */
+  .rowline > .tl-actions{ align-self: flex-start; margin: 8px -6px 0 0; gap: 0; }
+  .rowatt{ padding: 0 0 12px 27px; margin-top: -4px; }
+  .rowatt .att{ margin-top: 0; }
 
 
   /* ---------- 창이 뜨고 질 때 ---------- */

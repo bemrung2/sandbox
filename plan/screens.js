@@ -486,7 +486,7 @@ function renderSchedule(root, days){
   var attCount = list.reduce(function(n, it){ return n + Plan.attachOf(it.id).length; }, 0);
   /* 긴 날은 맨 아래의 더하기까지 한참 내려가야 한다. 머리에도 하나 둔다. */
   var stat = el('<div class="day-stat"><span class="mono">' + rows.length + '개 일정' +
-    (attCount ? ' · 자료 ' + attCount : '') + '</span></div>');
+    (attCount ? ' · 첨부 ' + attCount : '') + '</span></div>');
   stat.appendChild(quickAdd(function(){ openItemEditor(null, day.date); }));
   root.appendChild(stat);
 
@@ -522,9 +522,7 @@ function shopTimelineRow(sh){
   meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">쇼핑</span>'));
   if (sh.area) meta.appendChild(el('<span class="badge">' + esc(sh.area) + '</span>'));
   var actions = el('<span class="tl-actions"></span>');
-  var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
-  ripple(edit, function(){ openShopEditor(sh); });
-  actions.appendChild(edit);
+  actions.appendChild(penBtn(function(){ openShopEditor(sh); }));
   meta.appendChild(actions);
   body.appendChild(meta);
   return row;
@@ -609,13 +607,8 @@ function timelineItem(it, pair){
   }
 
   var actions = el('<span class="tl-actions"></span>');
-  var clip = el('<button class="quietbtn' + (atts.length ? " has" : "") + '" type="button" aria-label="자료">' +
-    icon("clip") + (atts.length ? atts.length : "") + '</button>');
-  ripple(clip, function(){ openAttachSheet(it); });
-  actions.appendChild(clip);
-  var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
-  ripple(edit, function(){ openItemEditor(it, null); });
-  actions.appendChild(edit);
+  actions.appendChild(clipBtn(it));
+  actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
   meta.appendChild(actions);
 
   body.appendChild(meta);
@@ -624,6 +617,21 @@ function timelineItem(it, pair){
 function shortPlace(p){
   var city = trip().city;
   return city ? p.replace(new RegExp("\\s*" + city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), "") : p;
+}
+
+/* 줄마다 달리는 두 단추. 글자 없이 아이콘 하나씩 — 정보 탭의 연필과 같은 무게다.
+   첨부는 붙은 것이 있으면 몇 개인지 함께 적는다. */
+function clipBtn(target){
+  var n = Plan.attachOf(target.id).length;
+  var b = el('<button class="quietbtn ico' + (n ? " has" : "") + '" type="button" aria-label="첨부' +
+    (n ? " " + n + "개" : "") + '">' + icon("clip") + (n ? n : "") + '</button>');
+  ripple(b, function(){ openAttachSheet(target); });
+  return b;
+}
+function penBtn(run){
+  var b = el('<button class="quietbtn ico" type="button" aria-label="수정">' + icon("edit") + '</button>');
+  ripple(b, run);
+  return b;
 }
 
 function attachStrip(itemId, atts){
@@ -705,7 +713,7 @@ function foodCard(f){
   var it = f.item;
   var places = it.places || [];
   var card = el('<div class="card t-food"></div>');
-  /* 머리 줄: 언제인지가 왼쪽, 하는 일(자료 · 수정)이 오른쪽 — 쇼핑 카드와 같은 자리다 */
+  /* 머리 줄: 언제인지가 왼쪽, 하는 일(첨부 · 수정)이 오른쪽 — 쇼핑 카드와 같은 자리다 */
   var head = el('<div class="card-row"><p class="card-when mono' + (it.s ? '' : ' undated') + '">' +
     (it.s ? esc(spanOf(it)) : '시간 미정') +
     (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p></div>');
@@ -727,13 +735,8 @@ function foodCard(f){
     });
   }
   var actions = el('<span class="tl-actions"></span>');
-  var clip = el('<button class="quietbtn' + (atts.length ? " has" : "") + '" type="button" aria-label="자료">' +
-    icon("clip") + (atts.length ? atts.length : "") + '</button>');
-  ripple(clip, function(){ openAttachSheet(it); });
-  actions.appendChild(clip);
-  var edit = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
-  ripple(edit, function(){ openItemEditor(it, null); });
-  actions.appendChild(edit);
+  actions.appendChild(clipBtn(it));
+  actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
   head.appendChild(actions);
   if (meta.children.length) card.appendChild(meta);
   return card;
@@ -780,22 +783,25 @@ function renderShop(root, days){
   root.appendChild(add);
 }
 
-function shopHead(when, onEdit){
+function shopHead(when, onEdit, target){
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon("bag") + '</span>' +
     '<h3 class="mono' + (when ? '' : ' undated') + '">' + (when ? esc(when) : '시간 미정') + '</h3></div>');
-  var ed = el('<button class="quietbtn" type="button">' + icon("edit") + '수정</button>');
-  ripple(ed, onEdit);
-  head.appendChild(ed);
+  var acts = el('<span class="tl-actions"></span>');
+  if (target) acts.appendChild(clipBtn(target));
+  acts.appendChild(penBtn(onEdit));
+  head.appendChild(acts);
   return head;
 }
 
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }));
+  card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }, it));
   card.appendChild(el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>'));
   (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
+  var atts = Plan.attachOf(it.id);
+  if (atts.length) card.appendChild(attachStrip(it.id, atts));
   buyList(card, it.buys || [], function(next){ return Plan.listEdit("items", it.id, { buys: next }); });
   return card;
 }
@@ -847,7 +853,7 @@ function buyList(card, list, save){
 /* ---------- tab: info ---------- */
 function renderInfo(root){
   root.appendChild(sectionCard({
-    title: "항공", key: "flights", ic: "plane", tone: "air",
+    title: "항공", key: "flights", ic: "plane", tone: "air", attach: true,
     empty: "아직 항공편이 없습니다.",
     /* 항공편은 일정의 '이동 · 항공기'다. 여기서 더해도 일정에 적힌다. */
     mirror: function(){
@@ -876,7 +882,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "숙소", key: "stays", ic: "bed", tone: "stay",
+    title: "숙소", key: "stays", ic: "bed", tone: "stay", attach: true,
     mirror: function(){ return itemsOfCat("stay"); },
     mirrorRow: function(it){
       return '<span class="lbl mono">' + esc(fmtMD(it.dayDate)) + ' (' + dowOf(it.dayDate) + ')' +
@@ -899,7 +905,7 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "예약", key: "books", ic: "star", tone: "book",
+    title: "예약", key: "books", ic: "star", tone: "book", attach: true,
     empty: "아직 예약이 없습니다.",
     render: function(k){
       return (k.when ? '<span class="lbl mono">' + esc(k.when) + '</span>' : '') +
@@ -973,6 +979,10 @@ function sectionCard(o){
       var pen = el('<button class="quietbtn" type="button" aria-label="수정">' + icon("edit") + '</button>');
       ripple(pen, function(){ editRec(o, rec); });
       row.appendChild(pen);
+    } else if (o.attach){
+      attachRow(card, row, icon(o.ic) + '<span class="rowbody">' + o.render(rec) + '</span>',
+        { id: rec.id, title: rec[o.fields[0].key] || o.title }, function(){ editRec(o, rec); });
+      return;
     } else {
       var btn = el('<button class="rowbtn" type="button">' +
         (o.simple ? "" : icon(o.ic)) + inner + '</button>');
@@ -982,15 +992,30 @@ function sectionCard(o){
     card.appendChild(row);
   });
   mirrored.forEach(function(it){
-    var row = el('<div class="rowline"></div>');
-    var btn = el('<button class="rowbtn" type="button">' + icon(o.ic) +
-      '<span class="rowbody">' + o.mirrorRow(it) + '</span>' + icon("edit", "rowpen") + '</button>');
-    ripple(btn, function(){ openItemEditor(it, null); });
-    row.appendChild(btn);
-    card.appendChild(row);
+    attachRow(card, el('<div class="rowline"></div>'),
+      icon(o.ic) + '<span class="rowbody">' + o.mirrorRow(it) + '</span>', it,
+      function(){ openItemEditor(it, null); });
   });
 
   return card;
+}
+/* 첨부를 받는 줄(항공 · 숙소 · 예약): 줄을 누르면 수정, 끝에 첨부와 연필.
+   붙은 것은 그 줄 바로 아래에 보인다. */
+function attachRow(card, row, inner, target, edit){
+  var btn = el('<button class="rowbtn" type="button">' + inner + '</button>');
+  ripple(btn, edit);
+  row.appendChild(btn);
+  var acts = el('<span class="tl-actions"></span>');
+  acts.appendChild(clipBtn(target));
+  acts.appendChild(penBtn(edit));
+  row.appendChild(acts);
+  card.appendChild(row);
+  var atts = Plan.attachOf(target.id);
+  if (atts.length){
+    var under = el('<div class="rowatt"></div>');
+    under.appendChild(attachStrip(target.id, atts));
+    card.appendChild(under);
+  }
 }
 function editRec(o, rec){
   openFormSheet({ title: o.title + " 수정", fields: o.fields }, rec,
@@ -1331,7 +1356,7 @@ function openItemEditor(item, defaultDate, presets){
 
 /* ---------- attachments sheet ---------- */
 function openAttachSheet(item){
-  var sheet = sheetShell("자료", (item.s ? item.s + " " : "") + item.title);
+  var sheet = sheetShell("첨부", (item.s ? item.s + " " : "") + item.title);
   var body = sheet.querySelector(".sheet-body");
   sheet.querySelector(".sheet-foot").remove();
 
@@ -1365,7 +1390,7 @@ function openAttachSheet(item){
         Plan.addAttach(item.id, { type:"note", text:v });
         f.querySelector("#a-note").value = "";
         sheet._clean();
-        paintList(); repaint(); toastDone("추가했습니다.");
+        paintList(); repaint();
       }));
       form.appendChild(f);
     } else if (kind === "link"){
@@ -1379,7 +1404,7 @@ function openAttachSheet(item){
         Plan.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
         g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
         sheet._clean();
-        paintList(); repaint(); toastDone("추가했습니다.");
+        paintList(); repaint();
       }));
       form.appendChild(g);
     } else {
@@ -1395,7 +1420,7 @@ function openAttachSheet(item){
         try{
           var pid = await storePhoto(file);
           Plan.addAttach(item.id, { type:"photo", pid: pid });
-          paintList(); repaint(); toastDone("추가했습니다.");
+          paintList(); repaint();
         }catch(e){ toast("사진을 저장하지 못했습니다."); }
         sheet._clean();
         label.innerHTML = icon("image") + "사진 고르기";
@@ -1410,7 +1435,7 @@ function openAttachSheet(item){
     listBox.innerHTML = "";
     var atts = Plan.attachOf(item.id);
     if (!atts.length){
-      listBox.appendChild(el('<p class="card-empty" style="padding:12px 0">아직 자료가 없습니다.</p>'));
+      listBox.appendChild(el('<p class="card-empty" style="padding:12px 0">아직 첨부가 없습니다.</p>'));
       return;
     }
     atts.forEach(function(a){
@@ -1444,5 +1469,5 @@ function openAttachSheet(item){
   }
 
   paintForm(); paintList();
-  overlay.appendChild(sheet);
+  showOverlay(sheet);
 }

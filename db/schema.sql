@@ -105,7 +105,7 @@ create table if not exists entries (
   ord     bigint  not null default 0
 );
 
--- 일정에 붙인 메모 · 링크 · 사진
+-- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
 create table if not exists attachments (
   id       text primary key,
   trip_id  text not null references trips(id) on delete cascade,

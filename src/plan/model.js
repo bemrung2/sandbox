@@ -7,7 +7,7 @@
  *   travel/trips/<id>/days/<YYYY-MM-DD>    그날 요약 + 동선
  *   travel/trips/<id>/items/<id>           일정 하나
  *   travel/trips/<id>/<목록>/<id>           가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
- *   travel/trips/<id>/attach/<id>          일정에 붙인 자료
+ *   travel/trips/<id>/attach/<id>          일정 · 숙소 · 예약에 붙인 첨부 (메모 · 링크 · 사진)
  */
 import { uid } from "../ui/dom.js";
 import { Store } from "../ui/store.js";
@@ -595,11 +595,12 @@ export var Plan = {
       rec = x; return false;
     });
     if (!rec) return null;
-    var atts = key === "items" ? (c.attach[id] || []).slice() : [];
+    /* 붙어 있던 첨부도 함께 지우고, 되돌리면 함께 돌아온다 — 어느 목록의 것이든 */
+    var atts = (c.attach[id] || []).slice();
     var here = this.path(key), attHere = this.path("attach");
     this.write(here + "/" + id, null);
     atts.forEach(function(a){ self.write(attHere + "/" + a.id, null); });
-    if (key === "items") delete c.attach[id];
+    delete c.attach[id];
     return function(){
       self.write(here + "/" + id, bodyOf(rec));
       atts.forEach(function(a){ self.write(attHere + "/" + a.id, Object.assign(bodyOf(a), { itemId: id })); });
