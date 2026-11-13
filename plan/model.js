@@ -615,9 +615,6 @@ export function tripName(t){
 export function tripPlace(t){
   return t && t.title && t.city ? t.city : "";
 }
-export function tripLabel(t){
-  return (t && t.country) || "";
-}
 export function bodyOf(rec){
   var body = Object.assign({}, rec);
   delete body.id;

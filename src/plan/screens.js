@@ -13,7 +13,7 @@ import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, STAY_KINDS, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayLeaving, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
-  tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
+  tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
   timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
@@ -120,13 +120,9 @@ function emptyState(){
 /* 이름 아래 한 줄: 어디로 가는지(여행지)와 그 라벨.
    여행지는 읽으라고 있는 말이니 라벨보다 또렷하게 둔다. */
 function subLine(t, who){
-  var place = tripPlace(t), label = tripLabel(t);
-  if (!place && !label) return "";
-  return '<span class="' + who + '-sub">' +
-    (place ? '<span class="sub-place">' + icon("pin", "sub-pin") + esc(place) + '</span>' : '') +
-    (place && label ? '<span class="sub-dot">·</span>' : '') +
-    (label ? '<span class="sub-label mono">' + esc(label) + '</span>' : '') +
-  '</span>';
+  var place = tripPlace(t);
+  if (!place) return "";
+  return '<span class="' + who + '-sub"><span class="sub-place">' + icon("pin", "sub-pin") + esc(place) + '</span></span>';
 }
 
 /* 지도 검색은 열어둔 여행의 도시를 함께 넣는다 — 같은 이름의 가게가 다른 나라에도 있다.
@@ -350,6 +346,7 @@ function renderHero(){
   var hero = el(
     '<div class="hero">' +
       '<div class="hero-top">' +
+      '<button class="quietbtn hero-back" type="button" aria-label="여행 목록으로">' + icon("back") + '</button>' +
       '<div class="hero-id">' +
         '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
         esc(tripName(t)) + '</h1>' +
@@ -358,6 +355,7 @@ function renderHero(){
     '</div>'
   );
   hero.querySelector(".hero-top").appendChild(themeButton());
+  ripple(hero.querySelector(".hero-back"), function(){ go({ screen:"list" }); });
   /* 날짜는 글자다. 떠나는 날과 돌아오는 날을 굵게, 요일은 흐리게, 며칠인지는
      옅게 칠한 알약 하나 — 그 이상은 하지 않는다. */
   var dates = el(
@@ -1252,10 +1250,6 @@ export function openTripEditor(t){
   inner.appendChild(el('<div class="fld-col"><label for="t-city">여행지</label>' +
     '<input id="t-city" type="text" placeholder="예: 로마" value="' + esc(t ? t.city : "") + '"></div>'));
   body.appendChild(flagRow);
-  body.appendChild(el(
-    '<div class="fld"><label for="t-country">라벨 <span class="opt">선택</span></label><input id="t-country" type="text" value="' +
-    esc(t ? t.country : "") + '" placeholder="예: ROMA · PARIS"></div>'
-  ));
   var dateRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var dr = dateRow.querySelector(".fld-row");
   dr.appendChild(pickerField({ type:"date", id:"t-start", label:"시작일", value: t ? t.start : "", col:true }));
@@ -1290,7 +1284,6 @@ export function openTripEditor(t){
       title: title,
       emoji: sheet.querySelector("#t-emoji").value.trim(),
       city: city,
-      country: sheet.querySelector("#t-country").value.trim(),
       start: start, end: end
     };
     closeOverlay();
