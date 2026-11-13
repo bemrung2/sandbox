@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, STAY_KINDS, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayLeaving, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KINDS, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayLeaving, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -1364,12 +1364,12 @@ function openItemEditor(item, defaultDate, presets){
   row.appendChild(eFld);
   timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
   body.appendChild(timeRow);
-  body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow" id="ed-cat"></div></div>'));
-  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow" id="ed-meal"></div></div>');
+  body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow scroll" id="ed-cat"></div></div>'));
+  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow scroll" id="ed-meal"></div></div>');
   body.appendChild(mealFld);
-  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow" id="ed-mode"></div></div>');
+  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow scroll" id="ed-mode"></div></div>');
   body.appendChild(modeFld);
-  var kindFld = el('<div class="fld"><label>숙소 구분</label><div class="pickrow" id="ed-kind"></div></div>');
+  var kindFld = el('<div class="fld"><label>숙소 구분</label><div class="pickrow scroll" id="ed-kind"></div></div>');
   body.appendChild(kindFld);
   var placeFld = el('<div class="fld"><label for="ed-places">장소</label>' +
     '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea>' +
@@ -1432,6 +1432,17 @@ function openItemEditor(item, defaultDate, presets){
   /* 식사 종류는 식사일 때만, 이동 수단은 이동일 때만, 숙소 구분은 숙소일 때만 묻는다.
      소분류 둘(수단 · 숙소 구분)은 같은 칸(mode)에 적으므로, 분류가 바뀌면 비운다. */
   var modeRow, kindRow, mealRow;
+  /* 이동 수단을 고르면 그 수단의 대표 이모티콘이 아이콘 칸에 들어간다. 칸이 비어 있거나 방금 우리가 넣은 것일 때만 바꾸고,
+     직접 적은 것은 건드리지 않는다. 이동이 아니게 되면 우리가 넣은 것은 도로 비운다. */
+  var emoEl = sheet.querySelector("#ed-emo");
+  var autoEmo = item && item.mode && item.emo === MODE_EMO[item.mode] ? item.emo : "";
+  var primed = !item;          /* 있던 일정을 열기만 해서는 아이콘을 바꾸지 않는다 */
+  function fillEmo(){
+    if (!primed) return;
+    var want = cur.cat === "move" ? (MODE_EMO[cur.mode] || "") : "";
+    var now = emoEl.value.trim();
+    if (!now || now === autoEmo){ emoEl.value = want; autoEmo = want; }
+  }
   function syncKinds(){
     var food = cur.cat === "food", move = cur.cat === "move", stay = cur.cat === "stay";
     mealFld.hidden = !food;
@@ -1448,6 +1459,7 @@ function openItemEditor(item, defaultDate, presets){
       modeRow.querySelectorAll(".pick").forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
       kindRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });
     }
+    fillEmo();
   }
   pickGroup(sheet.querySelector("#ed-cat"),
     [{ key:"", label:"없음" }].concat(CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; })),
@@ -1457,11 +1469,12 @@ function openItemEditor(item, defaultDate, presets){
     [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
     function(){ return cur.meal; }, function(v){ cur.meal = v; });
   modeRow = sheet.querySelector("#ed-mode");
-  pickGroup(modeRow, MODES, function(){ return cur.mode; }, function(v){ cur.mode = v; });
+  pickGroup(modeRow, MODES, function(){ return cur.mode; }, function(v){ cur.mode = v; fillEmo(); });
   kindRow = sheet.querySelector("#ed-kind");
   pickGroup(kindRow, [{ key:"", label:"없음" }].concat(STAY_KINDS), function(){ return cur.mode; },
     function(v){ cur.mode = v; fillStay(); });
   syncKinds();
+  primed = true;
   if (!item) fillStay();
 
   var foot = sheet.querySelector(".sheet-foot");

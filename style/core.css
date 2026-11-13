@@ -404,6 +404,10 @@
   }
   .pickrow.scroll::-webkit-scrollbar{ display: none; }
   .pickrow.scroll .pick{ flex-shrink: 0; scroll-snap-align: center; }
+  /* 더 있는 쪽 가장자리는 옅어진다 */
+  .pickrow.scroll.more-r{ -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent); }
+  .pickrow.scroll.more-l{ -webkit-mask-image: linear-gradient(to right, transparent, #000 34px); mask-image: linear-gradient(to right, transparent, #000 34px); }
+  .pickrow.scroll.more-l.more-r{ -webkit-mask-image: linear-gradient(to right, transparent, #000 34px, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(to right, transparent, #000 34px, #000 calc(100% - 34px), transparent); }
   .pick{
     border: 1px solid var(--line-strong); border-radius: 999px;
     background: transparent; color: var(--ink-soft);

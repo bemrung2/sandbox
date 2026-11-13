@@ -317,6 +317,8 @@ export var MODES = [
   { key:"taxi", label:"택시" }, { key:"walk", label:"도보" }, { key:"other", label:"기타" }
 ];
 export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", taxi:"택시", walk:"도보", other:"기타" };
+/* 이동 수단마다의 대표 이모티콘 — 편집 창에서 수단을 고르면 아이콘 칸이 비어 있을 때 이것으로 채운다. */
+export var MODE_EMO = { plane:"✈️", bus:"🚌", subway:"🚇", taxi:"🚕", walk:"🚶" };
 /* 숙소의 소분류 — 이동의 수단처럼 `mode` 칸에 적는다 */
 export var STAY_KINDS = [ { key:"checkin", label:"체크인" }, { key:"checkout", label:"체크아웃" } ];
 export var STAY_KIND_LABEL = { checkin:"체크인", checkout:"체크아웃" };

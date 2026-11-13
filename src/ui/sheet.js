@@ -482,8 +482,23 @@ function openTimeWheel(opts, onDone){
   requestAnimationFrame(function(){ hWheel.set(hh, false); mWheel.set(mm, false); });
 }
 
+/* 한 줄로 구르는 줄은 더 있는 쪽 가장자리가 옅어진다 — 거기에 더 있다는 뜻이다. 보이는 폭이 바뀌어도(숨었다 나타나도) 다시 잰다. */
+function rollEdges(row){
+  function edges(){
+    var max = row.scrollWidth - row.clientWidth;
+    row.classList.toggle("more-l", row.scrollLeft > 2);
+    row.classList.toggle("more-r", max > 2 && row.scrollLeft < max - 2);
+  }
+  if (!row._rolls){
+    row._rolls = true;
+    row.addEventListener("scroll", edges, { passive: true });
+    if (typeof ResizeObserver === "function") new ResizeObserver(edges).observe(row);
+  }
+  requestAnimationFrame(edges);
+}
 export function pickGroup(row, options, get, set){
   row.innerHTML = "";
+  var rolls = row.classList.contains("scroll");
   options.forEach(function(o){
     var b = el('<button class="pick" type="button" aria-pressed="' + (get() === o.key) + '">' + esc(o.label) + '</button>');
     ripple(b, function(){
@@ -491,10 +506,13 @@ export function pickGroup(row, options, get, set){
       row.querySelectorAll(".pick").forEach(function(x, i){
         x.setAttribute("aria-pressed", String(options[i].key === get()));
       });
+      /* 고른 것이 가운데로 오도록 굴린다 — 양옆에 이전 것과 다음 것이 보인다 */
+      if (rolls && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
       row.dispatchEvent(new Event("change", { bubbles: true }));
     });
     row.appendChild(b);
   });
+  if (rolls) rollEdges(row);
   /* 옆으로 구르는 줄이면 고른 것이 보이는 자리에 오게 한다 */
   requestAnimationFrame(function(){
     var on = row.querySelector('.pick[aria-pressed="true"]');
