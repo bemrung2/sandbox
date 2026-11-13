@@ -801,9 +801,9 @@ function foodCard(f){
         icon("pin") + esc(shortPlace(p)) + '</a>'));
     });
   }
+  /* 식사 탭에서는 일정을 고치지 않는다 — 첨부만 */
   var actions = el('<span class="tl-actions"></span>');
   actions.appendChild(clipBtn(it));
-  actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
   head.appendChild(actions);
   if (meta.children.length) card.appendChild(meta);
   return card;
@@ -850,20 +850,22 @@ function renderShop(root, days){
   root.appendChild(add);
 }
 
-function shopHead(when, onEdit, target){
+/* 쇼핑 탭에서는 일정을 고치지 않는다 — 연필이 없고 첨부만 (살 것은 줄마다 고친다) */
+function shopHead(when, target){
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon("bag") + '</span>' +
     '<h3 class="mono' + (when ? '' : ' undated') + '">' + (when ? esc(when) : '시간 미정') + '</h3></div>');
-  var acts = el('<span class="tl-actions"></span>');
-  if (target) acts.appendChild(clipBtn(target));
-  acts.appendChild(penBtn(onEdit));
-  head.appendChild(acts);
+  if (target){
+    var acts = el('<span class="tl-actions"></span>');
+    acts.appendChild(clipBtn(target));
+    head.appendChild(acts);
+  }
   return head;
 }
 
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }, it));
+  card.appendChild(shopHead(spanOf(it), it));
   var top = el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>');
   var mk = markPills(it);
@@ -879,7 +881,7 @@ function shopItemCard(it){
 /* 예전에 쇼핑 탭에서 가게로 따로 적어둔 것. 옮겨지기 전까지만 보인다. */
 function shopCard(s){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(s.time || "", function(){ openShopEditor(s); }));
+  card.appendChild(shopHead(s.time || ""));
   card.appendChild(el('<div class="card-top"><p class="card-name">' + placeHtml(s.name, s.map || s.name) + '</p></div>'));
   if (s.area) card.appendChild(el('<p class="card-kind">' + esc(s.area) + '</p>'));
   buyList(card, s.items || [], function(next){ return Plan.listEdit("shops", s.id, { items: next }); });
@@ -918,7 +920,7 @@ function buyList(card, list, save){
   var addBtn = el('<button class="quietbtn buyadd" type="button">' + icon("plus") + '쇼핑리스트 추가하기</button>');
   ripple(addBtn, function(){
     /* 줄을 바꾸면 한 줄이 하나다 — 여러 개를 한 번에 적는다 */
-    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩 적어 주세요\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
+    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
       var texts = linesOf(v);
       save(list.concat(texts.map(function(t){ return { id: uid("i"), text: t, got: false }; })));
       repaint();
@@ -1115,11 +1117,11 @@ function buildStayFields(sheet, box, st, fromDate){
   });
   rollEdges(perks);
   box.appendChild(el('<div class="fld"><label for="s-memo">메모 <span class="opt">선택</span></label>' +
-    '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩 적어 주세요">' + esc(st ? st.memo : "") + '</textarea></div>'));
+    '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩 적어 주세요.">' + esc(st ? st.memo : "") + '</textarea></div>'));
   var memo = box.querySelector("#s-memo");
   /* 이름으로 찾아지지 않는 숙소만 직접 주소를 적는다 */
   box.appendChild(el('<div class="fld"><label for="s-map">구글 지도 링크 <span class="opt">선택</span></label>' +
-    '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요" value="' +
+    '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요." value="' +
     esc(st && st.mapUrl ? st.mapUrl : "") + '"></div>'));
   function lines(){ return memo.value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean); }
 
@@ -1231,7 +1233,7 @@ function packCard(){
     '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
-    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩 적어 주세요\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
+    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
       var texts = linesOf(v);
       texts.forEach(function(t){ Plan.listAdd("packList", { text: t, on: false }); });
       repaint();
@@ -1441,7 +1443,10 @@ function openItemEditor(item, defaultDate, presets){
     '<input id="ed-flightno" type="text" autocapitalize="characters" placeholder="KE931" value="' + esc(fl.no) + '"></div>'));
   form.appendChild(nameRow);
   /* 날짜는 한 줄로 흐른다 — 열나흘이 네 줄을 차지하면 그 아래 칸들이 화면 밖으로 밀린다 */
-  form.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow scroll" id="ed-day"></div></div>'));
+  /* 일정 탭에서 더할 때는 날짜를 묻지 않는다 — 날짜를 골라 놓고 더하는 것이다. (고칠 때는 다른 날로 옮길 수 있게 둔다.) */
+  var dayFld = el('<div class="fld"><label>날짜</label><div class="pickrow scroll" id="ed-day"></div></div>');
+  dayFld.hidden = !item && !presets && state.tab === "sched";
+  form.appendChild(dayFld);
   var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = timeRow.querySelector(".fld-row");
   var sFld = pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true });
@@ -1455,9 +1460,9 @@ function openItemEditor(item, defaultDate, presets){
   timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
   form.appendChild(timeRow);
   form.appendChild(el('<div class="fld"><label for="ed-places">장소</label>' +
-    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳씩 적어 주세요">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea></div>'));
+    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳씩 적어 주세요.">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea></div>'));
   form.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
-    '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩 적어 주세요">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
+    '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩 적어 주세요.">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
   /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
   /* 예약 확정 · 현금 Only · 카드 Only는 버튼이다 — 태그 칸과는 따로, 태그에는 아무것도 들어가지 않는다.
      현금과 카드는 둘 중 하나만 켜진다. */
@@ -1487,7 +1492,7 @@ function openItemEditor(item, defaultDate, presets){
     '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>'));
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
   form.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
-    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요" value="' +
+    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요." value="' +
     esc(item && item.mapUrl ? item.mapUrl : "") + '"></div>'));
 
   pickGroup(sheet.querySelector("#ed-day"),
@@ -1496,6 +1501,14 @@ function openItemEditor(item, defaultDate, presets){
 
   var mealRow = sheet.querySelector("#ed-meal"), modeRow = sheet.querySelector("#ed-mode");
   var titleEl = sheet.querySelector("#ed-title"), airEl = sheet.querySelector("#ed-airline"), noEl = sheet.querySelector("#ed-flightno");
+  /* 편명은 적는 대로 대문자로 */
+  noEl.addEventListener("input", function(){
+    var up = noEl.value.toUpperCase();
+    if (up === noEl.value) return;
+    var at = noEl.selectionStart;
+    noEl.value = up;
+    try{ noEl.setSelectionRange(at, at); }catch(e){}
+  });
   /* 이동 수단을 고르면 그 수단의 대표 이모티콘이 아이콘 칸에 들어간다. 칸이 비어 있거나 방금 우리가 넣은 것일 때만 바꾸고,
      직접 적은 것은 건드리지 않는다. 이동이 아니게 되면 넣어둔 것은 도로 비운다. */
   var emoEl = sheet.querySelector("#ed-emo");
@@ -1527,6 +1540,8 @@ function openItemEditor(item, defaultDate, presets){
       modeRow.querySelectorAll(".pick").forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
     }
     /* 항공기면 일정 이름 칸 자리에 항공사와 편명. 오가는 동안 적은 것은 잃지 않는다. */
+    /* 항공기면 순서가 날짜 → 시간 → 아이콘 · 항공사 · 편명. 그 밖에는 이름이 먼저다. */
+    if (plane) timeRow.after(nameRow); else dayFld.before(nameRow);
     sheet.querySelector("#ed-title-col").hidden = plane;
     sheet.querySelector("#ed-air-col").hidden = !plane;
     sheet.querySelector("#ed-no-col").hidden = !plane;
@@ -1620,7 +1635,7 @@ function openItemEditor(item, defaultDate, presets){
   });
   foot.appendChild(save);
   showOverlay(sheet);
-  if (!item) setTimeout(function(){ sheet.querySelector("#ed-title").focus(); }, 60);
+  if (!item) setTimeout(function(){ (cur.cat === "move" && cur.mode === "plane" ? airEl : titleEl).focus(); }, 60);
 }
 
 /* ---------- attachments sheet ---------- */
@@ -1648,6 +1663,13 @@ function openAttachSheet(item){
     });
   });
 
+  /* 하나 붙이면 창을 닫는다 — 붙이는 화면에 머물러 있지 않는다 */
+  function added(){
+    sheet._clean();
+    closeTop(sheet);
+    repaint();
+    toastDone("추가했습니다.");
+  }
   function paintForm(){
     form.innerHTML = "";
     if (kind === "note"){
@@ -1657,9 +1679,7 @@ function openAttachSheet(item){
         var v = f.querySelector("#a-note").value.trim();
         if (!v) return flag(f.querySelector("#a-note"));
         Plan.addAttach(item.id, { type:"note", text:v });
-        f.querySelector("#a-note").value = "";
-        sheet._clean();
-        paintList(); repaint();
+        added();
       }));
       form.appendChild(f);
     } else if (kind === "link"){
@@ -1671,9 +1691,7 @@ function openAttachSheet(item){
         var u = safeUrl(g.querySelector("#a-lu").value);
         if (!u) return flag(g.querySelector("#a-lu"), "링크를 확인해 주세요.");
         Plan.addAttach(item.id, { type:"link", title: t || hostOf(u), url: u });
-        g.querySelector("#a-lt").value = ""; g.querySelector("#a-lu").value = "";
-        sheet._clean();
-        paintList(); repaint();
+        added();
       }));
       form.appendChild(g);
     } else {
@@ -1689,7 +1707,7 @@ function openAttachSheet(item){
         try{
           var pid = await storePhoto(file);
           Plan.addAttach(item.id, { type:"photo", pid: pid });
-          paintList(); repaint();
+          return added();
         }catch(e){ toast("사진을 저장하지 못했습니다."); }
         sheet._clean();
         label.innerHTML = icon("image") + "사진 고르기";
