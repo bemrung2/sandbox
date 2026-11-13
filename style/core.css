@@ -301,7 +301,8 @@
   /* 여러 줄 칸은 한 줄 높이에서 시작해 적는 만큼 자란다 (grow) */
   .fld textarea{ resize: none; min-height: 47px; padding: 11px 13px; line-height: 1.5; overflow-y: auto; }
   .fld textarea[rows="2"]{ min-height: 72px; }
-  .fld input::placeholder, .fld textarea::placeholder{ color: var(--ink-faint); opacity: 0.75; }
+  /* 예시 글은 적은 글보다 작고 가볍게 — 적을 칸이 먼저 읽힌다 */
+  .fld input::placeholder, .fld textarea::placeholder{ color: var(--ink-faint); opacity: 0.7; font-size: 13px; font-weight: 400; }
   /* 비었거나 틀린 칸 */
   .fld input.bad, .fld textarea.bad, .pickbox.bad, .timebox.bad{
     border-color: var(--danger);

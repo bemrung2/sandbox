@@ -918,7 +918,7 @@ function buyList(card, list, save){
   var addBtn = el('<button class="quietbtn buyadd" type="button">' + icon("plus") + '쇼핑리스트 추가하기</button>');
   ripple(addBtn, function(){
     /* 줄을 바꾸면 한 줄이 하나다 — 여러 개를 한 번에 적는다 */
-    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
+    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩 적어 주세요\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
       var texts = linesOf(v);
       save(list.concat(texts.map(function(t){ return { id: uid("i"), text: t, got: false }; })));
       repaint();
@@ -1115,11 +1115,11 @@ function buildStayFields(sheet, box, st, fromDate){
   });
   rollEdges(perks);
   box.appendChild(el('<div class="fld"><label for="s-memo">메모 <span class="opt">선택</span></label>' +
-    '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩">' + esc(st ? st.memo : "") + '</textarea></div>'));
+    '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩 적어 주세요">' + esc(st ? st.memo : "") + '</textarea></div>'));
   var memo = box.querySelector("#s-memo");
   /* 이름으로 찾아지지 않는 숙소만 직접 주소를 적는다 */
   box.appendChild(el('<div class="fld"><label for="s-map">구글 지도 링크 <span class="opt">선택</span></label>' +
-    '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
+    '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요" value="' +
     esc(st && st.mapUrl ? st.mapUrl : "") + '"></div>'));
   function lines(){ return memo.value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean); }
 
@@ -1231,7 +1231,7 @@ function packCard(){
     '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
-    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
+    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩 적어 주세요\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
       var texts = linesOf(v);
       texts.forEach(function(t){ Plan.listAdd("packList", { text: t, on: false }); });
       repaint();
@@ -1455,9 +1455,9 @@ function openItemEditor(item, defaultDate, presets){
   timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
   form.appendChild(timeRow);
   form.appendChild(el('<div class="fld"><label for="ed-places">장소</label>' +
-    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea></div>'));
+    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳씩 적어 주세요">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea></div>'));
   form.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
-    '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
+    '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩 적어 주세요">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
   /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
   /* 예약 확정 · 현금 Only · 카드 Only는 버튼이다 — 태그 칸과는 따로, 태그에는 아무것도 들어가지 않는다.
      현금과 카드는 둘 중 하나만 켜진다. */
@@ -1487,7 +1487,7 @@ function openItemEditor(item, defaultDate, presets){
     '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>'));
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
   form.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
-    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
+    '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 찾아지지 않을 때만 적어 주세요" value="' +
     esc(item && item.mapUrl ? item.mapUrl : "") + '"></div>'));
 
   pickGroup(sheet.querySelector("#ed-day"),
