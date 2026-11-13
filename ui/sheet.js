@@ -69,7 +69,7 @@ export function flag(input, said){
 export function grow(area){
   function fit(){
     area.style.height = "auto";
-    area.style.height = Math.min(220, area.scrollHeight + 2) + "px";
+    area.style.height = Math.min(+area.dataset.max || 220, area.scrollHeight + 2) + "px";
   }
   area.addEventListener("input", fit);
   requestAnimationFrame(fit);
@@ -198,7 +198,7 @@ export function openFormSheet(opts, rec, onSave, onDelete){
   opts.fields.forEach(function(f){
     var v = rec ? (rec[f.key] || "") : "";
     var control = f.area
-      ? '<textarea id="f-' + f.key + '" placeholder="' + esc(f.placeholder || "") + '">' + esc(v) + '</textarea>'
+      ? '<textarea id="f-' + f.key + '"' + (f.tall ? ' class="tall" data-max="420"' : '') + ' placeholder="' + esc(f.placeholder || "") + '">' + esc(v) + '</textarea>'
       : '<input id="f-' + f.key + '" type="' + (f.time ? "time" : "text") + '" placeholder="' +
         esc(f.placeholder || "") + '" value="' + esc(v) + '">';
     var fld = el('<div class="fld"><label for="f-' + f.key + '">' + esc(f.label) + '</label>' + control + '</div>');

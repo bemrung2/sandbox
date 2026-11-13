@@ -301,6 +301,8 @@
   /* 여러 줄 칸은 한 줄 높이에서 시작해 적는 만큼 자란다 (grow) */
   .fld textarea{ resize: none; min-height: 47px; padding: 11px 13px; line-height: 24px; overflow-y: auto; }
   .fld textarea[rows="2"]{ min-height: 72px; }
+  /* 긴 글을 적는 칸(정보 탭의 메모) — 처음부터 여러 줄이 보이고, 적는 만큼 더 자란다 */
+  .fld textarea.tall{ min-height: 170px; }
   /* 예시 글은 적은 글보다 작고 가볍게 — 적을 칸이 먼저 읽힌다 */
   .fld input::placeholder, .fld textarea::placeholder{ color: var(--ink-faint); opacity: 0.7; font-size: 13px; font-weight: 400; }
   /* 여러 줄 칸의 줄 높이는 적는 글씨(16px × 1.5)에 맞춰 둔다 — 작은 예시 글이 줄 위쪽에 붙어 떠 보이지 않게 */

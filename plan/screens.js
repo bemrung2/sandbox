@@ -1001,7 +1001,7 @@ function renderInfo(root){
     empty: "아직 메모가 없습니다.",
     simple: true,
     render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
-    fields: [{ key:"text", label:"메모", required:true, area:true }]
+    fields: [{ key:"text", label:"메모", required:true, area:true, tall:true }]
   }));
   root.appendChild(packCard());
   root.appendChild(dangerCard());
