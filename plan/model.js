@@ -13,7 +13,8 @@ import { uid } from "../ui/dom.js";
 import { Store } from "../ui/store.js";
 
 export var ROOT = "travel/trips";
-export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes"];
+/* wx: 지나간 날의 날씨 기록(travel/trips/<id>/wx/wx-<id>-2026-11-24). */
+export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes", "wx"];
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
 /* Emoji are deliberately rare: only where one carries meaning on its own
@@ -41,6 +42,7 @@ export function newTrip(o){
     links: o.links || [],
     packList: o.packList || [],
     notes: o.notes || [],
+    wx: o.wx || [],
     attach: o.attach || {}
   };
 }
@@ -553,6 +555,13 @@ export function stayRowsOn(date){
   return out;
 }
 
+/* 그날의 날씨 기록(지나간 날만 있다). 없으면 null. */
+export function weatherOf(date){
+  var t = trip();
+  if (!t) return null;
+  return (t.wx || []).filter(function(w){ return w.date === date; })[0] || null;
+}
+
 /* 그날 체크아웃하는 숙소 — 떠나는 날 아침에는 간밤에 묵은 곳이 그 숙소다. */
 export function stayLeaving(date){
   var t = trip(), hit = null;
@@ -703,6 +712,18 @@ export var Plan = {
 
   path(key){ return ROOT + "/" + this.active + "/" + key; },
   write(path, body){ return Store.write(path, body); },
+
+  /* 지나간 날의 날씨를 한 번 적어 둔다 — 그날이 지나면 예보는 사라지지만 기록은 남는다.
+     아이디는 여행과 날짜로 정해진다(wx-<여행>-<날짜>) — 두 사람이 동시에 적어도 한 줄이고, 여행끼리 섞이지 않는다.
+     이미 있으면 쓰지 않는다. */
+  recordWeather(date, w){
+    var t = this.cur();
+    if (!t || weatherOf(date)) return false;
+    var rec = { id: "wx-" + t.id + "-" + date, date: date, city: w.city || "", hi: w.hi, lo: w.lo, code: w.code };
+    t.wx.push(rec);
+    this.write(this.path("wx") + "/" + rec.id, bodyOf(rec));
+    return true;
+  },
 
   listAdd(key, rec){
     var full = Object.assign({ id: uid("x"), ord: Date.now() }, rec);

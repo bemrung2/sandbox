@@ -2,10 +2,11 @@
    NOAA · DWD · Météo-France · ECMWF 같은 각국 기상 기관의 모델을 모아 준다.
    예보는 오늘 7일 전부터 16일 앞까지만 있다. 그 밖의 날은 '없음'이다.
    어느 도시의 날씨인지는 칩에 도시 이름으로 적는다. (링크는 없다 — 누른다고 어디로 가지 않는다.) */
-import { trip, stayOn, stayDates, itemsOn, overnight } from "./model.js";
+import { trip, stayOn, stayDates, itemsOn, overnight, weatherOf, todayISO } from "./model.js";
 
 var GEO = "https://geocoding-api.open-meteo.com/v1/search";
 var FC = "https://api.open-meteo.com/v1/forecast";
+var ARCHIVE = "https://archive-api.open-meteo.com/v1/archive";   /* 92일보다 오래된 날 */
 var KEY = "bemtrip.wx.v1";
 var FRESH = 3 * 3600 * 1000;      // 예보는 3시간마다 새로
 var mem = {};                     // 이 탭 안의 기억 { 장소키: { at, geo, daily } }
@@ -171,7 +172,7 @@ function geocode(p){
 
 function forecast(geo){
   var url = FC + "?latitude=" + geo.lat + "&longitude=" + geo.lon +
-    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&past_days=7&forecast_days=16";
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&past_days=92&forecast_days=16";
   return getJSON(url).then(function(d){
     var dd = d && d.daily;
     if (!dd || !dd.time) return null;
@@ -185,6 +186,25 @@ function forecast(geo){
   });
 }
 
+/* 오래된 하루 — 예보의 지난 92일 밖이면 기록 보관소(archive)에서 그날 하나를 가져온다 */
+function archiveDay(geo, date){
+  var url = ARCHIVE + "?latitude=" + geo.lat + "&longitude=" + geo.lon + "&start_date=" + date + "&end_date=" + date +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto";
+  return getJSON(url).then(function(d){
+    var dd = d && d.daily, i = dd && dd.time ? dd.time.indexOf(date) : -1;
+    if (i < 0) return null;
+    var hi = dd.temperature_2m_max[i], lo = dd.temperature_2m_min[i], code = dd.weather_code[i];
+    return hi == null || lo == null || code == null ? null : { hi: Math.round(hi), lo: Math.round(lo), code: code };
+  }, function(){ return null; });
+}
+function daysAgo(date){ return Math.round((Date.parse(todayISO()) - Date.parse(date)) / 86400000); }
+
+/* 적어 둔 기록 — 지나간 날은 이것이 먼저다 */
+function recorded(date){
+  var w = weatherOf(date);
+  return w && w.hi != null ? { ok: true, recorded: true, city: w.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code) } : null;
+}
+
 function reading(rec, date, p){
   var w = rec && rec.daily && rec.daily[date];
   if (!w) return { ok: false, place: p };
@@ -193,6 +213,8 @@ function reading(rec, date, p){
 
 /* 지금 기억에 있는 것만, 기다리지 않고. 없으면 null. */
 export function peek(date){
+  var r = recorded(date);
+  if (r) return r;
   var p = placeOn(date);
   if (!p) return { ok: false, place: null };
   var rec = recall(placeKey(p));
@@ -201,6 +223,8 @@ export function peek(date){
 
 /* 날씨를 가져온다. 항상 {ok:false} 또는 {ok:true, …}로 끝난다 — 실패는 '없음'일 뿐이다. */
 export function weatherOn(date){
+  var r = recorded(date);
+  if (r) return Promise.resolve(r);
   var p = placeOn(date);
   if (!p) return Promise.resolve({ ok: false, place: null });
   var key = placeKey(p), rec = recall(key);
@@ -219,6 +243,12 @@ export function weatherOn(date){
     });
   }
   return inflight[key].then(function(fresh){
-    return reading(fresh || rec, date, p);   // 새로 못 받으면 묵은 것이라도
+    var got = reading(fresh || rec, date, p);   // 새로 못 받으면 묵은 것이라도
+    var have = fresh || rec;
+    if (got.ok || !have || !have.geo || daysAgo(date) <= 85) return got;
+    /* 예보가 닿지 않는 오래된 날이면 기록 보관소에서 */
+    return archiveDay(have.geo, date).then(function(w){
+      return w ? { ok: true, place: p, city: p.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code) } : got;
+    });
   });
 }

@@ -14,7 +14,7 @@
  * the database never sees it.
  */
 
-const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes"];
+const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes", "wx"];
 
 /* ---------------- paths <-> rows ---------------- */
 
@@ -122,6 +122,8 @@ function toRow(path, body) {
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
+    /* 지나간 날의 날씨 기록: tag=날짜, label=도시, detail={hi,lo,code} — 새 칸 없이 */
+    else if (group === "wx") { row.tag = body.date || id; row.label = body.city || ""; row.detail = JSON.stringify({ hi: body.hi, lo: body.lo, code: body.code }); }
     else { row.detail = body.text || ""; }
     return { table: "entries", key: "id=eq." + id, row };
   }
@@ -177,6 +179,11 @@ function toDocs(tables) {
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };
     else if (row.kind === "links") body = { title: row.label, url: row.url };
     else if (row.kind === "packList") body = { text: row.label, on: !!row.done };
+    else if (row.kind === "wx") {
+      let v = {};
+      try { v = JSON.parse(row.detail || "{}") || {}; } catch (e) { v = {}; }
+      body = { date: row.tag, city: row.label, hi: v.hi, lo: v.lo, code: v.code };
+    }
     else body = { text: row.detail };
     body.ord = row.ord;
     docs[PREFIX + "trips/" + row.trip_id + "/" + row.kind + "/" + row.id] = strip(body, Object.keys(body));

@@ -465,7 +465,7 @@ function paintWeather(node, w){
     node.className = "wx t-" + w.desc.tone;
     node.setAttribute("role", "img");
     node.setAttribute("aria-label", w.city + " " + w.desc.label + " 최고 " + w.hi + "도 최저 " + w.lo + "도");
-    node.title = w.city + " · " + w.desc.label + " · Open-Meteo";
+    node.title = w.city + " · " + w.desc.label + (w.recorded ? " · 그날의 기록" : " · Open-Meteo");
     node.innerHTML = icon(w.desc.icon) + '<span class="wx-txt"><span class="wx-temp"><b class="wx-hi">' + w.hi +
       '°</b><span class="wx-lo">' + w.lo + '°</span></span><span class="wx-city">' + esc(w.city) + '</span></span>';
   } else if (w){
@@ -487,8 +487,15 @@ function weatherChip(date){
   var node = document.createElement("span");
   var now = peek(date);
   paintWeather(node, now);
-  if (!now) weatherOn(date).then(function(w){ paintWeather(node, w); });
+  keepWeather(date, now);
+  if (!now) weatherOn(date).then(function(w){ paintWeather(node, w); keepWeather(date, w); });
   return node;
+}
+/* 그날이 지나면 그날의 날씨를 여행에 적어 둔다 — 예보는 며칠 지나면 사라지지만 기록은 계속 보인다.
+   적을 수 있는 사람이 볼 때 한 번(이미 있으면 쓰지 않는다). 아무 말도 띄우지 않는다. */
+function keepWeather(date, w){
+  if (!w || !w.ok || w.recorded || date >= todayISO() || !Store.canEdit()) return;
+  Plan.recordWeather(date, w);
 }
 
 /* ---------- tab: schedule ---------- */
