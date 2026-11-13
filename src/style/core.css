@@ -712,6 +712,14 @@
     border: none; font-weight: 700;
   }
   .badge.tag{ background: var(--signal-soft); color: var(--signal); }
+  /* 예약 확정 — 초록 체크 */
+  .badge.booked{
+    background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); font-weight: 700;
+  }
+  .badge.booked .icon{ width: 12px; height: 12px; stroke-width: 2.6; }
+  .pick{ display: inline-flex; align-items: center; justify-content: center; }
+  .pick .icon{ width: 14px; height: 14px; margin-right: 4px; }
+  .fld > .pickrow + input{ margin-top: 8px; }
   /* 다른 탭에서 온 것이라는 표시 */
   .badge.from{
     margin-left: 7px; font-size: 10px; font-weight: 700;

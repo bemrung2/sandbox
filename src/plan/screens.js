@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, BOOKED, isBooked, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -606,7 +606,7 @@ function timelineItem(it, pair){
     (it.cat === "move" && MODE_LABEL[it.mode] ? "이동 · " + MODE_LABEL[it.mode] : cat.label);
   meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(catLabel) + '</span>'));
   if (it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
-  if (it.tag) meta.appendChild(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
+  if (it.tag) meta.appendChild(tagBadge(it));
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -621,6 +621,11 @@ function timelineItem(it, pair){
 
   body.appendChild(meta);
   return row;
+}
+/* 태그 알약. 예약이 확정된 줄은 초록 체크가 붙는다. */
+function tagBadge(it){
+  if (isBooked(it)) return el('<span class="badge booked">' + icon("check") + esc(BOOKED) + '</span>');
+  return el('<span class="badge tag">' + esc(it.tag) + '</span>');
 }
 function shortPlace(p){
   var city = trip().city;
@@ -735,7 +740,7 @@ function foodCard(f){
   if (atts.length) card.appendChild(attachStrip(it.id, atts));
 
   var meta = el('<div class="card-meta"></div>');
-  if (it.tag) meta.appendChild(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
+  if (it.tag) meta.appendChild(tagBadge(it));
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -1356,8 +1361,19 @@ function openItemEditor(item, defaultDate, presets){
   body.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
     '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
   /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
-  body.appendChild(el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
-    '<input id="ed-tag" type="text" placeholder="예: 예약완료" value="' + esc(item && item.tag ? item.tag : "") + '"></div>'));
+  /* 예약이 확정된 줄은 버튼 하나로 표시한다 — 태그 칸에 '예약 확정'이 들어간다 */
+  var tagFld = el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
+    '<div class="pickrow"><button class="pick" type="button" id="ed-booked">' + icon("check") + BOOKED + '</button></div>' +
+    '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>');
+  body.appendChild(tagFld);
+  var tagEl = tagFld.querySelector("#ed-tag"), bookedBtn = tagFld.querySelector("#ed-booked");
+  function paintBooked(){ bookedBtn.setAttribute("aria-pressed", String(isBooked({ tag: tagEl.value }))); }
+  ripple(bookedBtn, function(){
+    tagEl.value = isBooked({ tag: tagEl.value }) ? "" : BOOKED;
+    tagEl.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  tagEl.addEventListener("input", paintBooked);
+  paintBooked();
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
   body.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
     '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +

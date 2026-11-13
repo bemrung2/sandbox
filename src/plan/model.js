@@ -111,22 +111,22 @@ var SEED_ITEMS = [
   { id:"hm-1124a", d:"2026-11-24", s:"13:00", cat:"food", meal:"cafe", t:"Regoli Pasticceria",
     places:["Regoli Pasticceria Roma"], lines:["커피와 빵"] },
   { id:"hm2-1124d", d:"2026-11-24", s:"14:00", e:"16:00", cat:"sight", t:"콜로세움", places:["콜로세움"] },
-  { id:"hm-1124f", d:"2026-11-24", s:"16:00", cat:"etc", t:"스냅 촬영" },
+  { id:"hm-1124f", d:"2026-11-24", s:"16:00", cat:"etc", t:"스냅 촬영", tag:"예약 확정" },
   { id:"hm-1124g", d:"2026-11-24", s:"17:00", cat:"food", meal:"dinner", t:"Tonnarello",
     places:["Tonnarello Roma"], lines:["까르보나라, 미트볼, 아마트리치아나"] },
   { id:"hm-1124h", d:"2026-11-24", s:"18:00", cat:"food", meal:"snack", t:"Fiordiluna",
     places:["Fiordiluna Roma"], lines:["젤라또"] },
   { id:"hm-1124i", d:"2026-11-24", s:"20:00", cat:"food", meal:"drink", t:"마트에서 장보고 2차" },
   /* 11.25 로마 — 바티칸, 천사의 성 */
-  { id:"hm-1125a", d:"2026-11-25", s:"07:40", cat:"sight", t:"바티칸 투어",
+  { id:"hm-1125a", d:"2026-11-25", s:"07:40", cat:"sight", t:"바티칸 투어", tag:"예약 확정",
     places:["바티칸 박물관"], lines:["07:40 시작"] },
-  { id:"hm-1125b", d:"2026-11-25", s:"14:00", cat:"food", meal:"lunch", t:"Ristorante Arlù", tag:"예약완료",
+  { id:"hm-1125b", d:"2026-11-25", s:"14:00", cat:"food", meal:"lunch", t:"Ristorante Arlù", tag:"예약 확정",
     places:["Ristorante Arlù Roma"],
     lines:["까르보나라, 아마트리치아나, 티라미수", "Soyeong Kim 이름으로 14시 예약 · 15분 지나면 취소"] },
   { id:"hm-1125c", d:"2026-11-25", s:"15:00", cat:"food", meal:"cafe", t:"카페" },
   { id:"hm-1125d", d:"2026-11-25", s:"16:00", cat:"food", meal:"snack", t:"Supplizio",
     places:["Supplizio Roma"], lines:["수플리 간식 — 맥주랑 같이"] },
-  { id:"hm-1125e", d:"2026-11-25", s:"17:00", cat:"sight", t:"야경 투어",
+  { id:"hm-1125e", d:"2026-11-25", s:"17:00", cat:"sight", t:"야경 투어", tag:"예약 확정",
     places:["천사의 성"], lines:["17:00 천사의 성 정문 앞"] },
   { id:"hm-1125f", d:"2026-11-25", s:"20:00", cat:"food", meal:"dinner", t:"저녁" },
   { id:"hm-1125g", d:"2026-11-25", s:"21:00", cat:"food", meal:"drink", t:"마트에서 장보고 2차" },
@@ -149,11 +149,11 @@ var SEED_ITEMS = [
   { id:"hm-1127a", d:"2026-11-27", s:"11:00", cat:"food", meal:"cafe", t:"Caffè Gilli",
     places:["Caffè Gilli Firenze"] },
   { id:"hm-1127b", d:"2026-11-27", s:"12:00", cat:"food", meal:"lunch", t:"Bottega di Fattoria - Trattoria Toscana",
-    tag:"예약완료", places:["Bottega di Fattoria Trattoria Toscana Firenze"],
+    tag:"예약 확정", places:["Bottega di Fattoria Trattoria Toscana Firenze"],
     lines:["12시 2명 예약완료", "또는 NUTI Il Grande Nuti Trattoria"] },
   { id:"hm-1127c", d:"2026-11-27", s:"13:00", cat:"food", meal:"drink", t:"View on Art Rooftop Cocktail Bar",
     places:["View on Art Rooftop Cocktail Bar Firenze"] },
-  { id:"hm-1127d", d:"2026-11-27", s:"14:15", cat:"sight", t:"두오모 쿠폴라", tag:"예약완료",
+  { id:"hm-1127d", d:"2026-11-27", s:"14:15", cat:"sight", t:"두오모 쿠폴라", tag:"예약 확정",
     places:["Cupola del Brunelleschi Firenze"], lines:["14:15 쿠폴라 예약 완료"] },
   { id:"hm-1127e", d:"2026-11-27", s:"15:00", cat:"food", meal:"cafe", t:"Vivoli",
     places:["Vivoli Firenze"], lines:["피스타치오 커피"] },
@@ -161,9 +161,9 @@ var SEED_ITEMS = [
     places:["베키오 궁전", "우피치 미술관"] },
   { id:"hm-1127g", d:"2026-11-27", s:"17:00", cat:"sight", t:"미켈란젤로 언덕", places:["미켈란젤로 광장 피렌체"] },
   { id:"hm-1127h", d:"2026-11-27", s:"18:00", cat:"shop", t:"피렌체 쇼핑" },
-  { id:"hm-1127i", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Dalloste", tag:"예약완료",
+  { id:"hm-1127i", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Dalloste", tag:"예약 확정",
     places:["Trattoria Dalloste Firenze"], lines:["19시 2명 예약완료 (The Fork 앱)"] },
-  { id:"hm-1127j", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Zà Zà", tag:"예약완료",
+  { id:"hm-1127j", d:"2026-11-27", s:"19:00", cat:"food", meal:"dinner", t:"Trattoria Zà Zà", tag:"예약 확정",
     places:["Trattoria Zà Zà Firenze"], lines:["19시 2명 예약완료"] },
   { id:"hm-1127k", d:"2026-11-27", s:"20:00", cat:"food", meal:"drink", t:"Buca San Giovanni Frigest",
     places:["Buca San Giovanni Firenze"], lines:["두오모 성당 야경 보면서 와인 한잔"] },
@@ -199,7 +199,7 @@ var SEED_ITEMS = [
     places:["Hinterdorf Zermatt", "Kirchbrücke Zermatt", "Fuchs Bakery Zermatt"],
     lines:["구시가지 힌터도르프 — 오래된 목조 가옥", "키르히브뤼케 — 전망 포인트",
            "쿱마트 장보기", "Fuchs Bakery & Cafe — 맛있는 빵집"] },
-  { id:"hm-1129f", d:"2026-11-29", s:"18:00", cat:"food", meal:"dinner", t:"Restaurant Pinte", tag:"예약완료",
+  { id:"hm-1129f", d:"2026-11-29", s:"18:00", cat:"food", meal:"dinner", t:"Restaurant Pinte", tag:"예약 확정",
     places:["Restaurant Pinte Zermatt"], lines:["18시 예약완료", "베이컨 & 에그 뢰스티 (25프랑) · 라클렛"] },
   { id:"hm-1129g", d:"2026-11-29", s:"20:00", cat:"etc", t:"수영장 · 루프탑 자쿠지",
     lines:["실내 수영장, 실내 자쿠지, 루프탑 자쿠지 (07:00–22:00)"] },
@@ -224,7 +224,11 @@ export var SEED_REVISIONS = {
   "items/hm-1124a": { was: function(i){ return i.title === "Regoli Pasticceria" && i.s === "10:00"; }, to: { s: "13:00" } },
   "items/hm-1124b": { was: function(i){ return i.title === "콜로세움 · 포로 로마노 · 팔라티노 언덕" && i.s === "10:30"; }, to: null },
   "items/hm-1124d": { was: function(i){ return i.title === "카페" && i.s === "13:00"; }, to: null },
-  "items/hm-1124e": { was: function(i){ return i.title === "트라스테베레 산책" && i.s === "14:00"; }, to: null }
+  "items/hm-1124e": { was: function(i){ return i.title === "트라스테베레 산책" && i.s === "14:00"; }, to: null },
+  /* 계획표에서 노란 칸 = 예약 확정. 아직 태그가 없는 줄만 채운다 (예약완료로 적어둔 줄은 그대로 읽힌다) */
+  "items/hm-1124f": { was: function(i){ return i.title === "스냅 촬영" && !i.tag; }, to: { tag: "예약 확정" } },
+  "items/hm-1125a": { was: function(i){ return i.title === "바티칸 투어" && !i.tag; }, to: { tag: "예약 확정" } },
+  "items/hm-1125e": { was: function(i){ return i.title === "야경 투어" && !i.tag; }, to: { tag: "예약 확정" } }
 };
 var SEED_SHOPS = [];
 var SEED_FLIGHTS = [];   /* 항공편은 일정(SEED_ITEMS)에 있다 */
@@ -306,6 +310,9 @@ export var MODES = [
 export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", walk:"도보", other:"기타" };
 /* 항공기로 가는 이동 — 예전 분류 '항공'도 같은 것이다 */
 export function isFlight(it){ return it && (it.cat === "air" || (it.cat === "move" && it.mode === "plane")); }
+/* 예약이 확정된 줄에 다는 태그. '예약완료'로 적어둔 것도 같은 뜻으로 읽는다. */
+export var BOOKED = "예약 확정";
+export function isBooked(it){ return !!it && /^예약\s*(완료|확정)$/.test(String(it.tag || "").trim()); }
 export var MEALS = [
   { key:"all", label:"전체" }, { key:"breakfast", label:"아침" }, { key:"lunch", label:"점심" },
   { key:"dinner", label:"저녁" }, { key:"snack", label:"간식" },
