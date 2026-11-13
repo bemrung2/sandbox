@@ -778,6 +778,12 @@
   .quietbtn.ico .icon{ width: 15px; height: 15px; }
   /* 줄 아래에 붙은 첨부 (정보 탭) */
   .rowline > .tl-actions{ align-self: flex-start; margin: 8px -6px 0 0; gap: 0; }
+  /* 숙소 줄: 타입은 이름 바로 아래, 시설은 작은 알약으로 */
+  .rowbody small.room{ color: var(--ink); font-weight: 500; }
+  .perks{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .perks .badge{ font-size: 10.5px; padding: 2px 8px; }
+  /* 메모 위의 버튼 줄은 메모 칸에 붙어 있다 */
+  .fld > .pickrow + textarea{ margin-top: 8px; }
   .rowatt{ padding: 0 0 12px 27px; margin-top: -4px; }
   .rowatt .att{ margin-top: 0; }
 

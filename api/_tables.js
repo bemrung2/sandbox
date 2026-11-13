@@ -109,7 +109,11 @@ function toRow(path, body) {
     const row = { id, trip_id: trip, kind: group, ord: body.ord || 0,
                   tag: null, label: "", sub: null, detail: null, url: null, done: false };
     if (group === "flights") { row.tag = body.label || null; row.label = body.airline || ""; row.sub = body.no || null; row.detail = body.detail || null; }
-    else if (group === "stays") { row.label = body.name || ""; row.sub = body.area || null; row.detail = body.detail || null; }
+    /* 숙소: 이름 · 지역 · 타입(룸) · 기간 · 메모. 새 칸은 period 하나뿐이다 — 타입은 tag, 메모는 detail에 얹는다. */
+    else if (group === "stays") {
+      row.label = body.name || ""; row.sub = body.area || null; row.tag = body.room || null;
+      row.period = body.period == null ? "" : body.period; row.detail = body.memo || null;
+    }
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
@@ -158,7 +162,12 @@ function toDocs(tables) {
   for (const row of tables.entries || []) {
     let body;
     if (row.kind === "flights") body = { label: row.tag, airline: row.label, no: row.sub, detail: row.detail };
-    else if (row.kind === "stays") body = { name: row.label, area: row.sub, detail: row.detail };
+    else if (row.kind === "stays") {
+      /* period 칸이 없던 때의 숙소는 기간과 메모가 detail 한 칸에 있다 — 화면이 갈라 읽는다 */
+      const old = row.period === undefined || row.period === null;
+      body = { name: row.label, area: row.sub, room: row.tag, period: row.period,
+               memo: old ? undefined : row.detail, detail: old ? row.detail : undefined };
+    }
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };
     else if (row.kind === "links") body = { title: row.label, url: row.url };
     else if (row.kind === "packList") body = { text: row.label, on: !!row.done };

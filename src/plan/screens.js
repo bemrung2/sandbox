@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, stayOn, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -890,18 +890,22 @@ function renderInfo(root){
         '<small>일정에서 추가</small>';
     },
     empty: "아직 숙소가 없습니다.",
+    editor: openStayEditor,
     render: function(h){
       /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
       var where = h.area ? h.name + " " + h.area.replace(/\s*·\s*/g, " ") : h.name;
+      var lines = String(h.memo || "").split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
+      var perks = lines.filter(function(x){ return AMENITIES.indexOf(x) >= 0; });
+      var notes = lines.filter(function(x){ return AMENITIES.indexOf(x) < 0; });
       return (h.area ? '<span class="lbl mono">' + esc(h.area) + '</span>' : '') +
         '<b>' + placeHtml(h.name, where, !!h.area) + '</b>' +
-        (h.detail ? '<small>' + esc(h.detail) + '</small>' : '');
+        (h.room ? '<small class="room">' + esc(h.room) + '</small>' : '') +
+        (h.period ? '<small>' + esc(h.period) + '</small>' : '') +
+        (perks.length ? '<span class="perks">' + perks.map(function(x){
+          return '<span class="badge">' + esc(x) + '</span>'; }).join("") + '</span>' : '') +
+        notes.map(function(x){ return '<small>' + esc(x) + '</small>'; }).join("");
     },
-    fields: [
-      { key:"name", label:"이름", placeholder:"예: 알펜리조트", required:true },
-      { key:"area", label:"지역", placeholder:"예: 스위스 · 체르마트" },
-      { key:"detail", label:"기간 · 메모", placeholder:"예: 11.28 (토) – 11.30 (월) · 2박" }
-    ]
+    fields: []
   }));
 
   root.appendChild(sectionCard({
@@ -955,6 +959,7 @@ function sectionCard(o){
     '<h3>' + esc(o.title) + (count ? '<span class="card-n">' + count + '</span>' : '') + '</h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
+    if (o.editor){ o.editor(null); return; }
     if (o.addItem){ openItemEditor(null, trip().start, o.addItem); return; }
     openFormSheet({ title: o.title + " 추가", fields: o.fields }, null, function(v){
       Plan.listAdd(o.key, v); repaint();
@@ -981,7 +986,7 @@ function sectionCard(o){
       row.appendChild(pen);
     } else if (o.attach){
       attachRow(card, row, icon(o.ic) + '<span class="rowbody">' + o.render(rec) + '</span>',
-        { id: rec.id, title: rec[o.fields[0].key] || o.title }, function(){ editRec(o, rec); });
+        { id: rec.id, title: (o.fields[0] ? rec[o.fields[0].key] : rec.name) || o.title }, function(){ editRec(o, rec); });
       return;
     } else {
       var btn = el('<button class="rowbtn" type="button">' +
@@ -999,6 +1004,113 @@ function sectionCard(o){
 
   return card;
 }
+/* 숙소에 달아둘 수 있는 것들. 버튼으로 누르면 메모에 한 줄로 들어가고, 다시 누르면 빠진다. */
+var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나"];
+
+/* 숙소: 이름 · 지역 · 타입(룸) · 체크인/체크아웃 · 메모. 버튼으로 시설을 메모에 넣는다. */
+function openStayEditor(st){
+  if (!mayEdit()) return;
+  var t = trip(), adding = !st;
+  var sheet = sheetShell(adding ? "숙소 추가" : "숙소 수정");
+  var body = sheet.querySelector(".sheet-body");
+  var now = st ? stayDates(st, t) : null;
+  /* 새 숙소는 앞 숙소가 끝나는 날에서 시작한다 */
+  var last = ordered(t.stays).map(function(x){ return stayDates(x, t); }).filter(Boolean)
+    .map(function(r){ return r.b; }).sort().pop();
+  var from = now ? now.a : ((adding && last) || t.start);
+  var to = now ? now.b : "";
+
+  body.appendChild(el('<div class="fld"><label for="s-name">이름</label>' +
+    '<input id="s-name" type="text" placeholder="예: 알펜리조트" value="' + esc(st ? st.name : "") + '"></div>'));
+  body.appendChild(el('<div class="fld"><label for="s-room">타입 <span class="opt">선택</span></label>' +
+    '<input id="s-room" type="text" placeholder="예: 스탠다드 트윈룸" value="' + esc(st ? st.room : "") + '"></div>'));
+  body.appendChild(el('<div class="fld"><label for="s-area">지역 <span class="opt">선택</span></label>' +
+    '<input id="s-area" type="text" placeholder="예: 스위스 · 체르마트" value="' + esc(st ? st.area : "") + '"></div>'));
+  var dr = el('<div class="fld"><div class="fld-row"></div></div>');
+  var row = dr.querySelector(".fld-row");
+  row.appendChild(pickerField({ type:"date", id:"s-in", label:"체크인", value: from, col:true }));
+  row.appendChild(pickerField({ type:"date", id:"s-out", label:"체크아웃", value: to, col:true }));
+  body.appendChild(dr);
+  var inEl = dr.querySelector("#s-in"), outEl = dr.querySelector("#s-out");
+  /* 체크아웃은 체크인보다 이를 수 없다 — 체크인을 고르면 하루 뒤로 따라온다 */
+  inEl.addEventListener("change", function(){
+    outEl.min = inEl.value;
+    if (inEl.value && (!outEl.value || outEl.value <= inEl.value)){
+      var d = new Date(inEl.value + "T00:00:00"); d.setDate(d.getDate() + 1);
+      outEl.value = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      outEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+  outEl.min = inEl.value;
+
+  /* 시설 버튼은 메모 위에 선다. 누르면 메모에 한 줄로 들어가고, 다시 누르면 그 줄이 빠진다. */
+  var memoFld = el('<div class="fld"><label for="s-memo">메모</label>' +
+    '<div class="pickrow" id="s-perks"></div>' +
+    '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩">' + esc(st ? st.memo : "") + '</textarea></div>');
+  body.appendChild(memoFld);
+  var memo = memoFld.querySelector("#s-memo"), perks = memoFld.querySelector("#s-perks");
+  function lines(){ return memo.value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean); }
+  function paintPerks(){
+    var have = lines();
+    perks.querySelectorAll(".pick").forEach(function(b){
+      b.setAttribute("aria-pressed", String(have.indexOf(b.dataset.perk) >= 0));
+    });
+  }
+  AMENITIES.forEach(function(name){
+    var b = el('<button class="pick" type="button" data-perk="' + esc(name) + '" aria-pressed="false">' + esc(name) + '</button>');
+    ripple(b, function(){
+      var have = lines(), i = have.indexOf(name);
+      if (i >= 0) have.splice(i, 1); else have.unshift(name);
+      /* 시설은 늘 메모 맨 위에 모인다 — 적어둔 글보다 앞에 */
+      var perksOn = have.filter(function(x){ return AMENITIES.indexOf(x) >= 0; })
+        .sort(function(a, c){ return AMENITIES.indexOf(a) - AMENITIES.indexOf(c); });
+      var rest = have.filter(function(x){ return AMENITIES.indexOf(x) < 0; });
+      memo.value = perksOn.concat(rest).join("\n");
+      memo.dispatchEvent(new Event("input", { bubbles: true }));
+      paintPerks();
+    });
+    perks.appendChild(b);
+  });
+  memo.addEventListener("input", paintPerks);
+  paintPerks();
+
+  var foot = sheet.querySelector(".sheet-foot");
+  if (st){
+    var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+    ripple(del, function(){
+      askThenDelete(st.name, function(){
+        var undo = undoOf(Plan.listRemove("stays", st.id));
+        repaint();
+        return undo;
+      });
+    });
+    foot.appendChild(del);
+  }
+  var save = el('<button class="btn btn-primary" type="button">저장</button>');
+  ripple(save, function(){
+    var nameEl = sheet.querySelector("#s-name");
+    var name = nameEl.value.trim();
+    if (!name) return flag(nameEl, "이름을 적어 주세요.");
+    if (!inEl.value) return flag(inEl, "날짜를 골라 주세요.");
+    if (!outEl.value) return flag(outEl, "날짜를 골라 주세요.");
+    if (outEl.value <= inEl.value) return flag(outEl, "체크아웃이 체크인보다 늦어야 합니다.");
+    var rec = {
+      name: name, area: sheet.querySelector("#s-area").value.trim(),
+      room: sheet.querySelector("#s-room").value.trim(),
+      period: periodText(inEl.value, outEl.value),
+      memo: lines().join("\n")
+    };
+    closeOverlay();
+    if (adding){ Plan.listAdd("stays", rec); savedToast(false); repaint(); return; }
+    var undo = undoEdit(Plan.listEdit("stays", st.id, rec));
+    savedToast(true, undo);
+    repaint();
+  });
+  foot.appendChild(save);
+  showOverlay(sheet);
+  if (adding) setTimeout(function(){ sheet.querySelector("#s-name").focus(); }, 60);
+}
+
 /* 첨부를 받는 줄(항공 · 숙소 · 예약): 줄을 누르면 수정, 끝에 첨부와 연필.
    붙은 것은 그 줄 바로 아래에 보인다. */
 function attachRow(card, row, inner, target, edit){
@@ -1018,6 +1130,7 @@ function attachRow(card, row, inner, target, edit){
   }
 }
 function editRec(o, rec){
+  if (o.editor) return o.editor(rec);
   openFormSheet({ title: o.title + " 수정", fields: o.fields }, rec,
     function(v){ var undo = undoEdit(Plan.listEdit(o.key, rec.id, v)); repaint(); return undo; },
     function(){

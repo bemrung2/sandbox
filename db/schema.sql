@@ -100,10 +100,14 @@ create table if not exists entries (
   label   text not null default '',
   sub     text,
   detail  text,
+  period  text,
   url     text,
   done    boolean not null default false,
   ord     bigint  not null default 0
 );
+
+-- 숙소의 기간(체크인 – 체크아웃). 타입(룸)은 tag, 메모는 detail에 있다.
+alter table entries add column if not exists period text;
 
 -- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
 create table if not exists attachments (

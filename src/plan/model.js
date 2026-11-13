@@ -218,15 +218,15 @@ var SEED_FLIGHTS = [];   /* 항공편은 일정(SEED_ITEMS)에 있다 */
 /* 예약된 숙소. 묵는 밤으로 적혀 온 것을 체크인–체크아웃으로 옮겨 적었다. */
 var SEED_STAYS = [
   { id:"st1", name:"비밀의 안뜰 - 트라스테베레", area:"이탈리아 · 로마",
-    detail:"11.23 (월) – 11.27 (금) · 4박" },
+    period:"11.23 (월) – 11.27 (금) · 4박" },
   { id:"st2", name:"Hotel Ester", area:"이탈리아 · 피렌체",
-    detail:"11.27 (금) – 11.28 (토) · 1박" },
+    period:"11.27 (금) – 11.28 (토) · 1박" },
   { id:"st3", name:"알펜리조트", area:"스위스 · 체르마트",
-    detail:"11.28 (토) – 11.30 (월) · 2박" },
+    period:"11.28 (토) – 11.30 (월) · 2박" },
   { id:"st4", name:"벨베데르", area:"스위스 · 그린델발트",
-    detail:"11.30 (월) – 12.3 (목) · 3박" },
+    period:"11.30 (월) – 12.3 (목) · 3박" },
   { id:"st5", name:"풀만", area:"프랑스 · 파리",
-    detail:"12.3 (목) – 12.5 (토) · 2박" }
+    period:"12.3 (목) – 12.5 (토) · 2박" }
 ];
 var SEED_BOOKS = [
   { id:"k1", name:"좌석 · 가는 편 KE931", when:"11.23 (월)",
@@ -263,7 +263,7 @@ export function seedTrip(){
       };
     }),
     flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
-    stays: SEED_STAYS.map(function(x){ return Object.assign({}, x); }),
+    stays: SEED_STAYS.map(function(x){ return Object.assign({ room: "", memo: "" }, x); }),
     books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
     /* 아이디가 매번 달라지면 "이미 들어와 있는지"를 알 수 없다. 씨앗은 늘 같다. */
     packList: SEED_PACK.map(function(t, i){ return { id: "pk" + (i + 1), text: t, on: false, ord: i }; })
@@ -418,17 +418,44 @@ function shopToItem(sh, t){
   };
 }
 
-/* 그날 밤 묵는 숙소. 숙소의 '기간 · 메모'에 적힌 두 날짜(체크인 – 체크아웃)를 읽는다.
-   체크인한 밤부터 체크아웃 전날 밤까지가 그 숙소다. 못 읽으면 없는 것으로 친다. */
+/* 숙소는 이름 · 지역 · 타입(room) · 기간(period) · 메모(memo)다. 예전에는 기간과 메모가
+   detail 한 칸에 섞여 있었다 — 두 날짜가 보이면 기간이고, 아니면 메모로 가른다.
+   읽을 때만 가르고 저장은 고칠 때 새 모양으로 간다. */
+function normStay(st){
+  if (st.period === undefined){
+    var d = st.detail || "";
+    var dated = (String(d).match(/\d{1,2}\.\d{1,2}/g) || []).length >= 2;
+    st.period = dated ? d : "";
+    st.memo = st.memo !== undefined ? st.memo : (dated ? "" : d);
+  }
+  delete st.detail;
+  st.room = st.room || "";
+  st.memo = st.memo || "";
+  return st;
+}
+/* 체크인 · 체크아웃을 날짜로 — 기간 글자에서 읽는다. 못 읽으면 null. */
+export function stayDates(st, t){
+  t = t || trip();
+  var both = String((st && st.period) || "").match(/\d{1,2}\.\d{1,2}/g) || [];
+  if (both.length < 2 || !t) return null;
+  var a = mdToIso(both[0], t), b = mdToIso(both[1], t);
+  return a && b ? { a: a, b: b } : null;
+}
+/* "11.28 (토) – 11.30 (월) · 2박" */
+export function periodText(a, b){
+  var n = dayDiff(b, a);
+  return fmtMD(a) + " (" + dowOf(a) + ") – " + fmtMD(b) + " (" + dowOf(b) + ")" + (n > 0 ? " · " + n + "박" : "");
+}
+
+/* 그날 밤 묵는 숙소. 체크인한 밤부터 체크아웃 전날 밤까지가 그 숙소다.
+   기간을 못 읽으면 없는 것으로 친다. */
 export function stayOn(date){
   var t = trip(), hit = null;
   if (!t) return null;
   (t.stays || []).forEach(function(st){
     if (hit) return;
-    var both = String(st.detail || "").match(/\d{1,2}\.\d{1,2}/g) || [];
-    if (both.length < 2) return;
-    var a = mdToIso(both[0], t), b = mdToIso(both[1], t);
-    if (a && b && date >= a && date < b) hit = st;
+    var r = stayDates(st, t);
+    if (r && date >= r.a && date < r.b) hit = st;
   });
   return hit;
 }
@@ -534,7 +561,8 @@ function modelFrom(map){
       var a = Object.assign({ id: p[2] }, body);
       (t.attach[a.itemId] = t.attach[a.itemId] || []).push(a);
     } else if (LISTS.indexOf(p[1]) >= 0 && p[2]){
-      t[p[1]].push(Object.assign({ id: p[2] }, body));
+      var rec = Object.assign({ id: p[2] }, body);
+      t[p[1]].push(p[1] === "stays" ? normStay(rec) : rec);
     }
   });
   return Object.keys(trips)
