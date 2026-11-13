@@ -117,8 +117,9 @@ function objectMark(word){
 }
 /* 고친 것도 몇 초간 되돌릴 수 있다 */
 export function savedToast(isEdit, undo){
-  if (isEdit && undo) toastUndo("수정했습니다.", undo, "edit");
-  else toastDone(isEdit ? "수정했습니다." : "추가했습니다.");
+  if (!isEdit) return toastDone("추가했습니다.");
+  /* 고친 것이 없으면 되돌릴 것도 없다 — 말하지 않는다 */
+  if (undo) toastUndo("수정했습니다.", undo, "edit");
 }
 
 export function sheetShell(title, sub){

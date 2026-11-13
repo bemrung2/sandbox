@@ -1275,7 +1275,7 @@ export function openTripEditor(t){
       return;
     }
     var undo = undoEdit(Plan.editTrip(t.id, rec));
-    state.day = 0;
+    if (undo) state.day = 0;
     savedToast(true, undo);
     repaint();
   });

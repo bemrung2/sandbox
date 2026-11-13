@@ -591,6 +591,14 @@ function modelFrom(map){
     .map(function(id){ return trips[id].t; });
 }
 
+/* 고친 칸이 하나라도 있나. 비어 있음(없음 · null · "" · [])은 모두 같은 것으로 본다 —
+   저장하면 null이 되는 칸이 처음엔 없었다는 이유로 '고쳤다'고 하지 않도록. */
+function blank(v){ return v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length); }
+function sameValue(a, b){ return blank(a) && blank(b) ? true : JSON.stringify(a) === JSON.stringify(b); }
+export function changed(was, patch){
+  return Object.keys(patch).some(function(k){ return !sameValue(was[k], patch[k]); });
+}
+
 export var Plan = {
   trips: [],
   active: null,
@@ -628,6 +636,8 @@ export var Plan = {
     c[key] = c[key].map(function(x){
       if (x.id !== id) return x;
       was = JSON.parse(JSON.stringify(x));
+      /* 바뀐 칸이 없으면 쓰지 않는다 — 돌려주는 것이 없으니 '고쳤다'는 말도 나오지 않는다 */
+      if (!changed(x, patch)) return x;
       next = Object.assign({}, x, patch);
       return next;
     });
@@ -661,6 +671,7 @@ export var Plan = {
     var self = this, t = this.cur();
     var here = this.path("days") + "/" + date;
     var was = { theme: t.dayThemes[date] || "", route: (t.dayRoutes[date] || []).slice() };
+    if (!changed(was, patch)) return null;
     if (patch.theme !== undefined){
       if (patch.theme) t.dayThemes[date] = patch.theme; else delete t.dayThemes[date];
     }
@@ -711,6 +722,7 @@ export var Plan = {
     var self = this, t = this.tripById(id);
     if (!t) return null;
     var was = metaOf(t);
+    if (!changed(was, rec)) return null;
     Object.assign(t, rec);
     this.write(ROOT + "/" + id, metaOf(t));
     return function(){ self.write(ROOT + "/" + id, was); };
