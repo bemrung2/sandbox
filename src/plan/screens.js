@@ -610,8 +610,10 @@ function timelineItem(it, pair){
   if (isCurrent) meta.appendChild(el('<span class="badge live">지금</span>'));
   var catLabel = isFlight(it) ? "이동 · 항공기" :
     (it.cat === "move" && MODE_LABEL[it.mode] ? "이동 · " + MODE_LABEL[it.mode] : cat.label);
-  meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(catLabel) + '</span>'));
-  if (it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
+  /* 식사는 끼니가 곧 분류다 — '식사 · 저녁' 두 알약 대신 식사 색 그대로 '저녁' 하나. */
+  var sub = it.cat === "food" && MEAL_LABEL[it.meal] ? MEAL_LABEL[it.meal] : "";
+  meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(sub || catLabel) + '</span>'));
+  if (!sub && it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
   var tg = tagBadge(it);
   if (tg) meta.appendChild(tg);
   if (places.length > 1){
@@ -635,8 +637,10 @@ function timelineItem(it, pair){
 function markPills(it){
   var have = marksOf(it);
   if (!have.length) return null;
+  /* 줄에서는 아이콘만 — 이름이 길어도 한 줄에 다 놓인다. 글자는 편집 창에 있다. */
   return el('<span class="marks">' + have.map(function(m){
-    return '<span class="badge mark mark-' + m.key + '">' + icon(m.icon) + esc(m.label) + '</span>';
+    return '<span class="badge mark mark-' + m.key + '" role="img" aria-label="' + esc(m.label) + '" title="' + esc(m.label) + '">' +
+      icon(m.icon) + '</span>';
   }).join("") + '</span>');
 }
 function tagBadge(it){

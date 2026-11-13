@@ -714,9 +714,10 @@
   /* 줄의 표시 셋 — 예약 확정은 초록, 현금 · 카드는 주황, (손으로 적은) 태그는 파랑이라 서로 갈린다 */
   .badge.mark{ font-weight: 700; }
   .badge.mark .icon{ width: 12px; height: 12px; stroke-width: 2.4; }
-  /* 이름 줄 오른쪽 끝. 둘이 켜지면 위아래로 쌓이고, 이름만 줄어든다. */
-  .marks{ flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; margin-top: 1px; }
-  .marks .badge{ font-size: 10.5px; padding: 2px 7px; border-radius: 7px; white-space: nowrap; }
+  /* 이름 줄 오른쪽 끝. 아이콘만 한 줄로 늘어서고, 줄어드는 것은 이름이다. */
+  .marks{ flex-shrink: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-top: 1px; }
+  .marks .badge{ padding: 0; width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; }
+  .marks .badge .icon{ width: 13px; height: 13px; }
   .badge.mark-booked{ background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
   .badge.mark-cash, .badge.mark-card{ background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
   /* 편집 창의 같은 버튼 — 켜지면 그 색으로 */
