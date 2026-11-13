@@ -459,41 +459,35 @@ function dayRow(days){
 }
 
 /* ---------- 그날의 날씨 ---------- */
-function wxHtml(w){
-  if (!w.ok) return null;
-  return icon(w.desc.icon) + '<b class="wx-hi">' + w.hi + '°</b><span class="wx-lo">' + w.lo + '°</span>';
-}
 function paintWeather(node, w){
   node.className = "wx";
-  node.removeAttribute("href"); node.removeAttribute("target"); node.removeAttribute("rel");
   if (w && w.ok){
     node.className = "wx t-" + w.desc.tone;
-    node.setAttribute("href", w.url);
-    node.setAttribute("target", "_blank");
-    node.setAttribute("rel", "noopener noreferrer");
-    node.setAttribute("aria-label", (w.city || "") + " " + w.desc.label + " 최고 " + w.hi + "도 최저 " + w.lo + "도 · Open-Meteo에서 보기");
-    node.title = (w.city || "") + " · " + w.desc.label + " · Open-Meteo";
-    node.innerHTML = wxHtml(w) + '<span class="wx-word">' + esc(w.desc.label) + '</span>';
+    node.setAttribute("role", "img");
+    node.setAttribute("aria-label", w.city + " " + w.desc.label + " 최고 " + w.hi + "도 최저 " + w.lo + "도");
+    node.title = w.city + " · " + w.desc.label + " · Open-Meteo";
+    node.innerHTML = icon(w.desc.icon) + '<span class="wx-txt"><span class="wx-temp"><b class="wx-hi">' + w.hi +
+      '°</b><span class="wx-lo">' + w.lo + '°</span></span><span class="wx-city">' + esc(w.city) + '</span></span>';
   } else if (w){
     node.className = "wx none";
+    node.setAttribute("role", "img");
     node.setAttribute("aria-label", "날씨 없음");
     node.title = "";
     node.innerHTML = '<span class="wx-word">날씨 없음</span>';
   } else {
     node.className = "wx wait";
+    node.setAttribute("role", "img");
     node.setAttribute("aria-label", "날씨를 불러오는 중");
     node.innerHTML = icon("wx-cloud") + '<span class="wx-word">···</span>';
   }
 }
 /* 기억에 있으면 바로 그리고, 없으면 기다리는 모양으로 두었다가 도착하면 바꾼다.
-   그 사이 화면이 바뀌어 노드가 떠났으면 건드리지 않는다. 실패는 '날씨 없음'이다. */
+   실패는 '날씨 없음'이다. 누르는 곳이 아니라서 span이다. */
 function weatherChip(date){
-  var node = document.createElement("a");
+  var node = document.createElement("span");
   var now = peek(date);
   paintWeather(node, now);
-  if (!now){
-    weatherOn(date).then(function(w){ paintWeather(node, w); });
-  }
+  if (!now) weatherOn(date).then(function(w){ paintWeather(node, w); });
   return node;
 }
 
@@ -517,7 +511,7 @@ function renderSchedule(root, days){
     '<div class="theme-row">' +
       '<button class="theme-main" type="button">' +
         '<span class="theme-body"><span class="theme-text' + (day.theme ? "" : " blank") + '">' +
-        esc(day.theme || "이 날의 한 줄 요약 추가") + '</span></span>' + icon("edit") +
+        esc(day.theme || "이 날의 한 줄 요약 추가") + '</span></span>' +
       '</button>' +
     '</div>'
   );

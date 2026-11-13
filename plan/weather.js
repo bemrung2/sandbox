@@ -1,8 +1,8 @@
-/* 그날 여행지의 날씨. 소스는 Open-Meteo — 키 없이 브라우저에서 바로 부를 수 있고,
+/* 그날 도착지의 날씨. 소스는 Open-Meteo — 키 없이 브라우저에서 바로 부를 수 있고,
    NOAA · DWD · Météo-France · ECMWF 같은 각국 기상 기관의 모델을 모아 준다.
-   예보는 오늘부터 16일 앞까지만 있다. 그 밖의 날은 '없음'이다.
-   어디서 가져왔는지는 화면의 링크가 말한다 (누르면 같은 좌표의 Open-Meteo 페이지). */
-import { trip, stayOn, stayDates } from "./model.js";
+   예보는 오늘 7일 전부터 16일 앞까지만 있다. 그 밖의 날은 '없음'이다.
+   어느 도시의 날씨인지는 칩에 도시 이름으로 적는다. (링크는 없다 — 누른다고 어디로 가지 않는다.) */
+import { trip, stayOn, stayDates, itemsOn, overnight } from "./model.js";
 
 var GEO = "https://geocoding-api.open-meteo.com/v1/search";
 var FC = "https://api.open-meteo.com/v1/forecast";
@@ -27,11 +27,88 @@ export function describeCode(c){
   return { label: "날씨", icon: "wx-cloud", tone: "cloud" };
 }
 
-/* 그날 어느 도시에 있는가 — 정보 탭의 숙소에서 읽는다. 그날 묵는 곳이 없으면 가장 가까운 숙소.
-   (체크아웃하는 날은 떠나는 숙소, 첫 체크인 전은 첫 숙소.) 숙소가 없으면 여행의 도시. */
+/* 알려진 도시의 영어 · 현지 표기 — 장소 이름에 "Tonnarello Roma"처럼 적혀 있는 것을 읽으려고. */
+var ALIAS = {
+  "로마": ["roma", "rome"], "피렌체": ["firenze", "florence"], "파리": ["paris"],
+  "체르마트": ["zermatt"], "그린델발트": ["grindelwald"], "인터라켄": ["interlaken"],
+  "베네치아": ["venezia", "venice"], "밀라노": ["milano", "milan"], "나폴리": ["napoli", "naples"],
+  "취리히": ["zurich", "zürich"], "루체른": ["luzern", "lucerne"], "제네바": ["geneve", "geneva"],
+  "인천": ["incheon"], "서울": ["seoul"], "도쿄": ["tokyo"], "오사카": ["osaka"], "교토": ["kyoto"],
+  "런던": ["london"], "바르셀로나": ["barcelona"], "마드리드": ["madrid"]
+};
+
+/* 이 여행에서 이름이 알려진 도시 — 숙소의 지역 끝말. { 도시: 나라 } */
+function knownCities(t){
+  var out = {};
+  (t.stays || []).forEach(function(st){
+    var parts = String(st.area || "").split(/[·,/]/).map(function(x){ return x.trim(); }).filter(Boolean);
+    if (parts.length) out[parts[parts.length - 1]] = parts.length > 1 ? parts[0] : "";
+  });
+  return out;
+}
+function inText(text, known){
+  var low = String(text || "").toLowerCase();
+  if (!low) return null;
+  var names = Object.keys(known).concat(Object.keys(ALIAS).filter(function(k){ return !(k in known); }));
+  names.sort(function(a, b){ return b.length - a.length; });
+  for (var i = 0; i < names.length; i++){
+    var n = names[i], hit = low.indexOf(n.toLowerCase()) >= 0;
+    if (!hit) hit = (ALIAS[n] || []).some(function(al){ return new RegExp("(^|[^a-z])" + al + "($|[^a-z])").test(low); });
+    if (hit) return { city: n, country: known[n] || "" };
+  }
+  return null;
+}
+/* 공항 이름의 첫 말이 도시다: "인천국제공항 제2여객터미널" → 인천 */
+function airportCity(text){
+  if (!/공항|airport/i.test(text || "")) return null;
+  var w = String(text).trim().split(/\s+/)[0].replace(/(국제)?공항$/, "");
+  return w ? { city: w, country: "" } : null;
+}
+function arrow(text){
+  var parts = String(text || "").split(/\s*(?:→|➔|->|=>|>)\s*/);
+  return parts.length > 1 ? parts[parts.length - 1].trim() : "";
+}
+
+/* 그날 어디에 도착하는가 — 하루의 마지막 일정이 있는 곳.
+   이동이면 내리는 곳(마지막 장소 · '→' 뒤), 아니면 그 일정의 장소. 도시를 읽을 수 없는 일정은 건너뛰고
+   그 앞 일정으로. 일정에서 못 읽으면 한 줄 요약의 '→' 뒤, 그것도 없으면 그날 묵는 숙소의 도시. */
+function arrivalOf(it, known){
+  var places = it.places || [], hit = null;
+  if (it.cat === "move" || it.cat === "air"){
+    var to = arrow(it.title);
+    var dest = to || (places.length ? places[places.length - 1] : "");
+    hit = inText(dest, known) || airportCity(dest) || (to ? { city: to, country: "" } : null);
+  } else {
+    hit = inText(places.join(" ") + " " + (it.title || ""), known);
+  }
+  return hit;
+}
+function dayBefore(date){
+  var d = new Date(date + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
 export function placeOn(date){
   var t = trip();
   if (!t) return null;
+  var known = knownCities(t);
+  var list = itemsOn(date).slice().reverse();
+  for (var i = 0; i < list.length; i++){
+    var hit = arrivalOf(list[i], known);
+    if (hit) return hit;
+  }
+  /* 이 날 적힌 것이 없는데 어제 밤을 넘겨 오는 비행이 이 날 내렸다면 그곳이다 */
+  var prev = itemsOn(dayBefore(date)).filter(function(it){ return overnight(it); });
+  for (var j = prev.length - 1; j >= 0; j--){
+    var h2 = arrivalOf(prev[j], known);
+    if (h2) return h2;
+  }
+  var theme = (t.dayThemes || {})[date] || "";
+  var tail = arrow(theme);
+  var fromTheme = inText(tail || theme, known);
+  if (fromTheme) return fromTheme;
+  if (tail) return { city: tail, country: "" };
+
   var st = stayOn(date);
   if (!st){
     var best = null, bestGap = 1e9;
@@ -108,18 +185,10 @@ function forecast(geo){
   });
 }
 
-/* 같은 좌표를 Open-Meteo에서 열어 보는 주소 */
-export function sourceUrl(geo){
-  return "https://open-meteo.com/en/docs?latitude=" + (+geo.lat).toFixed(4) +
-    "&longitude=" + (+geo.lon).toFixed(4) +
-    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto";
-}
-
 function reading(rec, date, p){
   var w = rec && rec.daily && rec.daily[date];
   if (!w) return { ok: false, place: p };
-  return { ok: true, place: p, city: rec.geo.name || p.city, hi: w.hi, lo: w.lo, code: w.code,
-    desc: describeCode(w.code), url: sourceUrl(rec.geo) };
+  return { ok: true, place: p, city: p.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code) };
 }
 
 /* 지금 기억에 있는 것만, 기다리지 않고. 없으면 null. */
