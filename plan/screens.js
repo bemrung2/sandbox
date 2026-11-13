@@ -544,10 +544,7 @@ function renderSchedule(root, days){
   } else {
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없습니다.</p></div>'));
   }
-  /* 더하는 자리는 어느 탭에서나 같은 모양이다 — 시간표의 레일에 매달지 않는다. */
-  var add = el('<button class="addcard" type="button">' + icon("plus") + '일정 추가</button>');
-  ripple(add, function(){ openItemEditor(null, day.date); });
-  root.appendChild(add);
+  /* 일정 탭에는 맨 아래의 '일정 추가'가 없다 — 더하는 자리는 머리의 작은 '추가'(quickAdd) 하나다. */
 }
 
 /* 쇼핑 탭의 가게가 시간표에 설 때. 고치는 일은 쇼핑 탭에서 한다. */
