@@ -76,6 +76,7 @@ function toRow(path, body) {
       title: body.title || "",
       emoji: body.emo || "",
       tag: body.tag || null,
+      marks: body.marks || [],          /* 예약 확정 · 현금 Only · 카드 Only — 태그와는 따로다 */
       places: body.places || [],
       lines: body.lines || [],
       ord: body.ord || 0
@@ -150,8 +151,8 @@ function toDocs(tables) {
       dayDate: isoDate(row.day_date), s: row.start_time, e: row.end_time,
       cat: row.category, meal: row.meal, mode: row.mode, mapUrl: row.map_url,
       buys: row.buys || [], title: row.title, emo: row.emoji,
-      tag: row.tag, places: row.places || [], lines: row.lines || [], ord: row.ord
-    }, ["dayDate", "s", "e", "cat", "meal", "mode", "mapUrl", "buys", "title", "emo", "tag",
+      tag: row.tag, marks: row.marks, places: row.places || [], lines: row.lines || [], ord: row.ord
+    }, ["dayDate", "s", "e", "cat", "meal", "mode", "mapUrl", "buys", "title", "emo", "tag", "marks",
         "places", "lines", "ord"]);
   }
   for (const row of tables.shops || []) {

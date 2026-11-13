@@ -712,13 +712,16 @@
     border: none; font-weight: 700;
   }
   .badge.tag{ background: var(--signal-soft); color: var(--signal); }
-  /* 예약 확정 — 초록 체크 */
-  .badge.booked{
-    background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); font-weight: 700;
-  }
-  .badge.booked .icon{ width: 12px; height: 12px; stroke-width: 2.6; }
+  /* 줄의 표시 셋 — 예약 확정은 초록, 현금 · 카드는 주황, (손으로 적은) 태그는 파랑이라 서로 갈린다 */
+  .badge.mark{ font-weight: 700; }
+  .badge.mark .icon{ width: 12px; height: 12px; stroke-width: 2.4; }
+  .badge.mark-booked{ background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+  .badge.mark-cash, .badge.mark-card{ background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+  /* 편집 창의 같은 버튼 — 켜지면 그 색으로 */
+  .pick.mark-pick .icon{ width: 14px; height: 14px; margin-right: 4px; stroke-width: 2.2; }
+  .pick.mark-booked[aria-pressed="true"]{ background: var(--ok); border-color: var(--ok); color: var(--paper); }
+  .pick.mark-cash[aria-pressed="true"], .pick.mark-card[aria-pressed="true"]{ background: var(--warn); border-color: var(--warn); color: var(--paper); }
   .pick{ display: inline-flex; align-items: center; justify-content: center; }
-  .pick .icon{ width: 14px; height: 14px; margin-right: 4px; }
   .fld > .pickrow + input{ margin-top: 8px; }
   /* 다른 탭에서 온 것이라는 표시 */
   .badge.from{

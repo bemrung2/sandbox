@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, BOOKED, isBooked, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -606,7 +606,7 @@ function timelineItem(it, pair){
     (it.cat === "move" && MODE_LABEL[it.mode] ? "이동 · " + MODE_LABEL[it.mode] : cat.label);
   meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(catLabel) + '</span>'));
   if (it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
-  if (it.tag) meta.appendChild(tagBadge(it));
+  markBadges(it).forEach(function(b){ meta.appendChild(b); });
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -622,10 +622,14 @@ function timelineItem(it, pair){
   body.appendChild(meta);
   return row;
 }
-/* 태그 알약. 예약이 확정된 줄은 초록 체크가 붙는다. */
-function tagBadge(it){
-  if (isBooked(it)) return el('<span class="badge booked">' + icon("check") + esc(BOOKED) + '</span>');
-  return el('<span class="badge tag">' + esc(it.tag) + '</span>');
+/* 줄의 알약들. 순서는 정해져 있다: 표시(예약 확정 · 현금 Only · 카드 Only)가 먼저, 손으로 적은
+   태그가 그다음. 색도 셋으로 갈린다 — 예약 확정은 초록, 현금 · 카드는 주황, 태그는 파랑. */
+function markBadges(it){
+  var out = marksOf(it).map(function(m){
+    return el('<span class="badge mark mark-' + m.key + '">' + icon(m.icon) + esc(m.label) + '</span>');
+  });
+  if (it.tag) out.push(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
+  return out;
 }
 function shortPlace(p){
   var city = trip().city;
@@ -740,7 +744,7 @@ function foodCard(f){
   if (atts.length) card.appendChild(attachStrip(it.id, atts));
 
   var meta = el('<div class="card-meta"></div>');
-  if (it.tag) meta.appendChild(tagBadge(it));
+  markBadges(it).forEach(function(b){ meta.appendChild(b); });
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -1361,19 +1365,32 @@ function openItemEditor(item, defaultDate, presets){
   body.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
     '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
   /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
-  /* 예약이 확정된 줄은 버튼 하나로 표시한다 — 태그 칸에 '예약 확정'이 들어간다 */
+  /* 예약 확정 · 현금 Only · 카드 Only는 버튼이다 — 태그 칸과는 따로, 태그에는 아무것도 들어가지 않는다.
+     현금과 카드는 둘 중 하나만 켜진다. */
+  var marks = (item && item.marks ? item.marks : []).slice();
+  var markFld = el('<div class="fld"><label>예약 · 결제 <span class="opt">선택</span></label>' +
+    '<div class="pickrow fit" id="ed-marks"></div></div>');
+  body.appendChild(markFld);
+  var markRow = markFld.querySelector("#ed-marks");
+  MARKS.forEach(function(m){
+    var b = el('<button class="pick mark-pick mark-' + m.key + '" type="button" data-mark="' + m.key +
+      '" aria-pressed="' + (marks.indexOf(m.key) >= 0) + '">' + icon(m.icon) + esc(m.label) + '</button>');
+    ripple(b, function(){
+      var on = marks.indexOf(m.key) >= 0;
+      marks = marks.filter(function(k){
+        return k !== m.key && !(!on && (m.key === "cash" || m.key === "card") && (k === "cash" || k === "card"));
+      });
+      if (!on) marks.push(m.key);
+      markRow.querySelectorAll(".pick").forEach(function(x){
+        x.setAttribute("aria-pressed", String(marks.indexOf(x.dataset.mark) >= 0));
+      });
+      markRow.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    markRow.appendChild(b);
+  });
   var tagFld = el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
-    '<div class="pickrow"><button class="pick" type="button" id="ed-booked">' + icon("check") + BOOKED + '</button></div>' +
     '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>');
   body.appendChild(tagFld);
-  var tagEl = tagFld.querySelector("#ed-tag"), bookedBtn = tagFld.querySelector("#ed-booked");
-  function paintBooked(){ bookedBtn.setAttribute("aria-pressed", String(isBooked({ tag: tagEl.value }))); }
-  ripple(bookedBtn, function(){
-    tagEl.value = isBooked({ tag: tagEl.value }) ? "" : BOOKED;
-    tagEl.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  tagEl.addEventListener("input", paintBooked);
-  paintBooked();
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
   body.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
     '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
@@ -1461,6 +1478,7 @@ function openItemEditor(item, defaultDate, presets){
       cat: cur.cat, meal: cur.meal || null, mode: cur.cat === "move" ? (cur.mode || null) : null,
       title: title, mapUrl: mapUrl,
       tag: sheet.querySelector("#ed-tag").value.trim() || null,
+      marks: MARKS.map(function(m){ return m.key; }).filter(function(k){ return marks.indexOf(k) >= 0; }),
       places: lines("#ed-places"), lines: lines("#ed-lines"),
       emo: sheet.querySelector("#ed-emo").value.trim()
     };

@@ -62,6 +62,7 @@ create table if not exists items (
   title      text not null default '',
   emoji      text not null default '',
   tag        text,
+  marks      jsonb,                                  -- ["booked","cash"] — 예약 확정 · 현금 Only · 카드 Only
   places     text[] not null default '{}',
   lines      text[] not null default '{}',
   ord        bigint not null default 0
@@ -71,6 +72,8 @@ create table if not exists items (
 alter table items add column if not exists mode    text;
 alter table items add column if not exists map_url text;
 alter table items add column if not exists buys    jsonb not null default '[]'::jsonb;
+-- 예약 확정 · 현금 Only · 카드 Only. 태그(tag)와는 따로 둔다.
+alter table items add column if not exists marks   jsonb;
 
 -- 가게 하나. buy_list는 [{id, text, got}]  (지금은 쇼핑도 일정으로 적는다 — 예전 기록용)
 create table if not exists shops (
