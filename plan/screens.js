@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, STAY_KINDS, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayLeaving, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -574,7 +574,7 @@ function shopTimelineRow(sh){
 }
 
 function timelineItem(it, pair){
-  var cat = isFlight(it) ? CAT.move : (CAT[it.cat] || CAT.todo);
+  var cat = isFlight(it) ? CAT.move : (CAT[it.cat] || { label:"", color:"var(--ink-faint)" });
   var isCurrent = pair && pair.current && pair.current.id === it.id;
   var places = it.places || [];
 
@@ -602,12 +602,10 @@ function timelineItem(it, pair){
 
   var meta = el('<div class="tl-meta"></div>');
   if (isCurrent) meta.appendChild(el('<span class="badge live">지금</span>'));
-  var catLabel = isFlight(it) ? "이동 · 항공기" :
-    (it.cat === "move" && MODE_LABEL[it.mode] ? "이동 · " + MODE_LABEL[it.mode] : cat.label);
-  /* 식사는 끼니가 곧 분류다 — '식사 · 저녁' 두 알약 대신 식사 색 그대로 '저녁' 하나. */
-  var sub = it.cat === "food" && MEAL_LABEL[it.meal] ? MEAL_LABEL[it.meal] : "";
-  meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(sub || catLabel) + '</span>'));
-  if (!sub && it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
+  /* 대분류 · 소분류가 알약 하나다 (식사 · 저녁 / 이동 · 택시 / 숙소 · 체크인). 분류를 안 골랐으면 알약이 없다. */
+  var catLabel = catBadgeText(it);
+  if (catLabel) meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(catLabel) + '</span>'));
+  if (it.meal && MEAL_LABEL[it.meal] && it.cat !== "food") meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
   var tg = tagBadge(it);
   if (tg) meta.appendChild(tg);
   if (places.length > 1){
@@ -920,7 +918,7 @@ function renderInfo(root){
     mirrorRow: function(it){
       return '<span class="lbl mono">' + esc(fmtMD(it.dayDate)) + ' (' + dowOf(it.dayDate) + ')' +
         (it.s ? ' · ' + esc(it.s) : '') + '</span><b>' + esc(it.title) + '</b>' +
-        '<small>일정에서 추가</small>';
+        '<small>' + (STAY_KIND_LABEL[it.mode] ? esc(STAY_KIND_LABEL[it.mode]) + ' · ' : '') + '일정에서 추가</small>';
     },
     empty: "아직 숙소가 없습니다.",
     editor: openStayEditor,
@@ -1353,7 +1351,7 @@ function openItemEditor(item, defaultDate, presets){
   var days = tripDays();
   var cur = {
     dayDate: item ? item.dayDate : defaultDate,
-    cat: item ? (item.cat === "air" ? "move" : item.cat) : ((presets && presets.cat) || "food"),
+    cat: item ? (item.cat === "air" ? "move" : (item.cat || "")) : ((presets && presets.cat) || ""),
     meal: item ? (item.meal || "") : ((presets && presets.meal) || ""),
     mode: item ? (item.cat === "air" ? "plane" : (item.mode || "")) : ((presets && presets.mode) || "")
   };
@@ -1390,6 +1388,8 @@ function openItemEditor(item, defaultDate, presets){
   body.appendChild(mealFld);
   var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow" id="ed-mode"></div></div>');
   body.appendChild(modeFld);
+  var kindFld = el('<div class="fld"><label>숙소 구분</label><div class="pickrow" id="ed-kind"></div></div>');
+  body.appendChild(kindFld);
   var placeFld = el('<div class="fld"><label for="ed-places">장소</label>' +
     '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea>' +
     '<p class="fld-hint" id="ed-places-hint" hidden>정보 탭의 숙소에서 가져왔습니다.</p></div>');
@@ -1436,7 +1436,7 @@ function openItemEditor(item, defaultDate, presets){
     if (cur.cat !== "stay") return;
     var now = placesEl.value.trim();
     if (now && now !== autoPlace) return;
-    var st = stayOn(cur.dayDate);
+    var st = cur.mode === "checkout" ? (stayLeaving(cur.dayDate) || stayOn(cur.dayDate)) : stayOn(cur.dayDate);
     /* 같은 이름의 호텔은 어디에나 있다. 도시까지 붙여야 지도가 그곳을 찾는다. */
     var city = st && st.area ? st.area.split("·").pop().trim() : "";
     autoPlace = st ? st.name + (city ? " " + city : "") : "";
@@ -1448,30 +1448,38 @@ function openItemEditor(item, defaultDate, presets){
   pickGroup(sheet.querySelector("#ed-day"),
     days.map(function(d){ return { key:d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
     function(){ return cur.dayDate; }, function(v){ cur.dayDate = v; fillStay(); });
-  /* 식사 종류는 식사일 때만, 이동 수단은 이동일 때만 묻는다. */
+  /* 식사 종류는 식사일 때만, 이동 수단은 이동일 때만, 숙소 구분은 숙소일 때만 묻는다.
+     소분류 둘(수단 · 숙소 구분)은 같은 칸(mode)에 적으므로, 분류가 바뀌면 비운다. */
+  var modeRow, kindRow, mealRow;
   function syncKinds(){
-    var food = cur.cat === "food", move = cur.cat === "move";
+    var food = cur.cat === "food", move = cur.cat === "move", stay = cur.cat === "stay";
     mealFld.hidden = !food;
     modeFld.hidden = !move;
+    kindFld.hidden = !stay;
     timeRow.querySelector("#ed-nextday").hidden = !move;
     if (!food && cur.meal){
       cur.meal = "";
       mealRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });
     }
-    if (!move && cur.mode){
+    var valid = move ? MODE_LABEL : stay ? STAY_KIND_LABEL : null;
+    if (cur.mode && !(valid && valid[cur.mode])){
       cur.mode = "";
       modeRow.querySelectorAll(".pick").forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
+      kindRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });
     }
   }
   pickGroup(sheet.querySelector("#ed-cat"),
-    CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; }),
+    [{ key:"", label:"없음" }].concat(CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; })),
     function(){ return cur.cat; }, function(v){ cur.cat = v; syncKinds(); fillStay(); });
-  var mealRow = sheet.querySelector("#ed-meal");
+  mealRow = sheet.querySelector("#ed-meal");
   pickGroup(mealRow,
     [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
     function(){ return cur.meal; }, function(v){ cur.meal = v; });
-  var modeRow = sheet.querySelector("#ed-mode");
+  modeRow = sheet.querySelector("#ed-mode");
   pickGroup(modeRow, MODES, function(){ return cur.mode; }, function(v){ cur.mode = v; });
+  kindRow = sheet.querySelector("#ed-kind");
+  pickGroup(kindRow, [{ key:"", label:"없음" }].concat(STAY_KINDS), function(){ return cur.mode; },
+    function(v){ cur.mode = v; fillStay(); });
   syncKinds();
   if (!item) fillStay();
 
@@ -1507,7 +1515,7 @@ function openItemEditor(item, defaultDate, presets){
     };
     var rec = {
       dayDate: cur.dayDate, s: step5(sEl.value) || null, e: step5(sheet.querySelector("#ed-e").value) || null,
-      cat: cur.cat, meal: cur.meal || null, mode: cur.cat === "move" ? (cur.mode || null) : null,
+      cat: cur.cat, meal: cur.meal || null, mode: cur.cat === "move" || cur.cat === "stay" ? (cur.mode || null) : null,
       title: title, mapUrl: mapUrl,
       tag: sheet.querySelector("#ed-tag").value.trim() || null,
       marks: MARKS.map(function(m){ return m.key; }).filter(function(k){ return marks.indexOf(k) >= 0; }),

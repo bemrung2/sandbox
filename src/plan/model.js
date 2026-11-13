@@ -309,13 +309,32 @@ export var CAT = {
   free:  { label:"자유", color:"var(--c-free)" },
   todo:  { label:"준비", color:"var(--c-todo)" }
 };
-export var CAT_ORDER = ["food","sight","shop","move","stay","etc"];
+/* 고를 수 있는 분류. '기타'는 걷어냈다 — 분류는 안 골라도 된다. 예전에 기타로 저장된 일정은 CAT에 남아 있어 그대로 보인다. */
+export var CAT_ORDER = ["food","sight","shop","move","stay"];
 /* 이동은 무엇으로 가는지까지 적는다. 항공기는 정보 탭의 항공 칸에도 선다. */
 export var MODES = [
   { key:"plane", label:"항공기" }, { key:"bus", label:"버스" }, { key:"subway", label:"지하철" },
-  { key:"walk", label:"도보" }, { key:"other", label:"기타" }
+  { key:"taxi", label:"택시" }, { key:"walk", label:"도보" }, { key:"other", label:"기타" }
 ];
-export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", walk:"도보", other:"기타" };
+export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", taxi:"택시", walk:"도보", other:"기타" };
+/* 숙소의 소분류 — 이동의 수단처럼 `mode` 칸에 적는다 */
+export var STAY_KINDS = [ { key:"checkin", label:"체크인" }, { key:"checkout", label:"체크아웃" } ];
+export var STAY_KIND_LABEL = { checkin:"체크인", checkout:"체크아웃" };
+/* 줄의 소분류 글자 — 식사는 끼니, 이동은 수단, 숙소는 체크인 · 체크아웃 */
+export function subLabel(it){
+  if (!it) return "";
+  if (it.cat === "food") return MEAL_LABEL[it.meal] || "";
+  if (it.cat === "move") return MODE_LABEL[it.mode] || "";
+  if (it.cat === "air") return "항공기";
+  if (it.cat === "stay") return STAY_KIND_LABEL[it.mode] || "";
+  return "";
+}
+/* 알약에 적는 글자: 대분류 · 소분류. 분류를 안 골랐으면 비어 있다. */
+export function catBadgeText(it){
+  if (!it || !CAT[it.cat]) return "";
+  var base = it.cat === "air" ? CAT.move.label : CAT[it.cat].label, sub = subLabel(it);
+  return sub ? base + " · " + sub : base;
+}
 /* 항공기로 가는 이동 — 예전 분류 '항공'도 같은 것이다 */
 export function isFlight(it){ return it && (it.cat === "air" || (it.cat === "move" && it.mode === "plane")); }
 /* 줄에 다는 표시 셋. 손으로 적는 태그와는 따로다 — 화면에서도 이 셋이 먼저, 색도 다르다.
@@ -512,6 +531,18 @@ export function stayOn(date){
     if (hit) return;
     var r = stayDates(st, t);
     if (r && date >= r.a && date < r.b) hit = st;
+  });
+  return hit;
+}
+
+/* 그날 체크아웃하는 숙소 — 떠나는 날 아침에는 간밤에 묵은 곳이 그 숙소다. */
+export function stayLeaving(date){
+  var t = trip(), hit = null;
+  if (!t) return null;
+  (t.stays || []).forEach(function(st){
+    if (hit) return;
+    var r = stayDates(st, t);
+    if (r && r.b === date) hit = st;
   });
   return hit;
 }

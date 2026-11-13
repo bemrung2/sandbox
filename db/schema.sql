@@ -54,9 +54,9 @@ create table if not exists items (
   day_date   date not null,
   start_time text,
   end_time   text,
-  category   text not null default 'todo',
+  category   text not null default 'todo',          -- 분류를 안 골랐으면 빈 글자
   meal       text,
-  mode       text,                                  -- 이동 수단: plane · bus · subway · walk · other
+  mode       text,                                  -- 소분류: 이동은 plane · bus · subway · taxi · walk · other, 숙소는 checkin · checkout
   map_url    text,                                  -- 장소 검색이 빗나갈 때 직접 적는 구글 지도 주소
   buys       jsonb not null default '[]'::jsonb,    -- 쇼핑 리스트 [{id, text, got}]
   title      text not null default '',

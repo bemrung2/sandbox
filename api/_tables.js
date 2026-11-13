@@ -68,7 +68,7 @@ function toRow(path, body) {
       day_date: body.dayDate,
       start_time: body.s || null,
       end_time: body.e || null,
-      category: body.cat || "todo",
+      category: body.cat || "",     /* 분류는 안 골라도 된다 */
       meal: body.meal || null,
       mode: body.mode || null,          /* 이동 수단 */
       map_url: body.mapUrl || null,     /* 직접 적은 구글 지도 주소 */
