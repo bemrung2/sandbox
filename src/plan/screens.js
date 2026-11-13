@@ -10,7 +10,7 @@ import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, isFlight, AMENITIES, SEED_REVISIONS, stayOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, tripLabel, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -72,6 +72,14 @@ function bookedMissing(){
     }
     if (p.length === 2 && p[0] !== "days" && filled[seedGroup(p)]) return;
     out[path] = map[path];
+  });
+  /* 계획표가 고쳐진 곳. 불러온 그대로인 줄만 바꾸거나(null이면 지우거나) 한다. */
+  Object.keys(SEED_REVISIONS).forEach(function(key){
+    var path = base + key, rev = SEED_REVISIONS[key], mine = have[path];
+    if (!mine || !rev.was(mine)) return;
+    /* 첨부가 붙은 줄은 지우지 않는다 — 붙인 것이 함께 사라진다 */
+    if (!rev.to && Plan.attachOf(key.split("/")[1]).length) return;
+    out[path] = rev.to ? Object.assign({}, mine, rev.to) : null;
   });
   return out;
 }

@@ -101,15 +101,16 @@ var SEED_ITEMS = [
   /* 11.23 로마 도착 */
   { id:"hm-1123a", d:"2026-11-23", s:"20:00", cat:"food", meal:"dinner", t:"Mr.Clood Bistrot",
     places:["Mr.Clood Bistrot Roma"], lines:["사과농어구이, 피스타치오 파스타"] },
-  /* 11.24 로마 — 오전 콜로세움 · 포로 로마노, 오후 트라스테베레 */
-  { id:"hm-1124a", d:"2026-11-24", s:"10:00", cat:"food", meal:"cafe", t:"Regoli Pasticceria",
-    places:["Regoli Pasticceria Roma"], lines:["커피와 빵"] },
-  { id:"hm-1124b", d:"2026-11-24", s:"10:30", e:"12:00", cat:"sight", t:"콜로세움 · 포로 로마노 · 팔라티노 언덕",
-    places:["콜로세움", "콘스탄티누스 개선문", "포로 로마노", "팔라티노 언덕", "진실의 입"],
-    lines:["콜로세움 통합권 예약", "콜로세움 → 콘스탄티누스 개선문 → 포로 로마노 → 팔라티노 언덕 · 진실의 입"] },
+  /* 11.24 로마 — 오전 개선문 · 포로 로마노 · 팔라티노, 오후 콜로세움 (계획표 개정판) */
+  { id:"hm2-1124a", d:"2026-11-24", s:"09:00", cat:"sight", t:"콘스탄티누스 개선문",
+    places:["콘스탄티누스 개선문"] },
+  { id:"hm2-1124b", d:"2026-11-24", s:"10:00", cat:"sight", t:"포로 로마노", places:["포로 로마노"] },
+  { id:"hm2-1124c", d:"2026-11-24", s:"11:00", cat:"sight", t:"팔라티노 언덕",
+    places:["팔라티노 언덕", "진실의 입"] },
   { id:"hm-1124c", d:"2026-11-24", s:"12:00", cat:"food", meal:"lunch", t:"피자" },
-  { id:"hm-1124d", d:"2026-11-24", s:"13:00", cat:"food", meal:"cafe", t:"카페" },
-  { id:"hm-1124e", d:"2026-11-24", s:"14:00", cat:"sight", t:"트라스테베레 산책", places:["트라스테베레 로마"] },
+  { id:"hm-1124a", d:"2026-11-24", s:"13:00", cat:"food", meal:"cafe", t:"Regoli Pasticceria",
+    places:["Regoli Pasticceria Roma"], lines:["커피와 빵"] },
+  { id:"hm2-1124d", d:"2026-11-24", s:"14:00", e:"16:00", cat:"sight", t:"콜로세움", places:["콜로세움"] },
   { id:"hm-1124f", d:"2026-11-24", s:"16:00", cat:"etc", t:"스냅 촬영" },
   { id:"hm-1124g", d:"2026-11-24", s:"17:00", cat:"food", meal:"dinner", t:"Tonnarello",
     places:["Tonnarello Roma"], lines:["까르보나라, 미트볼, 아마트리치아나"] },
@@ -211,8 +212,20 @@ var SEED_ITEMS = [
   /* 12.1 · 12.2 그린델발트 */
   { id:"hm-1201a", d:"2026-12-01", s:"09:00", cat:"sight", t:"융프라우", places:["융프라우요흐"], lines:["VIP 패스 구매"] },
   { id:"hm-1202a", d:"2026-12-02", s:"09:00", cat:"sight", t:"피르스트", places:["피르스트 그린델발트"],
-    lines:["플라이어 · 글라이더"] }
+    lines:["플라이어 · 글라이더"] },
+  /* 12.3 파리 */
+  { id:"hm2-1203a", d:"2026-12-03", s:"19:00", cat:"sight", t:"바토무슈 (야경)", places:["Bateaux Mouches Paris"],
+    lines:["센 강 야경 크루즈"] }
 ];
+
+/* 이미 불러간 일정을 계획표 개정판에 맞추는 손질. 불러온 뒤 한 글자도 안 고친 줄만 건드린다 —
+   고쳐 쓰고 있는 것은 그대로 둔다. was(지금 그 줄)가 참이면 to로 바꾸고, to가 null이면 지운다. */
+export var SEED_REVISIONS = {
+  "items/hm-1124a": { was: function(i){ return i.title === "Regoli Pasticceria" && i.s === "10:00"; }, to: { s: "13:00" } },
+  "items/hm-1124b": { was: function(i){ return i.title === "콜로세움 · 포로 로마노 · 팔라티노 언덕" && i.s === "10:30"; }, to: null },
+  "items/hm-1124d": { was: function(i){ return i.title === "카페" && i.s === "13:00"; }, to: null },
+  "items/hm-1124e": { was: function(i){ return i.title === "트라스테베레 산책" && i.s === "14:00"; }, to: null }
+};
 var SEED_SHOPS = [];
 var SEED_FLIGHTS = [];   /* 항공편은 일정(SEED_ITEMS)에 있다 */
 /* 예약된 숙소. 묵는 밤으로 적혀 온 것을 체크인–체크아웃으로 옮겨 적었다. */
