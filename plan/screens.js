@@ -959,35 +959,6 @@ function renderInfo(root){
   }));
 
   root.appendChild(sectionCard({
-    title: "예약", key: "books", ic: "star", tone: "book", attach: true,
-    empty: "아직 예약이 없습니다.",
-    render: function(k){
-      return (k.when ? '<span class="lbl mono">' + esc(k.when) + '</span>' : '') +
-        '<b>' + placeHtml(k.name, k.name) + '</b>' +
-        (k.detail ? '<small>' + esc(k.detail) + '</small>' : '');
-    },
-    fields: [
-      { key:"name", label:"이름", placeholder:"예: 바티칸 투어", required:true },
-      { key:"when", label:"일시", placeholder:"예: 11.25 (수) 07:40 · 2명" },
-      { key:"detail", label:"메모" }
-    ]
-  }));
-
-  root.appendChild(sectionCard({
-    title: "유용한 정보", key: "links", ic: "link", tone: "link",
-    empty: "아직 링크가 없습니다.",
-    linkMode: true,
-    render: function(l){
-      var u = safeUrl(l.url);
-      return '<b>' + esc(l.title) + '</b><small>' + esc(u ? hostOf(u) : "잘못된 주소") + '</small>';
-    },
-    fields: [
-      { key:"title", label:"제목", placeholder:"예: 공항버스 타는 법", required:true },
-      { key:"url", label:"링크", placeholder:"https://...", required:true, url:true }
-    ]
-  }));
-
-  root.appendChild(sectionCard({
     title: "메모", key: "notes", ic: "note", tone: "note",
     empty: "아직 메모가 없습니다.",
     simple: true,
