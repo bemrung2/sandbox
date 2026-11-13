@@ -101,6 +101,7 @@ create table if not exists entries (
   sub     text,
   detail  text,
   period  text,
+  perks   jsonb,
   url     text,
   done    boolean not null default false,
   ord     bigint  not null default 0
@@ -108,6 +109,8 @@ create table if not exists entries (
 
 -- 숙소의 기간(체크인 – 체크아웃). 타입(룸)은 tag, 메모는 detail에 있다.
 alter table entries add column if not exists period text;
+-- 숙소의 시설(조식 · 수영장 …). 메모와는 따로다.
+alter table entries add column if not exists perks  jsonb;
 
 -- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
 create table if not exists attachments (

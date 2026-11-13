@@ -263,7 +263,7 @@ export function seedTrip(){
       };
     }),
     flights: SEED_FLIGHTS.map(function(x){ return Object.assign({}, x); }),
-    stays: SEED_STAYS.map(function(x){ return Object.assign({ room: "", memo: "" }, x); }),
+    stays: SEED_STAYS.map(function(x){ return Object.assign({ room: "", memo: "", perks: [] }, x); }),
     books: SEED_BOOKS.map(function(x){ return Object.assign({}, x); }),
     /* 아이디가 매번 달라지면 "이미 들어와 있는지"를 알 수 없다. 씨앗은 늘 같다. */
     packList: SEED_PACK.map(function(t, i){ return { id: "pk" + (i + 1), text: t, on: false, ord: i }; })
@@ -421,6 +421,8 @@ function shopToItem(sh, t){
 /* 숙소는 이름 · 지역 · 타입(room) · 기간(period) · 메모(memo)다. 예전에는 기간과 메모가
    detail 한 칸에 섞여 있었다 — 두 날짜가 보이면 기간이고, 아니면 메모로 가른다.
    읽을 때만 가르고 저장은 고칠 때 새 모양으로 간다. */
+/* 숙소에 달아둘 수 있는 시설. 메모와는 따로 모은다. */
+export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나"];
 function normStay(st){
   if (st.period === undefined){
     var d = st.detail || "";
@@ -431,6 +433,12 @@ function normStay(st){
   delete st.detail;
   st.room = st.room || "";
   st.memo = st.memo || "";
+  /* 시설이 메모 한 줄로 적혀 있던 때(바로 앞 모양)의 것은 시설로 옮겨 읽는다 */
+  if (!Array.isArray(st.perks)){
+    var rows = st.memo.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
+    st.perks = rows.filter(function(x){ return AMENITIES.indexOf(x) >= 0; });
+    st.memo = rows.filter(function(x){ return AMENITIES.indexOf(x) < 0; }).join("\n");
+  }
   return st;
 }
 /* 체크인 · 체크아웃을 날짜로 — 기간 글자에서 읽는다. 못 읽으면 null. */

@@ -778,12 +778,24 @@
   .quietbtn.ico .icon{ width: 15px; height: 15px; }
   /* 줄 아래에 붙은 첨부 (정보 탭) */
   .rowline > .tl-actions{ align-self: flex-start; margin: 8px -6px 0 0; gap: 0; }
-  /* 숙소 줄: 타입은 이름 바로 아래, 시설은 작은 알약으로 */
-  .rowbody small.room{ color: var(--ink); font-weight: 500; }
-  .perks{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-  .perks .badge{ font-size: 10.5px; padding: 2px 8px; }
-  /* 메모 위의 버튼 줄은 메모 칸에 붙어 있다 */
-  .fld > .pickrow + textarea{ margin-top: 8px; }
+  /* 숙소 줄: 타입은 이름 아래 카드의 색으로 칠한 알약 — 이름과 한눈에 갈린다 */
+  .roomtag{
+    display: inline-block; margin-top: 4px; max-width: 100%;
+    font-size: 11.5px; font-weight: 700; line-height: 1.35; padding: 2px 9px; border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent);
+  }
+  /* 시설은 줄 폭 전체로 한 줄. 아주 좁은 화면에서만 접힌다. */
+  .rowbelow{ padding: 0 0 12px 27px; margin-top: -4px; }
+  .perks{ display: flex; flex-wrap: wrap; gap: 4px; }
+  .perk{
+    font-size: 10.5px; font-weight: 600; line-height: 1.3; padding: 3px 8px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--accent); white-space: nowrap;
+  }
+  /* 한 줄에 다 놓이는 선택 버튼 줄 */
+  .pickrow.fit{ flex-wrap: nowrap; gap: 5px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 0 18px 2px; }
+  .pickrow.fit::-webkit-scrollbar{ display: none; }
+  .pickrow.fit .pick{ flex: 1 0 auto; padding: 8px 6px; font-size: 12px; text-align: center; }
   .rowatt{ padding: 0 0 12px 27px; margin-top: -4px; }
   .rowatt .att{ margin-top: 0; }
 
