@@ -274,18 +274,42 @@
   .daybtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
 
   .theme-row{
-    display: flex; align-items: center; gap: 8px;
-    margin: 4px 18px 0; padding: 12px 14px;
+    display: flex; align-items: stretch;
+    margin: 4px 18px 0;
     background: var(--surface-2); border-radius: 16px;
-    border: none; width: calc(100% - 36px);
+    width: calc(100% - 36px);
+  }
+  .theme-main{
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+    padding: 12px 6px 12px 14px; border: none; background: none; border-radius: 16px;
     font: inherit; text-align: left; color: inherit; cursor: pointer;
   }
-  .theme-row:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+  .theme-main:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
   .theme-body{ flex: 1; min-width: 0; }
   .theme-text{ display: block; font-size: 14.5px; font-weight: 600; word-break: keep-all; }
   .theme-text.blank{ color: var(--ink-faint); font-weight: 400; }
-  .theme-row .icon{ width: 15px; height: 15px; color: var(--ink-faint); }
+  .theme-main .icon{ width: 15px; height: 15px; color: var(--ink-faint); flex-shrink: 0; }
 
+  /* 그날의 날씨 — 요약 줄의 맨 오른쪽. 아이콘 · 기온 · 말이 한 덩이로 서고, 누르면 소스 사이트. */
+  .wx{
+    flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+    padding: 0 12px 0 8px; margin-left: 2px; border-radius: 0 16px 16px 0;
+    font-size: 12px; color: var(--ink-faint); text-decoration: none; white-space: nowrap;
+  }
+  .wx .icon{ width: 18px; height: 18px; }
+  .wx-hi{ font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 700; color: var(--ink); }
+  .wx-lo{ font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; margin-left: -1px; }
+  .wx-word{ font-size: 12px; }
+  .wx[href]{ cursor: pointer; }
+  .wx[href]:hover .wx-word, .wx[href]:focus-visible .wx-word{ color: var(--signal); }
+  .wx[href]:focus-visible{ outline: 2px solid var(--signal); outline-offset: -2px; }
+  .wx.t-sun .icon{ color: var(--warn); }
+  .wx.t-rain .icon, .wx.t-snow .icon{ color: var(--signal); }
+  .wx.t-cloud .icon{ color: var(--ink-faint); }
+  .wx.none .wx-word{ font-size: 11.5px; }
+  .wx.wait{ opacity: .55; }
+  /* 좁은 화면에서는 말을 접고 아이콘과 기온만 */
+  @media (max-width: 380px){ .wx .wx-word{ display: none; } .wx.none .wx-word, .wx.wait .wx-word{ display: inline; } }
 
   .day-stat{
     display: flex; align-items: center; justify-content: space-between;

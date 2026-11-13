@@ -17,6 +17,7 @@ import {
   timedOn, currentPair
 } from "./model.js";
 import { state, go, repaint } from "./nav.js";
+import { peek, weatherOn } from "./weather.js";
 
 /* 고치는 일은 고칠 수 있는 사람만. 창을 열기 전에, 또는 손이 닿는 즉시 묻는다 —
    로그인하지 않았으면 그대로 카카오 로그인 화면으로 보낸다. */
@@ -457,6 +458,45 @@ function dayRow(days){
   return dayrow;
 }
 
+/* ---------- 그날의 날씨 ---------- */
+function wxHtml(w){
+  if (!w.ok) return null;
+  return icon(w.desc.icon) + '<b class="wx-hi">' + w.hi + '°</b><span class="wx-lo">' + w.lo + '°</span>';
+}
+function paintWeather(node, w){
+  node.className = "wx";
+  node.removeAttribute("href"); node.removeAttribute("target"); node.removeAttribute("rel");
+  if (w && w.ok){
+    node.className = "wx t-" + w.desc.tone;
+    node.setAttribute("href", w.url);
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+    node.setAttribute("aria-label", (w.city || "") + " " + w.desc.label + " 최고 " + w.hi + "도 최저 " + w.lo + "도 · Open-Meteo에서 보기");
+    node.title = (w.city || "") + " · " + w.desc.label + " · Open-Meteo";
+    node.innerHTML = wxHtml(w) + '<span class="wx-word">' + esc(w.desc.label) + '</span>';
+  } else if (w){
+    node.className = "wx none";
+    node.setAttribute("aria-label", "날씨 없음");
+    node.title = "";
+    node.innerHTML = '<span class="wx-word">날씨 없음</span>';
+  } else {
+    node.className = "wx wait";
+    node.setAttribute("aria-label", "날씨를 불러오는 중");
+    node.innerHTML = icon("wx-cloud") + '<span class="wx-word">···</span>';
+  }
+}
+/* 기억에 있으면 바로 그리고, 없으면 기다리는 모양으로 두었다가 도착하면 바꾼다.
+   그 사이 화면이 바뀌어 노드가 떠났으면 건드리지 않는다. 실패는 '날씨 없음'이다. */
+function weatherChip(date){
+  var node = document.createElement("a");
+  var now = peek(date);
+  paintWeather(node, now);
+  if (!now){
+    weatherOn(date).then(function(w){ paintWeather(node, w); });
+  }
+  return node;
+}
+
 /* ---------- tab: schedule ---------- */
 function renderSchedule(root, days){
   var pair = currentPair();
@@ -472,13 +512,18 @@ function renderSchedule(root, days){
   }));
   rows.sort(function(a, b){ return (mins(a.at) || 0) - (mins(b.at) || 0); });
 
+  /* 요약 줄: 왼쪽은 요약을 고치는 단추, 오른쪽 끝은 그날의 날씨 (누르면 소스 사이트). */
   var themeRow = el(
-    '<button class="theme-row" type="button">' +
-      '<span class="theme-body"><span class="theme-text' + (day.theme ? "" : " blank") + '">' +
-      esc(day.theme || "이 날의 한 줄 요약 추가") + '</span></span>' + icon("edit") +
-    '</button>'
+    '<div class="theme-row">' +
+      '<button class="theme-main" type="button">' +
+        '<span class="theme-body"><span class="theme-text' + (day.theme ? "" : " blank") + '">' +
+        esc(day.theme || "이 날의 한 줄 요약 추가") + '</span></span>' + icon("edit") +
+      '</button>' +
+    '</div>'
   );
-  ripple(themeRow, function(){
+  var wxNode = weatherChip(day.date);
+  themeRow.appendChild(wxNode);
+  ripple(themeRow.firstChild, function(){
     openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 로마 시내" },
       function(v){ var undo = undoEdit(Plan.setDay(day.date, { theme: v })); repaint(); return undo; },
       day.theme ? function(){
