@@ -618,9 +618,14 @@ function timelineItem(it, pair){
   var actions = el('<span class="tl-actions"></span>');
   actions.appendChild(clipBtn(it));
   actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
-  meta.appendChild(actions);
-
-  body.appendChild(meta);
+  /* 알약도 지도 링크도 없으면 아래 줄은 단추만 덩그러니 남는다 — 단추를 이름 줄 오른쪽으로 올리고 그 줄을 없앤다. */
+  if (!meta.children.length){
+    actions.classList.add("in-head");
+    row.querySelector(".tl-head").appendChild(actions);
+  } else {
+    meta.appendChild(actions);
+    body.appendChild(meta);
+  }
   return row;
 }
 /* 줄의 표시(예약 확정 · 현금 Only · 카드 Only)는 이름 줄 오른쪽 끝에, 위아래로 쌓아 둔다 —

@@ -370,6 +370,8 @@
   .tl-head + .tl-line{ margin-top: 6px; }
   .tl-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .tl-actions{ margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+  /* 아래 줄 없이 이름 줄에 오른 단추 — 줄 높이를 키우지 않게 위아래로 당겨 둔다 */
+  .tl-actions.in-head{ margin: -7px -6px -7px 0; align-items: center; }
   /* The running item is marked, not shouted at: a wash of the accent, the
      time in it, and a filled dot with a ring. */
   .tl-item.current .tl-body{
