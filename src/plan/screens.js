@@ -4,13 +4,13 @@ import { Store } from "../ui/store.js";
 import { themeButton } from "../ui/theme.js";
 import {
   sheetShell, openFormSheet, openTextDialog, openConfirmDialog, openAskDialog, askThenDelete,
-  savedToast, pickerField, pickGroup, showOverlay, closeOverlay, closeTop, flag
+  savedToast, pickerField, pickGroup, rollEdges, showOverlay, closeOverlay, closeTop, flag
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KINDS, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayLeaving, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -503,6 +503,8 @@ function renderSchedule(root, days){
     return { at: it.s, draw: function(){ return timelineItem(it, pair); } };
   }).concat(shopsOn(day.date).map(function(sh){
     return { at: sh.time, draw: function(){ return shopTimelineRow(sh); } };
+  })).concat(stayRowsOn(day.date).map(function(r){
+    return { at: r.at, draw: function(){ return stayTimelineRow(r); } };
   }));
   rows.sort(function(a, b){ return (mins(a.at) || 0) - (mins(b.at) || 0); });
 
@@ -568,6 +570,38 @@ function shopTimelineRow(sh){
   if (sh.area) meta.appendChild(el('<span class="badge">' + esc(sh.area) + '</span>'));
   var actions = el('<span class="tl-actions"></span>');
   actions.appendChild(penBtn(function(){ openShopEditor(sh); }));
+  meta.appendChild(actions);
+  body.appendChild(meta);
+  return row;
+}
+
+/* 정보 탭의 숙소를 그날에 세운 줄 — 체크인하는 날과 체크아웃하는 날. 시설은 여기 보이지 않는다(정보 탭에만).
+   고치는 곳은 정보 탭과 같은 숙소 폼이다. */
+function stayTimelineRow(r){
+  var st = r.stay, cat = CAT.stay;
+  var label = "숙소 · " + STAY_KIND_LABEL[r.kind];
+  var row = el(
+    '<div class="tl-item stayrow" data-id="' + esc(st.id) + '-' + r.kind + '">' +
+      '<div class="tl-time mono' + (r.at ? '' : ' undated') + '">' + esc(r.at || "미정") + '</div>' +
+      '<div class="tl-rail"><span class="tl-dot" style="border-color:' + cat.color + '"></span></div>' +
+      '<div class="tl-body"><div class="tl-head"><p class="tl-title">' +
+        (st.mapUrl && safeUrl(st.mapUrl) ? linkHtml(st.name, safeUrl(st.mapUrl)) :
+          placeHtml(st.name, st.area ? st.name + " " + st.area.replace(/\s*·\s*/g, " ") : st.name, !!st.area)) +
+      '</p></div></div>' +
+    '</div>'
+  );
+  var body = row.querySelector(".tl-body");
+  if (st.room) body.appendChild(el('<p class="tl-line">' + esc(st.room) + '</p>'));
+  String(st.memo || "").split("\n").map(function(x){ return x.trim(); }).filter(Boolean).forEach(function(l){
+    body.appendChild(el('<p class="tl-line">' + esc(l) + '</p>'));
+  });
+  var atts = Plan.attachOf(st.id);
+  if (atts.length) body.appendChild(attachStrip(st.id, atts));
+  var meta = el('<div class="tl-meta"></div>');
+  meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(label) + '</span>'));
+  var actions = el('<span class="tl-actions"></span>');
+  actions.appendChild(clipBtn(st));
+  actions.appendChild(penBtn(function(){ openStayEditor(st); }));
   meta.appendChild(actions);
   body.appendChild(meta);
   return row;
@@ -945,6 +979,8 @@ function renderInfo(root){
         '<b>' + link + '</b>' +
         (h.room ? '<span class="roomtag">' + esc(h.room) + '</span>' : '') +
         (h.period ? '<small>' + esc(h.period) + '</small>' : '') +
+        (h.inAt || h.outAt ? '<small>' + (h.inAt ? '체크인 ' + esc(h.inAt) : '') + (h.inAt && h.outAt ? ' · ' : '') +
+          (h.outAt ? '체크아웃 ' + esc(h.outAt) : '') + '</small>' : '') +
         notes.map(function(x){ return '<small>' + esc(x) + '</small>'; }).join("");
     },
     /* 시설은 줄 폭 전체로, 한 줄에 */
@@ -1024,30 +1060,26 @@ function sectionCard(o){
 
   return card;
 }
-/* 숙소: 이름 · 타입(룸) · 지역 · 체크인/체크아웃 · 시설(버튼) · 메모. */
-function openStayEditor(st){
-  if (!mayEdit()) return;
-  var t = trip(), adding = !st;
-  var sheet = sheetShell(adding ? "숙소 추가" : "숙소 수정");
-  var body = sheet.querySelector(".sheet-body");
+/* 숙소 입력 폼: 이름 · 타입(룸) · 지역 · 체크인/체크아웃(날짜와 예상 시간) · 시설(버튼) · 메모 · 지도 링크.
+   정보 탭의 숙소와 일정 탭에서 분류 '숙소'를 고를 때가 **같은 폼**이다 — 같은 것을 두 군데 적지 않는다.
+   box에 폼을 채우고, 저장할 값을 읽는 collect()를 돌려준다(비었거나 틀린 칸은 flag하고 null). */
+function buildStayFields(sheet, box, st, fromDate){
+  var t = trip();
   var now = st ? stayDates(st, t) : null;
-  /* 새 숙소는 앞 숙소가 끝나는 날에서 시작한다 */
-  var last = ordered(t.stays).map(function(x){ return stayDates(x, t); }).filter(Boolean)
-    .map(function(r){ return r.b; }).sort().pop();
-  var from = now ? now.a : ((adding && last) || t.start);
+  var from = now ? now.a : fromDate;
   var to = now ? now.b : "";
 
-  body.appendChild(el('<div class="fld"><label for="s-name">이름</label>' +
+  box.appendChild(el('<div class="fld"><label for="s-name">이름</label>' +
     '<input id="s-name" type="text" placeholder="예: 알펜리조트" value="' + esc(st ? st.name : "") + '"></div>'));
-  body.appendChild(el('<div class="fld"><label for="s-room">타입 <span class="opt">선택</span></label>' +
+  box.appendChild(el('<div class="fld"><label for="s-room">타입 <span class="opt">선택</span></label>' +
     '<input id="s-room" type="text" placeholder="예: 스탠다드 트윈룸" value="' + esc(st ? st.room : "") + '"></div>'));
-  body.appendChild(el('<div class="fld"><label for="s-area">지역 <span class="opt">선택</span></label>' +
+  box.appendChild(el('<div class="fld"><label for="s-area">지역 <span class="opt">선택</span></label>' +
     '<input id="s-area" type="text" placeholder="예: 스위스 · 체르마트" value="' + esc(st ? st.area : "") + '"></div>'));
   var dr = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = dr.querySelector(".fld-row");
   row.appendChild(pickerField({ type:"date", id:"s-in", label:"체크인", value: from, col:true }));
   row.appendChild(pickerField({ type:"date", id:"s-out", label:"체크아웃", value: to, col:true }));
-  body.appendChild(dr);
+  box.appendChild(dr);
   var inEl = dr.querySelector("#s-in"), outEl = dr.querySelector("#s-out");
   /* 체크아웃은 체크인보다 이를 수 없다 — 체크인을 고르면 하루 뒤로 따라온다 */
   inEl.addEventListener("change", function(){
@@ -1059,10 +1091,16 @@ function openStayEditor(st){
     }
   });
   outEl.min = inEl.value;
+  /* 예상 시간은 일정 탭의 그 시각에 선다. 비워도 된다 — 그러면 그날 맨 앞에 시간 미정으로 선다. */
+  var tr = el('<div class="fld"><div class="fld-row"></div></div>');
+  var trow = tr.querySelector(".fld-row");
+  trow.appendChild(pickerField({ type:"time", id:"s-in-t", label:"체크인 예상 시간", value: st ? st.inAt : "", col:true }));
+  trow.appendChild(pickerField({ type:"time", id:"s-out-t", label:"체크아웃 예상 시간", value: st ? st.outAt : "", col:true }));
+  box.appendChild(tr);
 
-  /* 시설은 메모와 따로다 — 눌러서 켜고 끈다. 한 줄에 다 들어오게 작게. */
-  var perksFld = el('<div class="fld"><label>시설 <span class="opt">선택</span></label><div class="pickrow fit" id="s-perks"></div></div>');
-  body.appendChild(perksFld);
+  /* 시설은 메모와 따로다 — 눌러서 켜고 끈다. 한 줄로 구르고, 더 있는 쪽 가장자리는 옅어진다. */
+  var perksFld = el('<div class="fld"><label>시설 <span class="opt">선택</span></label><div class="pickrow fit scroll" id="s-perks"></div></div>');
+  box.appendChild(perksFld);
   var perks = perksFld.querySelector("#s-perks");
   var on = (st && st.perks ? st.perks : []).slice();
   AMENITIES.forEach(function(name){
@@ -1075,14 +1113,53 @@ function openStayEditor(st){
     });
     perks.appendChild(b);
   });
-  body.appendChild(el('<div class="fld"><label for="s-memo">메모 <span class="opt">선택</span></label>' +
+  rollEdges(perks);
+  box.appendChild(el('<div class="fld"><label for="s-memo">메모 <span class="opt">선택</span></label>' +
     '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩">' + esc(st ? st.memo : "") + '</textarea></div>'));
-  var memo = body.querySelector("#s-memo");
+  var memo = box.querySelector("#s-memo");
   /* 이름으로 찾아지지 않는 숙소만 직접 주소를 적는다 */
-  body.appendChild(el('<div class="fld"><label for="s-map">구글 지도 링크 <span class="opt">선택</span></label>' +
+  box.appendChild(el('<div class="fld"><label for="s-map">구글 지도 링크 <span class="opt">선택</span></label>' +
     '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
     esc(st && st.mapUrl ? st.mapUrl : "") + '"></div>'));
   function lines(){ return memo.value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean); }
+
+  return {
+    focus: function(){ sheet.querySelector("#s-name").focus(); },
+    collect: function(){
+      var nameEl = sheet.querySelector("#s-name");
+      var name = nameEl.value.trim();
+      if (!name) return flag(nameEl, "이름을 적어 주세요."), null;
+      if (!inEl.value) return flag(inEl, "날짜를 골라 주세요."), null;
+      if (!outEl.value) return flag(outEl, "날짜를 골라 주세요."), null;
+      if (outEl.value <= inEl.value) return flag(outEl, "체크아웃이 체크인보다 늦어야 합니다."), null;
+      var mapEl = sheet.querySelector("#s-map"), mapRaw = mapEl.value.trim(), mapLink = "";
+      if (mapRaw){
+        mapLink = safeUrl(mapRaw) || "";
+        if (!mapLink) return flag(mapEl, "링크를 확인해 주세요."), null;
+      }
+      return {
+        name: name, area: sheet.querySelector("#s-area").value.trim(),
+        room: sheet.querySelector("#s-room").value.trim(),
+        period: periodText(inEl.value, outEl.value),
+        inAt: sheet.querySelector("#s-in-t").value || "", outAt: sheet.querySelector("#s-out-t").value || "",
+        perks: AMENITIES.filter(function(x){ return on.indexOf(x) >= 0; }),
+        memo: lines().join("\n"),
+        mapUrl: mapLink
+      };
+    },
+    checkIn: function(){ return inEl.value; }
+  };
+}
+
+function openStayEditor(st){
+  if (!mayEdit()) return;
+  var t = trip(), adding = !st;
+  var sheet = sheetShell(adding ? "숙소 추가" : "숙소 수정");
+  var body = sheet.querySelector(".sheet-body");
+  /* 새 숙소는 앞 숙소가 끝나는 날에서 시작한다 */
+  var last = ordered(t.stays).map(function(x){ return stayDates(x, t); }).filter(Boolean)
+    .map(function(r){ return r.b; }).sort().pop();
+  var form = buildStayFields(sheet, body, st, (adding && last) || t.start);
 
   var foot = sheet.querySelector(".sheet-foot");
   if (st){
@@ -1098,25 +1175,8 @@ function openStayEditor(st){
   }
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
   ripple(save, function(){
-    var nameEl = sheet.querySelector("#s-name");
-    var name = nameEl.value.trim();
-    if (!name) return flag(nameEl, "이름을 적어 주세요.");
-    if (!inEl.value) return flag(inEl, "날짜를 골라 주세요.");
-    if (!outEl.value) return flag(outEl, "날짜를 골라 주세요.");
-    if (outEl.value <= inEl.value) return flag(outEl, "체크아웃이 체크인보다 늦어야 합니다.");
-    var mapEl = sheet.querySelector("#s-map"), mapRaw = mapEl.value.trim(), mapLink = "";
-    if (mapRaw){
-      mapLink = safeUrl(mapRaw) || "";
-      if (!mapLink) return flag(mapEl, "링크를 확인해 주세요.");
-    }
-    var rec = {
-      name: name, area: sheet.querySelector("#s-area").value.trim(),
-      room: sheet.querySelector("#s-room").value.trim(),
-      period: periodText(inEl.value, outEl.value),
-      perks: AMENITIES.filter(function(x){ return on.indexOf(x) >= 0; }),
-      memo: lines().join("\n"),
-      mapUrl: mapLink
-    };
+    var rec = form.collect();
+    if (!rec) return;
     closeOverlay();
     if (adding){ Plan.listAdd("stays", rec); savedToast(false); repaint(); return; }
     var undo = undoEdit(Plan.listEdit("stays", st.id, rec));
@@ -1125,7 +1185,7 @@ function openStayEditor(st){
   });
   foot.appendChild(save);
   showOverlay(sheet);
-  if (adding) setTimeout(function(){ sheet.querySelector("#s-name").focus(); }, 60);
+  if (adding) setTimeout(form.focus, 60);
 }
 
 /* 첨부를 받는 줄(항공 · 숙소 · 예약): 줄을 누르면 수정, 끝에 첨부와 연필.
@@ -1327,6 +1387,16 @@ function afterLast(date){
   return step5(last.e && !overnight(last) ? last.e : last.s);
 }
 
+/* 항공은 '항공사'와 '편명'을 따로 받는다. 일정의 이름은 둘을 이어 붙인 것이다("대한항공 KE931") —
+   고칠 때는 끝의 편명 꼴을 떼어 다시 둘로 나눠 읽는다. */
+function splitFlight(title){
+  var m = String(title || "").trim().match(/^(.*?)\s*([A-Za-z0-9]{2}\s?\d{1,4}[A-Za-z]?)$/);
+  return m ? { airline: m[1].trim(), no: m[2].replace(/\s+/g, "") } : { airline: String(title || "").trim(), no: "" };
+}
+
+/* 일정 편집기. 맨 위가 분류다 — 분류가 아래 칸들의 모양을 정한다:
+   · 숙소를 고르면 정보 탭의 숙소와 같은 폼이 뜬다(`buildStayFields`) — 숙소는 하나뿐이고 일정 탭은 그것을 그날에 세운다.
+   · 이동 · 항공기를 고르면 일정 이름 대신 항공사와 편명을 따로 받는다. */
 function openItemEditor(item, defaultDate, presets){
   if (!mayEdit()) return;
   var days = tripDays();
@@ -1341,17 +1411,37 @@ function openItemEditor(item, defaultDate, presets){
   var startAt = item ? item.s : (!presets && defaultDate ? afterLast(defaultDate) : "");
   var sheet = sheetShell(item ? "일정 수정" : "일정 추가");
   var body = sheet.querySelector(".sheet-body");
+  var legacyStay = !!(item && item.cat === "stay");   /* 예전에 일정으로 적은 숙소는 일정 폼 그대로 고친다 */
 
+  /* ---- 맨 위: 분류와 그 소분류 ---- */
+  body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow scroll" id="ed-cat"></div></div>'));
+  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow scroll" id="ed-meal"></div></div>');
+  body.appendChild(mealFld);
+  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow scroll" id="ed-mode"></div></div>');
+  body.appendChild(modeFld);
+
+  var form = el('<div id="ed-itemform"></div>');       /* 일정 폼 */
+  var stayBox = el('<div id="ed-stayform" hidden></div>');   /* 숙소 폼(분류가 숙소일 때) */
+  body.appendChild(form);
+  body.appendChild(stayBox);
+  var stayCtl = null;
+
+  /* 일정 이름 줄: 아이콘 + (일정 | 항공사 · 편명) */
   var nameRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var nameInner = nameRow.querySelector(".fld-row");
   nameInner.appendChild(el('<div class="fld-col flag-col"><label for="ed-emo">아이콘</label>' +
     '<input id="ed-emo" type="text" maxlength="4" placeholder="없음" value="' +
     esc(item && item.emo ? item.emo : "") + '"></div>'));
-  nameInner.appendChild(el('<div class="fld-col"><label for="ed-title">일정</label>' +
+  nameInner.appendChild(el('<div class="fld-col" id="ed-title-col"><label for="ed-title">일정</label>' +
     '<input id="ed-title" type="text" value="' + esc(item ? item.title : "") + '"></div>'));
-  body.appendChild(nameRow);
+  var fl = item && cur.mode === "plane" ? splitFlight(item.title) : { airline: "", no: "" };
+  nameInner.appendChild(el('<div class="fld-col" id="ed-air-col" hidden><label for="ed-airline">항공사</label>' +
+    '<input id="ed-airline" type="text" placeholder="예: 대한항공" value="' + esc(fl.airline) + '"></div>'));
+  nameInner.appendChild(el('<div class="fld-col narrow" id="ed-no-col" hidden><label for="ed-flightno">편명</label>' +
+    '<input id="ed-flightno" type="text" autocapitalize="characters" placeholder="KE931" value="' + esc(fl.no) + '"></div>'));
+  form.appendChild(nameRow);
   /* 날짜는 한 줄로 흐른다 — 열나흘이 네 줄을 차지하면 그 아래 칸들이 화면 밖으로 밀린다 */
-  body.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow scroll" id="ed-day"></div></div>'));
+  form.appendChild(el('<div class="fld"><label>날짜</label><div class="pickrow scroll" id="ed-day"></div></div>'));
   var timeRow = el('<div class="fld"><div class="fld-row"></div></div>');
   var row = timeRow.querySelector(".fld-row");
   var sFld = pickerField({ type:"time", id:"ed-s", label:"시작", value: startAt, col:true });
@@ -1363,27 +1453,18 @@ function openItemEditor(item, defaultDate, presets){
   row.appendChild(sFld);
   row.appendChild(eFld);
   timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
-  body.appendChild(timeRow);
-  body.appendChild(el('<div class="fld"><label>분류</label><div class="pickrow scroll" id="ed-cat"></div></div>'));
-  var mealFld = el('<div class="fld"><label>식사 종류</label><div class="pickrow scroll" id="ed-meal"></div></div>');
-  body.appendChild(mealFld);
-  var modeFld = el('<div class="fld"><label>이동 수단</label><div class="pickrow scroll" id="ed-mode"></div></div>');
-  body.appendChild(modeFld);
-  var kindFld = el('<div class="fld"><label>숙소 구분</label><div class="pickrow scroll" id="ed-kind"></div></div>');
-  body.appendChild(kindFld);
-  var placeFld = el('<div class="fld"><label for="ed-places">장소</label>' +
-    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea>' +
-    '<p class="fld-hint" id="ed-places-hint" hidden>정보 탭의 숙소에서 가져왔습니다.</p></div>');
-  body.appendChild(placeFld);
-  body.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
+  form.appendChild(timeRow);
+  form.appendChild(el('<div class="fld"><label for="ed-places">장소</label>' +
+    '<textarea id="ed-places" rows="1" placeholder="한 줄에 한 곳">' + esc(item ? (item.places || []).join("\n") : "") + '</textarea></div>'));
+  form.appendChild(el('<div class="fld"><label for="ed-lines">메모</label>' +
     '<textarea id="ed-lines" rows="1" placeholder="한 줄에 하나씩">' + esc(item ? (item.lines || []).join("\n") : "") + '</textarea></div>'));
   /* 아래 둘은 적지 않아도 되는 칸이다 — 그래서 맨 끝에 둔다 */
   /* 예약 확정 · 현금 Only · 카드 Only는 버튼이다 — 태그 칸과는 따로, 태그에는 아무것도 들어가지 않는다.
      현금과 카드는 둘 중 하나만 켜진다. */
   var marks = (item && item.marks ? item.marks : []).slice();
   var markFld = el('<div class="fld"><label>예약 · 결제 <span class="opt">선택</span></label>' +
-    '<div class="pickrow fit" id="ed-marks"></div></div>');
-  body.appendChild(markFld);
+    '<div class="pickrow fit scroll" id="ed-marks"></div></div>');
+  form.appendChild(markFld);
   var markRow = markFld.querySelector("#ed-marks");
   MARKS.forEach(function(m){
     var b = el('<button class="pick mark-pick mark-' + m.key + '" type="button" data-mark="' + m.key +
@@ -1401,39 +1482,22 @@ function openItemEditor(item, defaultDate, presets){
     });
     markRow.appendChild(b);
   });
-  var tagFld = el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
-    '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>');
-  body.appendChild(tagFld);
+  rollEdges(markRow);
+  form.appendChild(el('<div class="fld"><label for="ed-tag">태그 <span class="opt">선택</span></label>' +
+    '<input id="ed-tag" type="text" placeholder="예: 17:15 입장" value="' + esc(item && item.tag ? item.tag : "") + '"></div>'));
   /* 장소 이름으로 찾아지지 않는 곳만 직접 주소를 적는다. 적어두면 그 일정의 지도는 이 주소로 열린다. */
-  body.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
+  form.appendChild(el('<div class="fld"><label for="ed-map">구글 지도 링크 <span class="opt">선택</span></label>' +
     '<input id="ed-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
     esc(item && item.mapUrl ? item.mapUrl : "") + '"></div>'));
 
-  /* 숙소로 적으면 그날 밤 묵는 곳을 장소에 채워둔다. 손으로 고친 장소는 건드리지 않는다. */
-  var placesEl = placeFld.querySelector("#ed-places");
-  var placesHint = placeFld.querySelector("#ed-places-hint");
-  var autoPlace = "";
-  function fillStay(){
-    if (cur.cat !== "stay") return;
-    var now = placesEl.value.trim();
-    if (now && now !== autoPlace) return;
-    var st = cur.mode === "checkout" ? (stayLeaving(cur.dayDate) || stayOn(cur.dayDate)) : stayOn(cur.dayDate);
-    /* 같은 이름의 호텔은 어디에나 있다. 도시까지 붙여야 지도가 그곳을 찾는다. */
-    var city = st && st.area ? st.area.split("·").pop().trim() : "";
-    autoPlace = st ? st.name + (city ? " " + city : "") : "";
-    placesEl.value = autoPlace;
-    placesHint.hidden = !st;
-  }
-  placesEl.addEventListener("input", function(){ placesHint.hidden = true; });
-
   pickGroup(sheet.querySelector("#ed-day"),
     days.map(function(d){ return { key:d.date, label: fmtMD(d.date) + " (" + d.dow + ")" }; }),
-    function(){ return cur.dayDate; }, function(v){ cur.dayDate = v; fillStay(); });
-  /* 식사 종류는 식사일 때만, 이동 수단은 이동일 때만, 숙소 구분은 숙소일 때만 묻는다.
-     소분류 둘(수단 · 숙소 구분)은 같은 칸(mode)에 적으므로, 분류가 바뀌면 비운다. */
-  var modeRow, kindRow, mealRow;
+    function(){ return cur.dayDate; }, function(v){ cur.dayDate = v; });
+
+  var mealRow = sheet.querySelector("#ed-meal"), modeRow = sheet.querySelector("#ed-mode");
+  var titleEl = sheet.querySelector("#ed-title"), airEl = sheet.querySelector("#ed-airline"), noEl = sheet.querySelector("#ed-flightno");
   /* 이동 수단을 고르면 그 수단의 대표 이모티콘이 아이콘 칸에 들어간다. 칸이 비어 있거나 방금 우리가 넣은 것일 때만 바꾸고,
-     직접 적은 것은 건드리지 않는다. 이동이 아니게 되면 우리가 넣은 것은 도로 비운다. */
+     직접 적은 것은 건드리지 않는다. 이동이 아니게 되면 넣어둔 것은 도로 비운다. */
   var emoEl = sheet.querySelector("#ed-emo");
   var autoEmo = item && item.mode && item.emo === MODE_EMO[item.mode] ? item.emo : "";
   var primed = !item;          /* 있던 일정을 열기만 해서는 아이콘을 바꾸지 않는다 */
@@ -1443,39 +1507,47 @@ function openItemEditor(item, defaultDate, presets){
     var now = emoEl.value.trim();
     if (!now || now === autoEmo){ emoEl.value = want; autoEmo = want; }
   }
+  var wasFlight = false;
+  /* 분류가 정하는 것: 소분류 줄, 이름 칸의 모양, 숙소 폼 */
   function syncKinds(){
-    var food = cur.cat === "food", move = cur.cat === "move", stay = cur.cat === "stay";
+    var food = cur.cat === "food", move = cur.cat === "move", stay = cur.cat === "stay" && !legacyStay;
+    var plane = move && cur.mode === "plane";
     mealFld.hidden = !food;
     modeFld.hidden = !move;
-    kindFld.hidden = !stay;
+    form.hidden = stay;
+    stayBox.hidden = !stay;
+    if (stay && !stayCtl) stayCtl = buildStayFields(sheet, stayBox, null, cur.dayDate);
     timeRow.querySelector("#ed-nextday").hidden = !move;
     if (!food && cur.meal){
       cur.meal = "";
       mealRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });
     }
-    var valid = move ? MODE_LABEL : stay ? STAY_KIND_LABEL : null;
-    if (cur.mode && !(valid && valid[cur.mode])){
+    if (cur.mode && !(move ? MODE_LABEL[cur.mode] : (cur.cat === "stay" && STAY_KIND_LABEL[cur.mode]))){
       cur.mode = "";
       modeRow.querySelectorAll(".pick").forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
-      kindRow.querySelectorAll(".pick").forEach(function(x, i){ x.setAttribute("aria-pressed", String(i === 0)); });
     }
+    /* 항공기면 일정 이름 칸 자리에 항공사와 편명. 오가는 동안 적은 것은 잃지 않는다. */
+    sheet.querySelector("#ed-title-col").hidden = plane;
+    sheet.querySelector("#ed-air-col").hidden = !plane;
+    sheet.querySelector("#ed-no-col").hidden = !plane;
+    if (plane && !wasFlight && !airEl.value && !noEl.value && titleEl.value.trim()){
+      var sp = splitFlight(titleEl.value); airEl.value = sp.airline; noEl.value = sp.no;
+    }
+    if (!plane && wasFlight && !titleEl.value.trim()) titleEl.value = (airEl.value.trim() + " " + noEl.value.trim()).trim();
+    wasFlight = plane;
     fillEmo();
   }
-  pickGroup(sheet.querySelector("#ed-cat"),
-    [{ key:"", label:"없음" }].concat(CAT_ORDER.map(function(k){ return { key:k, label: CAT[k].label }; })),
-    function(){ return cur.cat; }, function(v){ cur.cat = v; syncKinds(); fillStay(); });
-  mealRow = sheet.querySelector("#ed-meal");
+  /* 숙소는 새로 적을 때만 고른다 — 있던 일정을 숙소로 바꾸는 길은 없다 */
+  var cats = [{ key:"", label:"없음" }].concat(CAT_ORDER.filter(function(k){ return k !== "stay" || !item || legacyStay; })
+    .map(function(k){ return { key:k, label: CAT[k].label }; }));
+  pickGroup(sheet.querySelector("#ed-cat"), cats,
+    function(){ return cur.cat; }, function(v){ cur.cat = v; syncKinds(); });
   pickGroup(mealRow,
     [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
     function(){ return cur.meal; }, function(v){ cur.meal = v; });
-  modeRow = sheet.querySelector("#ed-mode");
-  pickGroup(modeRow, MODES, function(){ return cur.mode; }, function(v){ cur.mode = v; fillEmo(); });
-  kindRow = sheet.querySelector("#ed-kind");
-  pickGroup(kindRow, [{ key:"", label:"없음" }].concat(STAY_KINDS), function(){ return cur.mode; },
-    function(v){ cur.mode = v; fillStay(); });
+  pickGroup(modeRow, MODES, function(){ return cur.mode; }, function(v){ cur.mode = v; syncKinds(); });
   syncKinds();
   primed = true;
-  if (!item) fillStay();
 
   var foot = sheet.querySelector(".sheet-foot");
   if (item){
@@ -1491,9 +1563,26 @@ function openItemEditor(item, defaultDate, presets){
   }
   var save = el('<button class="btn btn-primary" type="button">저장</button>');
   ripple(save, function(){
-    var titleEl = sheet.querySelector("#ed-title"), sEl = sheet.querySelector("#ed-s");
-    var title = titleEl.value.trim();
-    if (!title) return flag(titleEl, "일정을 적어 주세요.");
+    /* 숙소: 정보 탭의 숙소 하나를 더한다. 일정 탭에는 체크인 · 체크아웃 날에 그 시각으로 선다. */
+    if (cur.cat === "stay" && !legacyStay){
+      var srec = stayCtl && stayCtl.collect();
+      if (!srec) return;
+      closeOverlay();
+      Plan.listAdd("stays", srec);
+      savedToast(false);
+      if (state.tab === "sched"){
+        var si = tripDays().findIndex(function(d){ return d.date === stayCtl.checkIn(); });
+        if (si >= 0 && si !== state.day) return go({ day: si });
+      }
+      repaint();
+      return;
+    }
+    var sEl = sheet.querySelector("#ed-s");
+    var plane = cur.cat === "move" && cur.mode === "plane";
+    /* 편명은 공백 없이 대문자로 — "tw 123" → "TW123" */
+    var title = plane ? (airEl.value.trim() + " " + noEl.value.replace(/\s+/g, "").toUpperCase()).trim() : titleEl.value.trim();
+    if (plane && !airEl.value.trim()) return flag(airEl, "항공사를 적어 주세요.");
+    if (!plane && !title) return flag(titleEl, "일정을 적어 주세요.");
     /* 시간이 없는 일정은 시간표에 설 수 없다. 식사와 쇼핑은 제 탭에 '시간 미정'으로
        모이므로 비워도 되고, 그 밖의 분류는 시각이 있어야 어딘가에 선다. */
     if (!sEl.value && cur.cat !== "food" && cur.cat !== "shop"){

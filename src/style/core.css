@@ -320,6 +320,7 @@
   .fld-col{ flex: 1 1 0; min-width: 0; }
   /* just wide enough for one emoji — it must never crowd the name beside it */
   .flag-col{ flex: 0 0 74px; width: 74px; }
+  .fld-col.narrow{ flex: 0 0 31%; }
   .flag-col input{ text-align: center; }
 
   /* Date and time inputs are drawn by the platform: iOS sizes them from their
@@ -804,7 +805,9 @@
   }
   /* 시설은 줄 폭 전체로 한 줄. 아주 좁은 화면에서만 접힌다. */
   .rowbelow{ padding: 0 0 12px 27px; margin-top: -4px; }
-  .perks{ display: flex; flex-wrap: wrap; gap: 4px; }
+  .perks{ display: flex; flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .perks::-webkit-scrollbar{ display: none; }
+  .perk{ flex-shrink: 0; }
   .perk{
     font-size: 10.5px; font-weight: 600; line-height: 1.3; padding: 3px 8px; border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);

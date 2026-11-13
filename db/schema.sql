@@ -115,6 +115,10 @@ alter table entries add column if not exists period text;
 -- 숙소의 시설(조식 · 수영장 …). 메모와는 따로다.
 alter table entries add column if not exists perks  jsonb;
 
+-- 숙소의 체크인 · 체크아웃 예상 시간("15:00"). 일정 탭에 그 시각으로 선다.
+alter table entries add column if not exists checkin_time  text;
+alter table entries add column if not exists checkout_time text;
+
 -- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
 create table if not exists attachments (
   id       text primary key,

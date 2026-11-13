@@ -483,7 +483,7 @@ function openTimeWheel(opts, onDone){
 }
 
 /* 한 줄로 구르는 줄은 더 있는 쪽 가장자리가 옅어진다 — 거기에 더 있다는 뜻이다. 보이는 폭이 바뀌어도(숨었다 나타나도) 다시 잰다. */
-function rollEdges(row){
+export function rollEdges(row){
   function edges(){
     var max = row.scrollWidth - row.clientWidth;
     row.classList.toggle("more-l", row.scrollLeft > 2);

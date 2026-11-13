@@ -490,7 +490,7 @@ function shopToItem(sh, t){
    detail 한 칸에 섞여 있었다 — 두 날짜가 보이면 기간이고, 아니면 메모로 가른다.
    읽을 때만 가르고 저장은 고칠 때 새 모양으로 간다. */
 /* 숙소에 달아둘 수 있는 시설. 메모와는 따로 모은다. */
-export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나"];
+export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나", "세탁"];
 function normStay(st){
   if (st.period === undefined){
     var d = st.detail || "";
@@ -502,6 +502,8 @@ function normStay(st){
   st.room = st.room || "";
   st.memo = st.memo || "";
   st.mapUrl = st.mapUrl || "";
+  st.inAt = st.inAt || "";      /* 체크인 · 체크아웃 예상 시간 "HH:MM" */
+  st.outAt = st.outAt || "";
   /* 시설이 메모 한 줄로 적혀 있던 때(바로 앞 모양)의 것은 시설로 옮겨 읽는다 */
   if (!Array.isArray(st.perks)){
     var rows = st.memo.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
@@ -535,6 +537,20 @@ export function stayOn(date){
     if (r && date >= r.a && date < r.b) hit = st;
   });
   return hit;
+}
+
+/* 일정 탭에 서는 숙소의 줄 — 체크인하는 날과 체크아웃하는 날에 한 줄씩. 숙소는 정보 탭의 것 하나뿐이고(같은 입력 폼),
+   일정 탭은 그것을 그날에 세워 보여줄 뿐이다. 예상 시간(inAt · outAt)이 없으면 시간 미정으로 그날 맨 앞에 선다. */
+export function stayRowsOn(date){
+  var t = trip(), out = [];
+  if (!t) return out;
+  ordered(t.stays).forEach(function(st){
+    var r = stayDates(st, t);
+    if (!r) return;
+    if (r.a === date) out.push({ stay: st, kind: "checkin", at: st.inAt || "" });
+    if (r.b === date) out.push({ stay: st, kind: "checkout", at: st.outAt || "" });
+  });
+  return out;
 }
 
 /* 그날 체크아웃하는 숙소 — 떠나는 날 아침에는 간밤에 묵은 곳이 그 숙소다. */

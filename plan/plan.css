@@ -343,6 +343,7 @@
     width: 44px; flex-shrink: 0; padding-top: 13px;
     font-size: 12.5px; font-weight: 600; line-height: 1.25; text-align: right;
   }
+  .tl-time.undated{ font-size: 12px; font-weight: 500; color: var(--ink-faint); }
   .tl-time small{ display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-faint); }
   /* 다음 날 끝나는 것 — 도착 시각 옆에 작게 */
   .nextday{ font-size: 8.5px; font-weight: 700; color: var(--signal); margin-left: 1px; vertical-align: 3px; line-height: 0; }
