@@ -586,11 +586,13 @@ function timelineItem(it, pair){
         (overnight(it) ? '<sup class="nextday">+1</sup>' : '') + '</small>' : '') + '</div>' +
       '<div class="tl-rail"><span class="tl-dot"' +
         (isCurrent ? '' : ' style="border-color:' + cat.color + '"') + '></span></div>' +
-      '<div class="tl-body"><p class="tl-title">' +
-        (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>' +
+      '<div class="tl-body"><div class="tl-head"><p class="tl-title">' +
+        (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div></div>' +
     '</div>'
   );
   var body = row.querySelector(".tl-body");
+  var mk = markPills(it);
+  if (mk) row.querySelector(".tl-head").appendChild(mk);
   (it.lines || []).forEach(function(l){ body.appendChild(el('<p class="tl-line">' + esc(l) + '</p>')); });
   var buys = it.buys || [];
   if (buys.length){
@@ -606,7 +608,8 @@ function timelineItem(it, pair){
     (it.cat === "move" && MODE_LABEL[it.mode] ? "이동 · " + MODE_LABEL[it.mode] : cat.label);
   meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">' + esc(catLabel) + '</span>'));
   if (it.meal && MEAL_LABEL[it.meal]) meta.appendChild(el('<span class="badge">' + esc(MEAL_LABEL[it.meal]) + '</span>'));
-  markBadges(it).forEach(function(b){ meta.appendChild(b); });
+  var tg = tagBadge(it);
+  if (tg) meta.appendChild(tg);
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -622,14 +625,18 @@ function timelineItem(it, pair){
   body.appendChild(meta);
   return row;
 }
-/* 줄의 알약들. 순서는 정해져 있다: 표시(예약 확정 · 현금 Only · 카드 Only)가 먼저, 손으로 적은
-   태그가 그다음. 색도 셋으로 갈린다 — 예약 확정은 초록, 현금 · 카드는 주황, 태그는 파랑. */
-function markBadges(it){
-  var out = marksOf(it).map(function(m){
-    return el('<span class="badge mark mark-' + m.key + '">' + icon(m.icon) + esc(m.label) + '</span>');
-  });
-  if (it.tag) out.push(el('<span class="badge tag">' + esc(it.tag) + '</span>'));
-  return out;
+/* 줄의 표시(예약 확정 · 현금 Only · 카드 Only)는 이름 줄 오른쪽 끝에, 위아래로 쌓아 둔다 —
+   분류 · 태그 알약 틈에 섞이면 가장 중요한 것이 묻힌다. 색도 갈린다: 예약 확정은 초록,
+   현금 · 카드는 주황. (손으로 적은 태그는 아래 알약 줄에서 파랑이다.) */
+function markPills(it){
+  var have = marksOf(it);
+  if (!have.length) return null;
+  return el('<span class="marks">' + have.map(function(m){
+    return '<span class="badge mark mark-' + m.key + '">' + icon(m.icon) + esc(m.label) + '</span>';
+  }).join("") + '</span>');
+}
+function tagBadge(it){
+  return it.tag ? el('<span class="badge tag">' + esc(it.tag) + '</span>') : null;
 }
 function shortPlace(p){
   var city = trip().city;
@@ -735,16 +742,20 @@ function foodCard(f){
     (it.s ? esc(spanOf(it)) : '시간 미정') +
     (MEAL_LABEL[it.meal] ? ' · ' + esc(MEAL_LABEL[it.meal]) : '') + '</p></div>');
   card.appendChild(head);
-  card.appendChild(el('<div class="card-top"><p class="card-name">' +
+  var top = el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') +
-    titleHtml(it) + '</p></div>'));
+    titleHtml(it) + '</p></div>');
+  var mk = markPills(it);
+  if (mk) top.appendChild(mk);
+  card.appendChild(top);
   (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
 
   var atts = Plan.attachOf(it.id);
   if (atts.length) card.appendChild(attachStrip(it.id, atts));
 
   var meta = el('<div class="card-meta"></div>');
-  markBadges(it).forEach(function(b){ meta.appendChild(b); });
+  var tg = tagBadge(it);
+  if (tg) meta.appendChild(tg);
   if (places.length > 1){
     places.forEach(function(p){
       meta.appendChild(el('<a class="maplink" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener">' +
@@ -814,8 +825,11 @@ function shopHead(when, onEdit, target){
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
   card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }, it));
-  card.appendChild(el('<div class="card-top"><p class="card-name">' +
-    (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>'));
+  var top = el('<div class="card-top"><p class="card-name">' +
+    (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>');
+  var mk = markPills(it);
+  if (mk) top.appendChild(mk);
+  card.appendChild(top);
   (it.lines || []).forEach(function(l){ card.appendChild(el('<p class="card-kind">' + esc(l) + '</p>')); });
   var atts = Plan.attachOf(it.id);
   if (atts.length) card.appendChild(attachStrip(it.id, atts));
