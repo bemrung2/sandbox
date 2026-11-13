@@ -801,9 +801,9 @@ function foodCard(f){
         icon("pin") + esc(shortPlace(p)) + '</a>'));
     });
   }
-  /* 식사 탭에서는 일정을 고치지 않는다 — 첨부만 */
   var actions = el('<span class="tl-actions"></span>');
   actions.appendChild(clipBtn(it));
+  actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
   head.appendChild(actions);
   if (meta.children.length) card.appendChild(meta);
   return card;
@@ -850,22 +850,20 @@ function renderShop(root, days){
   root.appendChild(add);
 }
 
-/* 쇼핑 탭에서는 일정을 고치지 않는다 — 연필이 없고 첨부만 (살 것은 줄마다 고친다) */
-function shopHead(when, target){
+function shopHead(when, onEdit, target){
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon("bag") + '</span>' +
     '<h3 class="mono' + (when ? '' : ' undated') + '">' + (when ? esc(when) : '시간 미정') + '</h3></div>');
-  if (target){
-    var acts = el('<span class="tl-actions"></span>');
-    acts.appendChild(clipBtn(target));
-    head.appendChild(acts);
-  }
+  var acts = el('<span class="tl-actions"></span>');
+  if (target) acts.appendChild(clipBtn(target));
+  acts.appendChild(penBtn(onEdit));
+  head.appendChild(acts);
   return head;
 }
 
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(spanOf(it), it));
+  card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }, it));
   var top = el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>');
   var mk = markPills(it);
@@ -881,7 +879,7 @@ function shopItemCard(it){
 /* 예전에 쇼핑 탭에서 가게로 따로 적어둔 것. 옮겨지기 전까지만 보인다. */
 function shopCard(s){
   var card = el('<div class="card t-shop"></div>');
-  card.appendChild(shopHead(s.time || ""));
+  card.appendChild(shopHead(s.time || "", function(){ openShopEditor(s); }));
   card.appendChild(el('<div class="card-top"><p class="card-name">' + placeHtml(s.name, s.map || s.name) + '</p></div>'));
   if (s.area) card.appendChild(el('<p class="card-kind">' + esc(s.area) + '</p>'));
   buyList(card, s.items || [], function(next){ return Plan.listEdit("shops", s.id, { items: next }); });
