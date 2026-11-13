@@ -285,13 +285,15 @@ export function renderTrip(root, keepScroll){
 
   root.innerHTML = "";
   root.appendChild(frag);
-  /* 날짜 줄은 탭 줄 바로 아래에 붙는다. 탭 줄의 높이는 글꼴에 따라 달라지니 재서 알려준다. */
-  root.style.setProperty("--tabs-h", tabs.offsetHeight + "px");
 
   if (state.tab === "sched") renderSchedule(body, days);
   else if (state.tab === "food") renderFood(body, days);
   else if (state.tab === "shop") renderShop(body, days);
   else renderInfo(body);
+
+  /* 날짜 줄은 탭 줄 바로 아래에 붙는다. 탭 줄의 높이는 글꼴에 따라 달라지니 재서 알려준다.
+     내용을 다 채운 뒤에 잰다 — 비어 있을 때 재면 화면이 잠깐 짧아져 브라우저가 스크롤을 맨 위로 끌어올린다. */
+  root.style.setProperty("--tabs-h", tabs.offsetHeight + "px");
 
   if (!keepScroll){
     var pin = sameTrip ? Math.max(0, tabs.offsetTop - (parseFloat(getComputedStyle(tabs).top) || 0)) : 0;
@@ -853,6 +855,12 @@ function shopCard(s){
 }
 
 /* 가게 하나의 쇼핑리스트. save(다음 목록)는 되살리는 함수를 돌려준다. */
+/* 여러 줄로 적은 것을 줄마다 하나로 — 빈 줄은 버린다 */
+function linesOf(v){
+  return String(v).split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
+}
+function addedMsg(n){ return n > 1 ? n + "개 추가했습니다." : "추가했습니다."; }
+
 function buyList(card, list, save){
   list.forEach(function(i){
     card.appendChild(checkRow(i.text, i.got,
@@ -877,10 +885,12 @@ function buyList(card, list, save){
 
   var addBtn = el('<button class="quietbtn buyadd" type="button">' + icon("plus") + '쇼핑리스트 추가하기</button>');
   ripple(addBtn, function(){
-    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"예: 티셔츠" }, function(v){
-      save(list.concat([{ id: uid("i"), text: v, got: false }]));
+    /* 줄을 바꾸면 한 줄이 하나다 — 여러 개를 한 번에 적는다 */
+    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
+      var texts = linesOf(v);
+      save(list.concat(texts.map(function(t){ return { id: uid("i"), text: t, got: false }; })));
       repaint();
-      toastDone("추가했습니다.");
+      toastDone(addedMsg(texts.length));
     });
   });
   card.appendChild(addBtn);
@@ -1192,9 +1202,11 @@ function packCard(){
     '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
   ripple(add, function(){
-    openTextDialog({ title:"준비물 추가", placeholder:"예: 멀티탭" }, function(v){
-      Plan.listAdd("packList", { text: v, on: false });
+    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
+      var texts = linesOf(v);
+      texts.forEach(function(t){ Plan.listAdd("packList", { text: t, on: false }); });
       repaint();
+      toastDone(addedMsg(texts.length));
     });
   });
   head.appendChild(add);

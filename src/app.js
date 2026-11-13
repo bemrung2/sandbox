@@ -36,6 +36,9 @@ function slide(next){
 
 function paint(keepScroll){
   if (!view) return;
+  /* 고치고 다시 그릴 때는 보던 자리 그대로. 다시 그리는 동안 화면이 잠깐 짧아지면 브라우저가
+     스크롤을 맨 위로 끌어올리므로, 그린 뒤에 있던 자리로 되돌려 놓는다. */
+  var was = window.scrollY;
   Plan.reread();
   if (state.screen === "trip" && Plan.cur()){
     slide("trip");
@@ -46,6 +49,7 @@ function paint(keepScroll){
     leftTrip();
     renderTrips(view, keepScroll);
   }
+  if (keepScroll && window.scrollY !== was) window.scrollTo({ top: was, behavior: "instant" });
 }
 
 /* The 지금 card says how far through the current item you are, so it has to
