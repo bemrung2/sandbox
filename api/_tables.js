@@ -115,6 +115,7 @@ function toRow(path, body) {
       row.label = body.name || ""; row.sub = body.area || null; row.tag = body.room || null;
       row.period = body.period == null ? "" : body.period; row.detail = body.memo || null;
       row.perks = body.perks || [];
+      row.url = body.mapUrl || null;       /* 직접 적은 구글 지도 주소 */
     }
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
@@ -167,7 +168,7 @@ function toDocs(tables) {
     else if (row.kind === "stays") {
       /* period 칸이 없던 때의 숙소는 기간과 메모가 detail 한 칸에 있다 — 화면이 갈라 읽는다 */
       const old = row.period === undefined || row.period === null;
-      body = { name: row.label, area: row.sub, room: row.tag, period: row.period, perks: row.perks,
+      body = { name: row.label, area: row.sub, room: row.tag, period: row.period, perks: row.perks, mapUrl: row.url,
                memo: old ? undefined : row.detail, detail: old ? row.detail : undefined };
     }
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };

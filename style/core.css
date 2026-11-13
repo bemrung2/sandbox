@@ -198,18 +198,17 @@
   /* a press also sinks, which reads as weight rather than as a highlight */
   /* 눌리면 살짝 가라앉고, 색은 한 번에 바뀌지 않고 번지듯 옮겨 간다 */
   .btn, .trip-open, .kakao, .daybtn, .chip, .pick, .tab, .check, .quietbtn, .linkbtn,
-  .icon-btn, .btn-text, .addcard, .trip-pin, .theme-row, .routerow, .rowbtn, .timebox, .attpick button{
+  .icon-btn, .btn-text, .addcard, .trip-pin, .theme-row, .rowbtn, .timebox, .attpick button{
     transition: transform 140ms var(--ease), background-color 180ms ease, color 180ms ease,
                 border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
   }
-  .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active,
-  .routerow:active{ transform: scale(0.985); }
+  .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active{ transform: scale(0.985); }
   .pick:active, .chip:active, .daybtn:active, .check:active, .btn-text:active,
   .icon-btn:active, .trip-pin:active, .quietbtn:active{ transform: scale(0.95); }
 
   @media (prefers-reduced-motion: reduce){
     .rip > .ink{ animation-duration: 1ms; }
-    .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active, .routerow:active,
+    .btn:active, .trip-open:active, .kakao:active, .addcard:active, .theme-row:active,
     .pick:active, .chip:active, .daybtn:active, .check:active, .btn-text:active,
     .icon-btn:active, .trip-pin:active, .quietbtn:active{ transform: none; }
   }

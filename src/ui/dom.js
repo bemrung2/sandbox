@@ -79,7 +79,12 @@ export function ripple(node, handler){
     });
     setTimeout(off, 1200);
   });
-  if (handler) node.addEventListener("click", handler);
+  if (handler) node.addEventListener("click", function(e){
+    /* 줄 안의 지도 링크를 눌렀다면 링크가 갈 곳으로 가야지, 줄의 동작(수정 창)이 열려서는 안 된다 */
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if (a && a !== node && node.contains(a)) return;
+    handler.call(this, e);
+  });
   return node;
 }
 

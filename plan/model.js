@@ -480,6 +480,7 @@ function normStay(st){
   delete st.detail;
   st.room = st.room || "";
   st.memo = st.memo || "";
+  st.mapUrl = st.mapUrl || "";
   /* 시설이 메모 한 줄로 적혀 있던 때(바로 앞 모양)의 것은 시설로 옮겨 읽는다 */
   if (!Array.isArray(st.perks)){
     var rows = st.memo.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);

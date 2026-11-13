@@ -489,8 +489,6 @@ function renderSchedule(root, days){
   });
   root.appendChild(themeRow);
 
-  root.appendChild(routeRow(day));
-
   var attCount = list.reduce(function(n, it){ return n + Plan.attachOf(it.id).length; }, 0);
   /* 긴 날은 맨 아래의 더하기까지 한참 내려가야 한다. 머리에도 하나 둔다. */
   var stat = el('<div class="day-stat"><span class="mono">' + rows.length + '개 일정' +
@@ -533,45 +531,6 @@ function shopTimelineRow(sh){
   actions.appendChild(penBtn(function(){ openShopEditor(sh); }));
   meta.appendChild(actions);
   body.appendChild(meta);
-  return row;
-}
-
-/* 그날의 동선 한 줄. 칩 하나가 한 곳, 화살표로 이어진다. */
-function routeRow(day){
-  var stops = day.route || [];
-  var row = el('<button class="routerow" type="button" aria-label="이 날의 동선 수정"></button>');
-  var label = el('<span class="route-label mono">동선</span>');
-  row.appendChild(label);
-  if (stops.length){
-    var chain = el('<span class="route-chain"></span>');
-    /* the arrow travels with the stop before it, so a wrap never starts with → */
-    stops.forEach(function(stop, i){
-      chain.appendChild(el('<span class="route-seg"><span class="route-stop">' + esc(stop) + '</span>' +
-        (i < stops.length - 1 ? '<span class="route-arrow" aria-hidden="true">→</span>' : '') + '</span>'));
-    });
-    row.appendChild(chain);
-  } else {
-    row.appendChild(el('<span class="route-chain blank">이 날의 동선 적어두기</span>'));
-  }
-  row.appendChild(el(icon("edit", "route-pen")));
-  ripple(row, function(){
-    openTextDialog({
-      title: fmtMD(day.date) + " 동선",
-      value: stops.join("\n"),
-      placeholder: "한 줄에 한 곳",
-      what: fmtMD(day.date) + " 동선",
-      multiline: true
-    }, function(v){
-      var next = v.split(/[\n→>,]/).map(function(x){ return x.trim(); }).filter(Boolean);
-      var undo = undoEdit(Plan.setDay(day.date, { route: next }));
-      repaint();
-      return undo;
-    }, stops.length ? function(){
-      var undo = undoOf(Plan.setDay(day.date, { route: [] }));
-      repaint();
-      return undo;
-    } : null);
-  });
   return row;
 }
 
@@ -926,8 +885,10 @@ function renderInfo(root){
       /* 같은 이름의 호텔은 어느 나라에나 있다. 지역을 적어뒀으면 같이 찾는다. */
       var where = h.area ? h.name + " " + h.area.replace(/\s*·\s*/g, " ") : h.name;
       var notes = String(h.memo || "").split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
+      /* 직접 적은 지도 링크가 있으면 그 주소로, 없으면 이름으로 찾는다 */
+      var link = h.mapUrl && safeUrl(h.mapUrl) ? linkHtml(h.name, safeUrl(h.mapUrl)) : placeHtml(h.name, where, !!h.area);
       return (h.area ? '<span class="lbl mono">' + esc(h.area) + '</span>' : '') +
-        '<b>' + placeHtml(h.name, where, !!h.area) + '</b>' +
+        '<b>' + link + '</b>' +
         (h.room ? '<span class="roomtag">' + esc(h.room) + '</span>' : '') +
         (h.period ? '<small>' + esc(h.period) + '</small>' : '') +
         notes.map(function(x){ return '<small>' + esc(x) + '</small>'; }).join("");
@@ -1092,6 +1053,10 @@ function openStayEditor(st){
   body.appendChild(el('<div class="fld"><label for="s-memo">메모 <span class="opt">선택</span></label>' +
     '<textarea id="s-memo" rows="1" placeholder="한 줄에 하나씩">' + esc(st ? st.memo : "") + '</textarea></div>'));
   var memo = body.querySelector("#s-memo");
+  /* 이름으로 찾아지지 않는 숙소만 직접 주소를 적는다 */
+  body.appendChild(el('<div class="fld"><label for="s-map">구글 지도 링크 <span class="opt">선택</span></label>' +
+    '<input id="s-map" type="url" inputmode="url" autocomplete="off" placeholder="장소 이름으로 안 찾아질 때만" value="' +
+    esc(st && st.mapUrl ? st.mapUrl : "") + '"></div>'));
   function lines(){ return memo.value.split("\n").map(function(x){ return x.trim(); }).filter(Boolean); }
 
   var foot = sheet.querySelector(".sheet-foot");
@@ -1114,12 +1079,18 @@ function openStayEditor(st){
     if (!inEl.value) return flag(inEl, "날짜를 골라 주세요.");
     if (!outEl.value) return flag(outEl, "날짜를 골라 주세요.");
     if (outEl.value <= inEl.value) return flag(outEl, "체크아웃이 체크인보다 늦어야 합니다.");
+    var mapEl = sheet.querySelector("#s-map"), mapRaw = mapEl.value.trim(), mapLink = "";
+    if (mapRaw){
+      mapLink = safeUrl(mapRaw) || "";
+      if (!mapLink) return flag(mapEl, "링크를 확인해 주세요.");
+    }
     var rec = {
       name: name, area: sheet.querySelector("#s-area").value.trim(),
       room: sheet.querySelector("#s-room").value.trim(),
       period: periodText(inEl.value, outEl.value),
       perks: AMENITIES.filter(function(x){ return on.indexOf(x) >= 0; }),
-      memo: lines().join("\n")
+      memo: lines().join("\n"),
+      mapUrl: mapLink
     };
     closeOverlay();
     if (adding){ Plan.listAdd("stays", rec); savedToast(false); repaint(); return; }
@@ -1135,8 +1106,12 @@ function openStayEditor(st){
 /* 첨부를 받는 줄(항공 · 숙소 · 예약): 줄을 누르면 수정, 끝에 첨부와 연필.
    붙은 것은 그 줄 바로 아래에 보인다. */
 function attachRow(card, row, inner, target, edit, below){
-  var btn = el('<button class="rowbtn" type="button">' + inner + '</button>');
+  /* 안에 지도 링크가 있으므로 button이 아니라 div다 — 링크를 button 안에 두면 어떤 브라우저는 링크가 안 열린다 */
+  var btn = el('<div class="rowbtn" role="button" tabindex="0">' + inner + '</div>');
   ripple(btn, edit);
+  btn.addEventListener("keydown", function(e){
+    if ((e.key === "Enter" || e.key === " ") && e.target === btn){ e.preventDefault(); btn.click(); }
+  });
   row.appendChild(btn);
   var acts = el('<span class="tl-actions"></span>');
   acts.appendChild(clipBtn(target));
