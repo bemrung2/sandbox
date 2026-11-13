@@ -350,7 +350,6 @@ function renderHero(){
   var hero = el(
     '<div class="hero">' +
       '<div class="hero-top">' +
-      '<button class="icon-btn hero-back" type="button" aria-label="여행 목록으로">' + icon("back") + '</button>' +
       '<div class="hero-id">' +
         '<h1 class="hero-city">' + (t.emoji ? '<span class="hero-flag">' + esc(t.emoji) + '</span>' : '') +
         esc(tripName(t)) + '</h1>' +
@@ -359,14 +358,15 @@ function renderHero(){
     '</div>'
   );
   hero.querySelector(".hero-top").appendChild(themeButton());
-  ripple(hero.querySelector(".hero-back"), function(){ go({ screen:"list" }); });
   /* 날짜는 글자다. 떠나는 날과 돌아오는 날을 굵게, 요일은 흐리게, 며칠인지는
      옅게 칠한 알약 하나 — 그 이상은 하지 않는다. */
   var dates = el(
     '<p class="hero-dates">' +
-      '<span class="hd-day mono">' + fmtMD(t.start) + '<small>' + dowOf(t.start) + '</small></span>' +
-      '<span class="hd-arrow">~</span>' +
-      '<span class="hd-day mono">' + fmtMD(t.end) + '<small>' + dowOf(t.end) + '</small></span>' +
+      '<span class="hd-range">' +
+        '<span class="hd-day mono">' + fmtMD(t.start) + '<small>' + dowOf(t.start) + '</small></span>' +
+        '<span class="hd-arrow">~</span>' +
+        '<span class="hd-day mono">' + fmtMD(t.end) + '<small>' + dowOf(t.end) + '</small></span>' +
+      '</span>' +
       '<span class="hd-nights">' + esc(nightsLabel()) + '</span>' +
     '</p>'
   );
