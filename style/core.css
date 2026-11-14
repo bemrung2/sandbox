@@ -798,7 +798,9 @@
   .badge.mark{ font-weight: 700; }
   .badge.mark .icon{ width: 12px; height: 12px; stroke-width: 2.4; }
   /* 이름 줄 오른쪽 끝. 아이콘만 한 줄로 늘어서고, 줄어드는 것은 이름이다. */
-  .marks{ flex-shrink: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-top: 1px; }
+  /* 표시와 줄의 단추(첨부 · 연필)는 같은 세로줄에 선다: 단추 칸이 32px에 2px 틈(34px 걸음)이므로,
+     표시(22px)는 오른쪽에서 5px 들여 놓고 12px씩 띄운다 — 맨 오른쪽 표시가 연필 위, 그다음이 첨부 위다. */
+  .marks{ flex-shrink: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; margin: 1px 5px 0 0; }
   .marks .badge{ padding: 0; width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; }
   .marks .badge .icon{ width: 13px; height: 13px; }
   .badge.mark-booked{ background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
@@ -871,7 +873,9 @@
   .quietbtn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .quietbtn.has{ color: var(--signal); }
   /* 아이콘만 있는 단추 — 네모난 손가락 자리 */
-  .quietbtn.ico{ min-width: 32px; padding: 6px; justify-content: center; }
+  /* 아이콘 단추는 늘 32×32 한 칸이다 — 첨부 개수는 칸 안의 작은 글자로 얹어, 개수가 붙어도 아이콘이 밀리지 않는다 */
+  .quietbtn.ico{ width: 32px; min-width: 32px; height: 32px; padding: 0; justify-content: center; position: relative; }
+  .quietbtn.ico .cnt{ position: absolute; top: 3px; right: 2px; font-size: 9.5px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
   .quietbtn.ico .icon{ width: 15px; height: 15px; }
   /* 줄 아래에 붙은 첨부 (정보 탭) */
   .rowline > .tl-actions{ align-self: flex-start; margin: 8px -6px 0 0; gap: 0; }

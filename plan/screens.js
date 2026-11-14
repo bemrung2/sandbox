@@ -692,7 +692,7 @@ function shortPlace(p){
 function clipBtn(target){
   var n = Plan.attachOf(target.id).length;
   var b = el('<button class="quietbtn ico' + (n ? " has" : "") + '" type="button" aria-label="첨부' +
-    (n ? " " + n + "개" : "") + '">' + icon("clip") + (n ? n : "") + '</button>');
+    (n ? " " + n + "개" : "") + '">' + icon("clip") + (n ? '<span class="cnt">' + n + '</span>' : "") + '</button>');
   ripple(b, function(){ openAttachSheet(target); });
   return b;
 }
