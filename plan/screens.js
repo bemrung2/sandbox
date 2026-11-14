@@ -8,6 +8,7 @@ import {
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
+import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
   Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
@@ -996,13 +997,7 @@ function renderInfo(root){
     fields: []
   }));
 
-  root.appendChild(sectionCard({
-    title: "메모", key: "notes", ic: "note", tone: "note",
-    empty: "아직 메모가 없습니다.",
-    simple: true,
-    render: function(n){ return '<b>' + esc(n.text) + '</b>'; },
-    fields: [{ key:"text", label:"메모", required:true, area:true, tall:true }]
-  }));
+  root.appendChild(memoCard());
   root.appendChild(packCard());
   root.appendChild(dangerCard());
 }
@@ -1224,6 +1219,86 @@ function editRec(o, rec){
       repaint();
       return undo;
     });
+}
+
+/* ---------- 메모 ----------
+   메모는 모양이 있는 글이다(굵게 · 밑줄 · 취소선 · 체크 줄 · 크기 · 색 — `src/ui/rich.js`). 저장하는 것은 걸러 낸 HTML이고
+   (`rich: true`), 그 전에 적은 맨글자 메모는 줄마다 한 줄로 읽는다 — 줄을 바꿔 적은 것이 한 줄로 붙어 보이지 않게. */
+function memoHtml(n){ return n.rich ? safeRich(n.text) : richFromText(n.text); }
+function memoCard(){
+  var list = ordered(trip().notes);
+  var card = el('<div class="card t-note"></div>');
+  var head = el('<div class="card-head">' +
+    '<span class="card-ic">' + icon("note") + '</span>' +
+    '<h3>메모' + (list.length ? '<span class="card-n">' + list.length + '</span>' : '') + '</h3></div>');
+  var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
+  ripple(add, function(){ openMemoEditor(null); });
+  head.appendChild(add);
+  card.appendChild(head);
+  if (!list.length){
+    card.appendChild(el('<p class="card-empty">아직 메모가 없습니다.</p>'));
+    return card;
+  }
+  list.forEach(function(n){
+    var row = el('<div class="rowline memorow"></div>');
+    /* 안에 줄(div)과 체크 상자가 있으므로 button이 아니라 div다 */
+    var btn = el('<div class="rowbtn" role="button" tabindex="0"><div class="rowbody rich memo">' + memoHtml(n) + '</div>' +
+      icon("edit", "rowpen") + '</div>');
+    var box = btn.querySelector(".memo");
+    /* 체크 상자를 누르면 그 자리에서 켜고 끈다. 그 밖의 자리는 고치는 창을 연다. */
+    btn.addEventListener("click", function(e){
+      var line = e.target.closest ? e.target.closest(".mk") : null;
+      if (!line || !box.contains(line) || e.clientX - line.getBoundingClientRect().left > 28) return;
+      e.stopImmediatePropagation();
+      if (!mayEdit()) return;
+      line.setAttribute("data-on", line.getAttribute("data-on") === "1" ? "0" : "1");
+      Plan.listEdit("notes", n.id, { text: cleanRich(box), rich: true });
+      repaint();
+    });
+    ripple(btn, function(){ openMemoEditor(n); });
+    btn.addEventListener("keydown", function(e){
+      if ((e.key === "Enter" || e.key === " ") && e.target === btn){ e.preventDefault(); btn.click(); }
+    });
+    row.appendChild(btn);
+    card.appendChild(row);
+  });
+  return card;
+}
+function openMemoEditor(n){
+  if (!mayEdit()) return;
+  var sheet = sheetShell(n ? "메모 수정" : "메모 추가");
+  var body = sheet.querySelector(".sheet-body");
+  var was = n ? memoHtml(n) : "";
+  var ed = richEditor({ html: was, label: "메모" });
+  body.appendChild(el('<div class="fld"></div>')).appendChild(ed.node);
+
+  var foot = sheet.querySelector(".sheet-foot");
+  if (n){
+    var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+    ripple(del, function(){
+      askThenDelete(richText(was).split("\n")[0].slice(0, 24), function(){
+        var undo = undoOf(Plan.listRemove("notes", n.id));
+        repaint();
+        return undo;
+      });
+    });
+    foot.appendChild(del);
+  }
+  var save = el('<button class="btn btn-primary" type="button">저장</button>');
+  ripple(save, function(){
+    var html = ed.html();
+    if (!html) return flag(ed.field, "메모를 적어 주세요.");
+    closeOverlay();
+    if (!n){ Plan.listAdd("notes", { text: html, rich: true }); savedToast(false); repaint(); return; }
+    /* 바뀐 것이 없으면 쓰지도 말하지도 않는다 (예전 맨글자 메모를 열었다 그냥 닫은 것도 그렇다) */
+    if (html === was) return;
+    var undo = undoEdit(Plan.listEdit("notes", n.id, { text: html, rich: true }));
+    savedToast(true, undo);
+    repaint();
+  });
+  foot.appendChild(save);
+  showOverlay(sheet);
+  if (!n) setTimeout(ed.focus, 80);
 }
 
 function packCard(){

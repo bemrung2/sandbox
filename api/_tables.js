@@ -124,7 +124,8 @@ function toRow(path, body) {
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
     /* 지나간 날의 날씨 기록: tag=날짜, label=도시, detail={hi,lo,code} — 새 칸 없이 */
     else if (group === "wx") { row.tag = body.date || id; row.label = body.city || ""; row.detail = JSON.stringify({ hi: body.hi, lo: body.lo, code: body.code }); }
-    else { row.detail = body.text || ""; }
+    /* 메모: 모양이 있는 글이면(rich) detail에 걸러 낸 HTML이 들어 있고 tag가 그것을 말한다 */
+    else { row.detail = body.text || ""; row.tag = body.rich ? "rich" : null; }
     return { table: "entries", key: "id=eq." + id, row };
   }
   return null;
@@ -184,7 +185,7 @@ function toDocs(tables) {
       try { v = JSON.parse(row.detail || "{}") || {}; } catch (e) { v = {}; }
       body = { date: row.tag, city: row.label, hi: v.hi, lo: v.lo, code: v.code };
     }
-    else body = { text: row.detail };
+    else body = { text: row.detail, rich: row.tag === "rich" ? true : undefined };
     body.ord = row.ord;
     docs[PREFIX + "trips/" + row.trip_id + "/" + row.kind + "/" + row.id] = strip(body, Object.keys(body));
   }
