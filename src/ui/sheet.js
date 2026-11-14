@@ -264,7 +264,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   });
   scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
     var v = input.value.trim();
-    if (!v) return flag(input);
+    if (!v && !opts.optional) return flag(input);   /* optional: 비워서 지우는 것도 저장이다 */
     closeOverlay();
     var undo = onSave(v);
     /* 있던 것을 바꿨을 때만 되돌리기를 내민다 — 새로 적은 것은 지우면 된다 */

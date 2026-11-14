@@ -6,7 +6,7 @@ import {
   sheetShell, openFormSheet, openTextDialog, openConfirmDialog, openAskDialog, askThenDelete,
   savedToast, pickerField, pickGroup, rollEdges, showOverlay, closeOverlay, closeTop, flag
 } from "../ui/sheet.js";
-import { storePhoto, dropPhoto, thumb } from "../ui/photos.js";
+import { storePhoto, dropPhoto, thumb, loadPhoto } from "../ui/photos.js";
 import { reorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
@@ -253,7 +253,9 @@ function tripCard(t, box){
 /* ---------- trip ---------- */
 /* 탭을 옮길 때는 내용이 제자리에서 서서히 떠오른다. 밀리지 않는다 — 움직이는
    것은 목록과 여행 사이뿐이다. */
-var lastTab = "", lastTrip = "";
+var lastTab = "", lastTrip = "", tabsX = 0;
+/* 탭: 주소에 쓰는 이름과 화면의 말. '준비'의 주소 이름은 예전 그대로 info다(예전 링크가 살아 있게). */
+var TABS = [["sched","일정"],["food","식사"],["shop","쇼핑"],["tip","Tip"],["info","준비"]];
 export function renderTrip(root, keepScroll){
   var days = tripDays();
   var tabTurned = lastTab && lastTab !== state.tripId + "/" + state.tab && lastTab.split("/")[0] === state.tripId;
@@ -269,11 +271,15 @@ export function renderTrip(root, keepScroll){
   var frag = document.createDocumentFragment();
   frag.appendChild(renderHero());
 
-  var tabs = el('<div class="tabs" role="tablist"></div>');
-  [["sched","일정"],["food","식사"],["shop","쇼핑"],["info","정보"]].forEach(function(t){
+  /* 탭은 다섯이고 옆으로 구른다. 띠(.tabs)는 화면에 붙어 있고, 그 안의 줄(.tabs-roll)이 구른다 —
+     더 있는 쪽 가장자리의 글자만 옅어지고 띠의 바탕은 그대로다. */
+  var tabs = el('<div class="tabs"><div class="tabs-roll" role="tablist"></div></div>');
+  var roll = tabs.firstChild, onTab = null;
+  TABS.forEach(function(t){
     var b = el('<button class="tab" role="tab" type="button" aria-selected="' + (state.tab === t[0]) + '">' + t[1] + '</button>');
     ripple(b, function(){ go({ tab: t[0] }); });
-    tabs.appendChild(b);
+    roll.appendChild(b);
+    if (state.tab === t[0]) onTab = b;
   });
   frag.appendChild(tabs);
 
@@ -286,11 +292,20 @@ export function renderTrip(root, keepScroll){
   if (state.tab === "sched") renderSchedule(body, days);
   else if (state.tab === "food") renderFood(body, days);
   else if (state.tab === "shop") renderShop(body, days);
+  else if (state.tab === "tip") renderTips(body);
   else renderInfo(body);
 
   /* 날짜 줄은 탭 줄 바로 아래에 붙는다. 탭 줄의 높이는 글꼴에 따라 달라지니 재서 알려준다.
      내용을 다 채운 뒤에 잰다 — 비어 있을 때 재면 화면이 잠깐 짧아져 브라우저가 스크롤을 맨 위로 끌어올린다. */
   root.style.setProperty("--tabs-h", tabs.offsetHeight + "px");
+  /* 고른 탭이 줄 가운데로 온다 — 있던 자리에서 부드럽게 굴러가서, 옆에 탭이 더 있다는 것이 보인다 */
+  rollEdges(roll);
+  if (onTab && roll.scrollWidth > roll.clientWidth + 1){
+    var to = Math.max(0, Math.min(roll.scrollWidth - roll.clientWidth, onTab.offsetLeft - (roll.clientWidth - onTab.offsetWidth) / 2));
+    roll.scrollLeft = sameTrip ? tabsX : to;
+    if (roll.scrollLeft !== to) roll.scrollTo({ left: to, behavior: "smooth" });
+    tabsX = to;
+  }
 
   if (!keepScroll){
     var pin = sameTrip ? Math.max(0, tabs.offsetTop - (parseFloat(getComputedStyle(tabs).top) || 0)) : 0;
@@ -943,6 +958,147 @@ function buyList(card, list, save){
     });
   });
   card.appendChild(addBtn);
+}
+
+/* ---------- tab: tip ----------
+   링크와 사진을 모아 두는 곳. 세 칸짜리 정사각 격자다(새것이 먼저). 링크 칸은 제목을 글로, 사진 칸은 사진을 보인다.
+   링크 칸을 누르면 링크가 열리고(고치는 것은 칸 모서리의 연필), 사진 칸을 누르면 크게 보며 메모를 단다. */
+function renderTips(root){
+  var list = ordered(trip().tips).slice().reverse();
+  var links = list.filter(function(t){ return t.type !== "photo"; }).length;
+  var head = el('<div class="day-stat"><span class="mono">' + (list.length ? '링크 ' + links + ' · 사진 ' + (list.length - links) : '') + '</span></div>');
+  head.appendChild(quickAdd(function(){ openTipAdd(); }));
+  root.appendChild(head);
+  if (!list.length){
+    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 Tip이 없습니다.</p></div>'));
+    return;
+  }
+  var grid = el('<div class="tipgrid"></div>');
+  list.forEach(function(t){ grid.appendChild(tipTile(t)); });
+  root.appendChild(grid);
+}
+function tipTile(t){
+  if (t.type === "photo"){
+    var ph = el('<button class="tip tip-photo" type="button" aria-label="사진' + (t.memo ? " · " + esc(t.memo) : "") + '">' +
+      '<img alt="">' + (t.memo ? '<span class="tip-cap">' + esc(t.memo) + '</span>' : '') + '</button>');
+    loadPhoto(t.pid).then(function(d){ if (d) ph.querySelector("img").src = d; else ph.classList.add("lost"); });
+    ripple(ph, function(){ openTipPhoto(t); });
+    return ph;
+  }
+  var u = safeUrl(t.url);
+  /* 칸 전체가 링크다. 연필은 그 위에 따로 얹는다(링크 안에 단추를 넣지 않는다). */
+  var tile = el('<div class="tip tip-link">' +
+    '<a class="tip-go" href="' + esc(u || "#") + '" target="_blank" rel="noopener" aria-label="' + esc(t.title || "") + ' 열기"></a>' +
+    '<span class="tip-ic">' + icon("link") + '</span>' +
+    '<span class="tip-title">' + esc(t.title || (u ? hostOf(u) : "링크")) + '</span>' +
+    '<span class="tip-host">' + esc(u ? hostOf(u) : "잘못된 주소") + '</span></div>');
+  var pen = el('<button class="quietbtn ico tip-pen" type="button" aria-label="수정">' + icon("edit") + '</button>');
+  ripple(pen, function(){ openTipLink(t); });
+  tile.appendChild(pen);
+  return tile;
+}
+function tipName(t){ return t.type === "photo" ? (t.memo || "사진") : (t.title || "링크"); }
+/* 지운 사진은 되돌릴 시간이 지나면 저장소에서도 치운다 */
+function removeTip(t){
+  var back = Plan.listRemove("tips", t.id), gone = true;
+  if (t.type === "photo" && t.pid) setTimeout(function(){ if (gone) dropPhoto(t.pid); }, 6000);
+  repaint();
+  return undoOf(back ? function(){ gone = false; back(); } : null);
+}
+function openTipAdd(){
+  if (!mayEdit()) return;
+  var sheet = sheetShell("Tip 추가");
+  var body = sheet.querySelector(".sheet-body");
+  sheet.querySelector(".sheet-foot").remove();
+  var picker = el('<div class="attpick">' +
+    '<button type="button" data-k="link" aria-pressed="true">' + icon("link") + '링크</button>' +
+    '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button></div>');
+  var form = el('<div></div>');
+  body.appendChild(picker); body.appendChild(form);
+  var kind = "link";
+  picker.querySelectorAll("button").forEach(function(b){
+    ripple(b, function(){
+      kind = b.getAttribute("data-k");
+      picker.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed", String(x.getAttribute("data-k") === kind)); });
+      paint();
+    });
+  });
+  function added(){
+    sheet._clean();
+    closeTop(sheet);
+    repaint();
+    toastDone("추가했습니다.");
+  }
+  function paint(){
+    form.innerHTML = "";
+    if (kind === "link"){
+      var g = el('<div><div class="fld"><label for="tp-u">링크</label><input id="tp-u" type="text" inputmode="url" autocomplete="off" placeholder="https://"></div>' +
+        '<div class="fld"><label for="tp-t">제목 <span class="opt">선택</span></label><input id="tp-t" type="text" placeholder="예: 공항버스 타는 법"></div>' +
+        '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
+      ripple(g.querySelector("button"), editing(function(){
+        var u = safeUrl(g.querySelector("#tp-u").value);
+        if (!u) return flag(g.querySelector("#tp-u"), "링크를 확인해 주세요.");
+        Plan.listAdd("tips", { type:"link", url: u, title: g.querySelector("#tp-t").value.trim() || hostOf(u) });
+        added();
+      }));
+      form.appendChild(g);
+      setTimeout(function(){ var i = g.querySelector("#tp-u"); if (i.isConnected) i.focus(); }, 80);
+    } else {
+      var h = el('<div><div class="fld"><label for="tp-m">메모 <span class="opt">선택</span></label>' +
+        '<input id="tp-m" type="text" placeholder="예: 이 메뉴 꼭 먹기"></div>' +
+        '<label class="btn btn-primary" style="width:100%">' + icon("image") + '사진 고르기' +
+        '<input type="file" accept="image/*" hidden></label></div>');
+      var file = h.querySelector('input[type="file"]');
+      file.addEventListener("change", async function(){
+        var f = file.files[0];
+        if (!f || !mayEdit()) return;
+        var label = h.querySelector("label.btn");
+        label.textContent = "저장 중...";
+        try{
+          var pid = await storePhoto(f);
+          Plan.listAdd("tips", { type:"photo", pid: pid, memo: h.querySelector("#tp-m").value.trim() });
+          return added();
+        }catch(e){ toast("사진을 저장하지 못했습니다."); }
+        label.innerHTML = icon("image") + "사진 고르기";
+        label.appendChild(file);
+        file.value = "";
+      });
+      form.appendChild(h);
+    }
+  }
+  paint();
+  showOverlay(sheet);
+}
+/* 사진 하나를 크게: 누구나 볼 수 있고, 메모를 달거나 지우는 것은 누르는 순간에 묻는다 */
+function openTipPhoto(t){
+  var sheet = sheetShell("사진");
+  var body = sheet.querySelector(".sheet-body");
+  var view = el('<div class="tipview"><img alt="">' + (t.memo ? '<p class="tipview-memo">' + esc(t.memo) + '</p>' : '') + '</div>');
+  loadPhoto(t.pid).then(function(d){ if (d) view.querySelector("img").src = d; else toast("사진을 불러오지 못했습니다."); });
+  body.appendChild(view);
+  var foot = sheet.querySelector(".sheet-foot");
+  var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+  ripple(del, editing(function(){ askThenDelete(tipName(t), function(){ return removeTip(t); }); }));
+  foot.appendChild(del);
+  var memo = el('<button class="btn btn-primary" type="button">' + (t.memo ? "메모 수정" : "메모 추가") + '</button>');
+  ripple(memo, function(){
+    openTextDialog({ title: "사진 메모", value: t.memo || "", placeholder: "예: 이 메뉴 꼭 먹기", multiline: true, optional: true },
+      function(v){ var undo = undoEdit(Plan.listEdit("tips", t.id, { memo: v })); repaint(); return undo; });
+  });
+  foot.appendChild(memo);
+  showOverlay(sheet);
+}
+function openTipLink(t){
+  openFormSheet({ title: "링크 수정", fields: [
+      { key:"title", label:"제목", placeholder:"예: 공항버스 타는 법" },
+      { key:"url", label:"링크", placeholder:"https://", required:true, url:true }
+    ] }, t,
+    function(v){
+      var undo = undoEdit(Plan.listEdit("tips", t.id, { title: (v.title || "").trim() || hostOf(v.url), url: v.url }));
+      repaint();
+      return undo;
+    },
+    function(){ return removeTip(t); });
 }
 
 /* ---------- tab: info ---------- */

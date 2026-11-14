@@ -14,7 +14,7 @@
  * the database never sees it.
  */
 
-const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes", "wx"];
+const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes", "wx", "tips"];
 
 /* ---------------- paths <-> rows ---------------- */
 
@@ -122,6 +122,11 @@ function toRow(path, body) {
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
+    /* Tip 탭의 링크 · 사진: tag=종류(link|photo), label=제목, url=주소, sub=사진 id, detail=사진의 메모 — 새 칸 없이 */
+    else if (group === "tips") {
+      row.tag = body.type === "photo" ? "photo" : "link"; row.label = body.title || "";
+      row.url = body.url || null; row.sub = body.pid || null; row.detail = body.memo || null;
+    }
     /* 지나간 날의 날씨 기록: tag=날짜, label=도시, detail={hi,lo,code} — 새 칸 없이 */
     else if (group === "wx") { row.tag = body.date || id; row.label = body.city || ""; row.detail = JSON.stringify({ hi: body.hi, lo: body.lo, code: body.code }); }
     /* 메모: 모양이 있는 글이면(rich) detail에 걸러 낸 HTML이 들어 있고 tag가 그것을 말한다 */
@@ -180,6 +185,7 @@ function toDocs(tables) {
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };
     else if (row.kind === "links") body = { title: row.label, url: row.url };
     else if (row.kind === "packList") body = { text: row.label, on: !!row.done };
+    else if (row.kind === "tips") body = { type: row.tag === "photo" ? "photo" : "link", title: row.label, url: row.url, pid: row.sub, memo: row.detail };
     else if (row.kind === "wx") {
       let v = {};
       try { v = JSON.parse(row.detail || "{}") || {}; } catch (e) { v = {}; }

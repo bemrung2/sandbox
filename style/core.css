@@ -41,6 +41,10 @@
     --ok: #1E8A57;
     --warn: #B4690A;
 
+    /* 사진 위에 얹는 글자와 그 뒤의 그늘 — 사진 위라서 밝은 화면 · 어두운 화면이 같다 */
+    --photo-shade: rgba(8, 10, 16, 0.66);
+    --on-photo: #FFFFFF;
+
     --shadow: rgba(18, 22, 32, 0.10);
     --shadow-soft: rgba(18, 22, 32, 0.04);
     --scrim: rgba(14, 16, 24, 0.40);

@@ -72,7 +72,7 @@ function route(path, segs){
   if (segs[0] === "t" && segs[1]){
     state.screen = "trip";
     state.tripId = decodeURIComponent(segs[1]);
-    state.tab = ["sched", "food", "shop", "info"].indexOf(segs[2]) >= 0 ? segs[2] : "sched";
+    state.tab = ["sched", "food", "shop", "tip", "info"].indexOf(segs[2]) >= 0 ? segs[2] : "sched";
     state.day = Math.max(0, parseInt(segs[3], 10) || 0);
     state.meal = state.tab === "food" ? (segs[4] || "all") : "all";
     Plan.open(state.tripId);

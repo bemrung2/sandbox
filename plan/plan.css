@@ -231,22 +231,83 @@
 
 
 /* ---------- tabs ---------- */
+  /* 띠(.tabs)는 화면에 붙어 있고, 그 안의 줄(.tabs-roll)이 옆으로 구른다. 탭이 다섯이라 폰에서는 마지막 탭이
+     반쯤 걸쳐 보인다 — 옆에 더 있다는 표시다. 더 있는 쪽 가장자리의 글자는 옅어진다(띠의 바탕은 그대로). */
   .tabs{
     position: sticky; top: var(--safe-t); z-index: 15;
-    display: flex; padding: 0 10px;
     background: var(--paper);
     background: color-mix(in srgb, var(--paper) 86%, transparent);
     -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
     border-bottom: 1px solid var(--line);
   }
+  .tabs-roll{
+    display: flex; padding: 0 10px; overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    margin-bottom: -1px;
+  }
+  .tabs-roll::-webkit-scrollbar{ display: none; }
+  .tabs-roll.more-r{ -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+  .tabs-roll.more-l{ -webkit-mask-image: linear-gradient(to right, transparent, #000 40px); mask-image: linear-gradient(to right, transparent, #000 40px); }
+  .tabs-roll.more-l.more-r{ -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
   .tab{
-    flex: 1; min-width: 0; padding: 14px 2px 12px;
+    flex: 1 0 auto; min-width: 86px; padding: 14px 6px 12px;
     border: none; background: transparent; color: var(--ink-faint);
-    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
-    border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    border-bottom: 2.5px solid transparent;
   }
   .tab[aria-selected="true"]{ color: var(--signal); border-bottom-color: var(--signal); font-weight: 700; }
   .tab:focus-visible{ outline: 2px solid var(--signal); outline-offset: -3px; }
+
+
+/* ---------- tip: 링크와 사진의 격자 ---------- */
+  /* 세 칸짜리 정사각 격자. 사진은 칸을 꽉 채우고, 링크는 제목을 글로 적는다. */
+  .tipgrid{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 6px 14px 0; }
+  .tip{
+    position: relative; aspect-ratio: 1 / 1; min-width: 0; overflow: hidden;
+    border-radius: 14px; border: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left;
+    background: var(--surface-2);
+  }
+  .tip-photo{ cursor: pointer; display: block; width: 100%; }
+  .tip-photo img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tip-photo img:not([src]){ visibility: hidden; }
+  /* 메모가 있는 사진은 아래에 한 줄이 비친다 */
+  /* (.rip > * 가 position을 relative로 돌려놓으므로 한 단 더 구체적으로 적는다) */
+  .tip.tip-photo > .tip-cap{
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 7px; display: block;
+    font-size: 11px; font-weight: 600; line-height: 1.3; color: var(--on-photo);
+    background: linear-gradient(to top, var(--photo-shade), transparent);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tip-link{
+    display: flex; flex-direction: column; padding: 8px 9px 8px;
+    background: color-mix(in srgb, var(--signal) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--signal) 16%, var(--line));
+    transition: transform 140ms var(--ease), border-color 180ms ease;
+  }
+  .tip-link:active{ transform: scale(0.97); }
+  .tip-go{ position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+  .tip-go:focus-visible{ outline: 2px solid var(--signal); outline-offset: -2px; }
+  .tip-ic{
+    width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--signal) 16%, transparent); color: var(--signal);
+  }
+  .tip-ic .icon{ width: 13px; height: 13px; }
+  .tip-title{
+    margin-top: 6px; font-size: 12.5px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; flex-shrink: 0;
+    word-break: break-word; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  }
+  .tip-host{ margin-top: auto; padding-top: 3px; font-size: 10px; line-height: 1.2; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  /* 좁은 화면의 칸(95px쯤)에는 제목 두 줄까지만 — 줄 가운데가 잘려 보이면 안 된다 */
+  @media (max-width: 360px){ .tip-title{ -webkit-line-clamp: 2; font-size: 12px; } }
+  /* 연필은 칸 오른쪽 위 모서리에 얹는다(.quietbtn.ico의 position을 이겨야 한다) */
+  .tip .quietbtn.tip-pen{ position: absolute; top: 3px; right: 2px; z-index: 2; color: var(--ink-faint); width: 28px; min-width: 28px; height: 28px; }
+  .tip-link .tip-title{ padding-right: 0; }
+  .tip-link .tip-ic{ margin-right: 30px; }
+  /* 사진을 크게 */
+  .tipview img{ display: block; width: 100%; max-height: 62vh; object-fit: contain; border-radius: 14px; background: var(--surface-2); min-height: 120px; }
+  .tipview-memo{ margin: 12px 2px 0; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 
 
 /* ---------- day switch ---------- */
