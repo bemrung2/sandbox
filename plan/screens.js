@@ -657,8 +657,9 @@ function timelineItem(it, pair){
   var actions = el('<span class="tl-actions"></span>');
   actions.appendChild(clipBtn(it));
   actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
-  /* 알약도 지도 링크도 없으면 아래 줄은 단추만 덩그러니 남는다 — 단추를 이름 줄 오른쪽으로 올리고 그 줄을 없앤다. */
-  if (!meta.children.length){
+  /* 알약도 지도 링크도 없으면 아래 줄은 단추만 덩그러니 남는다 — 단추를 이름 줄 오른쪽으로 올리고 그 줄을 없앤다.
+     다만 이름 줄에 표시(예약 확정 등)가 있으면 올리지 않는다 — 표시와 단추가 한 줄에 몰려 겹쳐 보인다. 그때는 다른 줄처럼 아래에 둔다. */
+  if (!meta.children.length && !mk){
     actions.classList.add("in-head");
     row.querySelector(".tl-head").appendChild(actions);
   } else {
