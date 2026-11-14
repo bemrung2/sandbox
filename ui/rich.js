@@ -2,6 +2,7 @@
 
    저장하는 것은 **걸러 낸 HTML**이다. 허락한 것만 남긴다:
      줄      <div>…</div>            체크 줄  <div class="mk" data-on="0|1">…</div>
+     머리표 줄  <div class="bl" data-b="dash|dot">…</div>   (– 또는 ·)
      글자    <b> <u> <s>             크기 · 색  <span class="ms-l mc-red">
    그 밖의 태그 · 속성 · 스타일은 전부 버린다. 화면에 낼 때도 저장된 것을 믿지 않고 같은 체로 다시 거른다 —
    다른 사람이 적은 글이 내 화면에서 스크립트가 되면 안 된다.
@@ -64,6 +65,7 @@ function wrapsOf(node){
 
 /* DOM → 걸러 낸 HTML. 줄 단위로 평평하게 편다(겹친 블록 · 붙여 넣은 표도 줄이 된다). */
 export function cleanRich(root){
+  /* mk: 줄의 종류 — null(보통) · "0"/"1"(체크 줄) · "dash"/"dot"(머리표 줄) */
   var lines = [], cur = "", mk = null, stack = [], pushed = 0;
   function open(){ return stack.map(function(w){ return w[0]; }).join(""); }
   function close(){ return stack.slice().reverse().map(function(w){ return w[1]; }).join(""); }
@@ -85,6 +87,7 @@ export function cleanRich(root){
         if (cur) push();
         var before = pushed, wasMk = mk;
         if (c.classList && c.classList.contains("mk")) mk = c.getAttribute("data-on") === "1" ? "1" : "0";
+        else if (c.classList && c.classList.contains("bl")) mk = c.getAttribute("data-b") === "dot" ? "dot" : "dash";
         walk(c);
         if (cur || pushed === before) push();
         mk = wasMk;
@@ -107,7 +110,9 @@ export function cleanRich(root){
   while (lines.length && !lines[lines.length - 1].html && lines[lines.length - 1].mk === null) lines.pop();
   if (!lines.some(function(l){ return l.html.replace(/<[^>]+>/g, "").trim(); })) return "";
   return lines.map(function(l){
-    return (l.mk === null ? "<div>" : '<div class="mk" data-on="' + l.mk + '">') + (l.html || "<br>") + "</div>";
+    var open = l.mk === null ? "<div>" :
+      (l.mk === "dash" || l.mk === "dot") ? '<div class="bl" data-b="' + l.mk + '">' : '<div class="mk" data-on="' + l.mk + '">';
+    return open + (l.html || "<br>") + "</div>";
   }).join("");
 }
 
@@ -162,7 +167,10 @@ export function richEditor(opts){
           '<button type="button" class="rich-btn" data-cmd="underline" aria-label="밑줄" aria-pressed="false"><u>가</u></button>' +
           '<button type="button" class="rich-btn" data-cmd="strikeThrough" aria-label="취소선" aria-pressed="false"><s>가</s></button>' +
           '<button type="button" class="rich-btn" data-check aria-label="체크박스" aria-pressed="false">' + icon("check") + '</button>' +
-          '<span class="rich-sep"></span>' +
+          '<button type="button" class="rich-btn rich-bl" data-list="dash" aria-label="줄 앞에 –" aria-pressed="false"><i>–</i></button>' +
+          '<button type="button" class="rich-btn rich-bl" data-list="dot" aria-label="줄 앞에 가운데점" aria-pressed="false"><i>•</i></button>' +
+        '</div>' +
+        '<div class="rich-tools rich-sizes">' +
           RICH_SIZES.map(function(s){
             return '<button type="button" class="rich-btn rich-size sz-' + s.key + '" data-size="' + s.n + '" aria-label="글씨 ' + s.label + '">가</button>';
           }).join("") +
@@ -182,7 +190,7 @@ export function richEditor(opts){
 
   function changed(){ ed.dispatchEvent(new Event("input", { bubbles: true })); }
   function emptyMark(){
-    ed.classList.toggle("is-empty", !(ed.textContent || "").trim() && !ed.querySelector(".mk"));
+    ed.classList.toggle("is-empty", !(ed.textContent || "").trim() && !ed.querySelector(".mk, .bl"));
   }
   function inEd(){
     var sel = window.getSelection();
@@ -197,6 +205,9 @@ export function richEditor(opts){
     });
     var blk = sel ? topBlock(ed, sel.anchorNode) : null;
     wrap.querySelector("[data-check]").setAttribute("aria-pressed", String(!!(blk && blk.classList.contains("mk"))));
+    wrap.querySelectorAll("[data-list]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(!!(blk && blk.classList.contains("bl") && blk.getAttribute("data-b") === b.dataset.list)));
+    });
   }
   function exec(cmd, val){
     if (!inEd()) ed.focus();
@@ -206,8 +217,17 @@ export function richEditor(opts){
     }catch(e){}
     changed(); states();
   }
-  /* 지금 줄(고른 줄들)을 체크 줄로, 이미 모두 체크 줄이면 보통 줄로 */
-  function toggleCheck(){
+  /* 줄의 종류를 벗긴다 → 보통 줄 */
+  function plain(b){
+    b.classList.remove("mk", "bl"); b.removeAttribute("data-on"); b.removeAttribute("data-b");
+    if (!b.getAttribute("class")) b.removeAttribute("class");
+  }
+  function isKind(b, kind){
+    return kind === "check" ? b.classList.contains("mk") : (b.classList.contains("bl") && b.getAttribute("data-b") === kind);
+  }
+  /* 지금 줄(고른 줄들)을 그 종류로 — 체크 줄("check") · 머리표 줄("dash" · "dot"). 이미 모두 그 종류면 보통 줄로 되돌린다.
+     한 줄은 한 가지 종류다(체크 줄이면서 머리표 줄일 수는 없다). */
+  function toggleLine(kind){
     if (!inEd()) ed.focus();
     blockify(ed);
     var sel = window.getSelection();
@@ -218,10 +238,13 @@ export function richEditor(opts){
     var range = sel.getRangeAt(0);
     var blocks = Array.prototype.filter.call(ed.children, function(b){ return range.intersectsNode(b); });
     if (!blocks.length) return;
-    var all = blocks.every(function(b){ return b.classList.contains("mk"); });
+    var all = blocks.every(function(b){ return isKind(b, kind); });
     blocks.forEach(function(b){
-      if (all){ b.classList.remove("mk"); b.removeAttribute("data-on"); if (!b.getAttribute("class")) b.removeAttribute("class"); }
-      else if (!b.classList.contains("mk")){ b.classList.add("mk"); b.setAttribute("data-on", "0"); }
+      if (all){ plain(b); return; }
+      if (isKind(b, kind)) return;
+      plain(b);
+      if (kind === "check"){ b.classList.add("mk"); b.setAttribute("data-on", "0"); }
+      else { b.classList.add("bl"); b.setAttribute("data-b", kind); }
     });
     changed(); states();
   }
@@ -234,7 +257,8 @@ export function richEditor(opts){
       if (b.dataset.cmd) exec(b.dataset.cmd);
       else if (b.dataset.size) exec("fontSize", b.dataset.size);
       else if (b.dataset.color) exec("foreColor", b.dataset.color);
-      else toggleCheck();
+      else if (b.dataset.list) toggleLine(b.dataset.list);
+      else toggleLine("check");
     });
   });
 
@@ -246,29 +270,36 @@ export function richEditor(opts){
     line.setAttribute("data-on", line.getAttribute("data-on") === "1" ? "0" : "1");
     changed();
   });
+  function special(b){ return !!b && (b.classList.contains("mk") || b.classList.contains("bl")); }
   ed.addEventListener("keydown", function(e){
     if (e.isComposing) return;
     var sel = inEd(), blk = sel ? topBlock(ed, sel.anchorNode) : null;
     if (e.key === "Enter" && !e.shiftKey){
-      /* 빈 체크 줄에서 Enter는 체크 줄에서 나오는 것이다 */
-      if (blk && blk.classList.contains("mk") && !(blk.textContent || "").trim()){
+      /* 빈 체크 줄 · 머리표 줄에서 Enter는 그 줄에서 나오는 것이다 — 표시가 지워지고 보통 줄이 된다 */
+      if (special(blk) && !(blk.textContent || "").trim()){
         e.preventDefault();
-        blk.classList.remove("mk"); blk.removeAttribute("data-on"); blk.removeAttribute("class");
+        plain(blk);
         changed(); states();
         return;
       }
-      /* 새 줄은 체크가 꺼진 채로 시작한다 (브라우저는 윗줄의 속성을 그대로 베낀다) */
+      /* 새 줄은 윗줄의 종류를 잇는다(브라우저가 속성을 그대로 베낀다). 체크만은 꺼진 채로 시작한다. */
       setTimeout(function(){
         var s2 = inEd(), nb = s2 ? topBlock(ed, s2.anchorNode) : null;
         if (nb && nb !== blk && nb.classList.contains("mk") && !(nb.textContent || "").trim()) nb.setAttribute("data-on", "0");
+        /* 브라우저가 속성을 베끼지 않았으면 직접 잇는다 */
+        if (nb && nb !== blk && special(blk) && !special(nb) && !(nb.textContent || "").trim() && blk.nextSibling === nb){
+          if (blk.classList.contains("mk")){ nb.classList.add("mk"); nb.setAttribute("data-on", "0"); }
+          else { nb.classList.add("bl"); nb.setAttribute("data-b", blk.getAttribute("data-b")); }
+        }
+        states();
       }, 0);
     }
-    if (e.key === "Backspace" && blk && blk.classList.contains("mk") && sel.isCollapsed){
+    if (e.key === "Backspace" && special(blk) && sel.isCollapsed){
       var r = document.createRange();
       r.selectNodeContents(blk); r.setEnd(sel.anchorNode, sel.anchorOffset);
       if (!r.toString()){
         e.preventDefault();
-        blk.classList.remove("mk"); blk.removeAttribute("data-on"); blk.removeAttribute("class");
+        plain(blk);
         changed(); states();
       }
     }

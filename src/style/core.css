@@ -696,13 +696,18 @@
   .rich .mk[data-on="1"]{ color: var(--ink-faint); }
   .rich .mk[data-on="1"] *{ color: inherit; }
 
+  /* 머리표 줄: 줄 앞의 – 또는 · 는 그려 넣는 것이다(글자가 아니다 — 고르거나 지워지지 않고, 줄이 넘어가도 글이 그 아래로 들어가지 않는다) */
+  .rich .bl{ position: relative; padding-left: 17px; }
+  .rich .bl::before{ content: "–"; position: absolute; left: 2px; top: 0; color: var(--ink-faint); }
+  .rich .bl[data-b="dot"]::before{ content: "•"; left: 3px; }
+
   /* 적는 곳 */
   .rich-wrap{ border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface); overflow: hidden; transition: border-color 180ms ease, box-shadow 180ms ease; }
   .rich-wrap:focus-within{ border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-tint); }
   .rich-wrap:has(.rich-ed.bad){ border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 16%, transparent); }
-  .rich-bar{ border-bottom: 1px solid var(--line); background: var(--surface-2); padding: 6px 6px 7px; display: flex; flex-direction: column; gap: 4px; }
-  .rich-tools, .rich-colors{ display: flex; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-  .rich-tools::-webkit-scrollbar, .rich-colors::-webkit-scrollbar{ display: none; }
+  /* 도구는 세 무리(글 모양과 줄 · 크기 · 색)다. 폭이 모자라면 무리째 다음 줄로 넘어간다 — 옆으로 숨기지 않는다. */
+  .rich-bar{ border-bottom: 1px solid var(--line); background: var(--surface-2); padding: 6px 6px 7px; display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; }
+  .rich-tools, .rich-colors{ display: flex; align-items: center; gap: 2px; }
   .rich-btn{
     flex-shrink: 0; min-width: 36px; height: 36px; padding: 0 8px; border: none; border-radius: 10px;
     background: transparent; color: var(--ink-soft); font: inherit; font-size: 15px; line-height: 1; cursor: pointer;
@@ -710,14 +715,15 @@
   }
   .rich-btn b{ font-weight: 800; }
   .rich-btn .icon{ width: 17px; height: 17px; stroke-width: 2.4; }
-  .rich-btn[data-check]{ }
+  .rich-bl i{ font-style: normal; font-size: 17px; font-weight: 700; line-height: 1; }
   .rich-btn[data-check] .icon{ padding: 2px; border: 1.6px solid currentColor; border-radius: 5px; width: 18px; height: 18px; }
   .rich-btn[aria-pressed="true"]{ background: var(--signal-soft); color: var(--signal); }
   .rich-btn:focus-visible, .rich-dot:focus-visible{ outline: 2px solid var(--signal); outline-offset: -2px; }
   .rich-sep{ flex-shrink: 0; width: 1px; height: 18px; background: var(--line-strong); margin: 0 5px; }
+  .rich-size{ min-width: 34px; padding: 0 5px; }
   .rich-size.sz-s{ font-size: 12px; } .rich-size.sz-m{ font-size: 15px; } .rich-size.sz-l{ font-size: 18px; } .rich-size.sz-xl{ font-size: 21px; font-weight: 700; }
   .rich-dot{
-    flex-shrink: 0; width: 36px; height: 32px; border: none; background: transparent; border-radius: 10px; cursor: pointer;
+    flex-shrink: 0; width: 28px; height: 36px; border: none; background: transparent; border-radius: 10px; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
   }
   .rich-dot i{ width: 18px; height: 18px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line-strong); }
