@@ -371,8 +371,17 @@
     width: 4px; height: 4px; border-radius: 50%; background: var(--line-strong);
   }
   .tl-head + .tl-line{ margin-top: 6px; }
-  .tl-meta{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tl-meta{ display: flex; align-items: flex-end; gap: 6px; margin-top: 8px; }
+  .tl-meta > .badge{ align-self: center; }
+  .tl-tags{ flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tl-tags:empty{ display: none; }
+  .tl-meta > .tl-tags + .tl-actions{ margin-bottom: -4px; }
   .tl-actions{ margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+  /* 마지막 내용(첨부 · 메모 줄) 옆 아래 끝에 붙은 단추 — 알약이 없는 줄에서 단추만의 빈 줄을 만들지 않는다 */
+  .tl-dock{ display: flex; align-items: flex-end; gap: 8px; }
+  .tl-dock > :first-child{ flex: 1; min-width: 0; }
+  .tl-dock > .tl-actions{ margin-bottom: -5px; }
+  .tl-head + .tl-dock > .tl-line{ margin-top: 6px; }
   /* 아래 줄 없이 이름 줄에 오른 단추 — 줄 높이를 키우지 않게 위아래로 당겨 둔다 */
   .tl-actions.in-head{ margin: -4px 0 -6px 0; align-items: center; }
   /* The running item is marked, not shouted at: a wash of the accent, the

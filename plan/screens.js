@@ -639,7 +639,10 @@ function timelineItem(it, pair){
   var atts = Plan.attachOf(it.id);
   if (atts.length) body.appendChild(attachStrip(it.id, atts));
 
-  var meta = el('<div class="tl-meta"></div>');
+  /* 알약은 왼쪽 상자(.tl-tags)에서 줄을 바꾸고, 단추는 그 오른쪽 아래 끝에 선다 — 알약이 줄을 꽉 채워도
+     단추만 다음 줄로 밀려 빈 줄을 만들지 않는다. */
+  var wrap = el('<div class="tl-meta"><div class="tl-tags"></div></div>');
+  var meta = wrap.firstChild;
   if (isCurrent) meta.appendChild(el('<span class="badge live">지금</span>'));
   /* 대분류 · 소분류가 알약 하나다 (식사 · 저녁 / 이동 · 택시 / 숙소 · 체크인). 분류를 안 골랐으면 알약이 없다. */
   var catLabel = catBadgeText(it);
@@ -659,12 +662,20 @@ function timelineItem(it, pair){
   actions.appendChild(penBtn(function(){ openItemEditor(it, null); }));
   /* 알약도 지도 링크도 없으면 아래 줄은 단추만 덩그러니 남는다 — 단추를 이름 줄 오른쪽으로 올리고 그 줄을 없앤다.
      다만 이름 줄에 표시(예약 확정 등)가 있으면 올리지 않는다 — 표시와 단추가 한 줄에 몰려 겹쳐 보인다. 그때는 다른 줄처럼 아래에 둔다. */
+  var last = body.lastElementChild;
   if (!meta.children.length && !mk){
     actions.classList.add("in-head");
     row.querySelector(".tl-head").appendChild(actions);
+  } else if (!meta.children.length && last && !last.classList.contains("tl-head")){
+    /* 표시는 있는데 알약이 없는 줄: 단추만으로 한 줄을 쓰지 않는다 — 마지막 내용(첨부나 메모 줄)의 오른쪽 아래 끝에 붙인다.
+       그러면 그 아래에 빈 줄이 남지 않고, 단추의 세로줄도 다른 줄과 같다. */
+    var dock = el('<div class="tl-dock"></div>');
+    body.insertBefore(dock, last);
+    dock.appendChild(last);
+    dock.appendChild(actions);
   } else {
-    meta.appendChild(actions);
-    body.appendChild(meta);
+    wrap.appendChild(actions);
+    body.appendChild(wrap);
   }
   return row;
 }
