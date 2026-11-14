@@ -964,9 +964,14 @@ function buyList(card, list, save){
    링크와 사진을 모아 두는 곳. 세 칸짜리 정사각 격자다(새것이 먼저). 링크 칸은 제목을 글로, 사진 칸은 사진을 보인다.
    링크 칸을 누르면 링크가 열리고(고치는 것은 칸 모서리의 연필), 사진 칸을 누르면 크게 보며 메모를 단다. */
 function renderTips(root){
-  var list = ordered(trip().tips).slice().reverse();
-  var links = list.filter(function(t){ return t.type !== "photo"; }).length;
-  var head = el('<div class="day-stat"><span class="mono">' + (list.length ? '링크 ' + links + ' · 사진 ' + (list.length - links) : '') + '</span></div>');
+  /* 메모는 `notes`, 링크와 사진은 `tips`에 있다 — 한 격자에 새것부터 섞어 놓는다 */
+  var list = ordered(trip().notes).map(function(n){ return { kind: "memo", rec: n }; })
+    .concat(ordered(trip().tips).map(function(t){ return { kind: t.type === "photo" ? "photo" : "link", rec: t }; }))
+    .sort(function(a, b){ return (b.rec.ord || 0) - (a.rec.ord || 0) || String(b.rec.id).localeCompare(String(a.rec.id)); });
+  var n = { memo: 0, link: 0, photo: 0 };
+  list.forEach(function(x){ n[x.kind]++; });
+  var head = el('<div class="day-stat"><span class="mono">' +
+    (list.length ? '메모 ' + n.memo + ' · 링크 ' + n.link + ' · 사진 ' + n.photo : '') + '</span></div>');
   head.appendChild(quickAdd(function(){ openTipAdd(); }));
   root.appendChild(head);
   if (!list.length){
@@ -974,8 +979,14 @@ function renderTips(root){
     return;
   }
   var grid = el('<div class="tipgrid"></div>');
-  list.forEach(function(t){ grid.appendChild(tipTile(t)); });
+  list.forEach(function(x){ grid.appendChild(x.kind === "memo" ? memoTile(x.rec) : tipTile(x.rec)); });
   root.appendChild(grid);
+}
+/* 메모 칸: 글의 모양 그대로 작게 비친다. 누르면 크게 본다. */
+function memoTile(m){
+  var tile = el('<button class="tip tip-memo" type="button" aria-label="메모"><div class="rich tip-memo-body">' + memoHtml(m) + '</div></button>');
+  ripple(tile, function(){ openMemoView(m); });
+  return tile;
 }
 function tipTile(t){
   if (t.type === "photo"){
@@ -1011,11 +1022,12 @@ function openTipAdd(){
   var body = sheet.querySelector(".sheet-body");
   sheet.querySelector(".sheet-foot").remove();
   var picker = el('<div class="attpick">' +
-    '<button type="button" data-k="link" aria-pressed="true">' + icon("link") + '링크</button>' +
+    '<button type="button" data-k="memo" aria-pressed="true">' + icon("note") + '메모</button>' +
+    '<button type="button" data-k="link" aria-pressed="false">' + icon("link") + '링크</button>' +
     '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button></div>');
   var form = el('<div></div>');
   body.appendChild(picker); body.appendChild(form);
-  var kind = "link";
+  var kind = "memo";
   picker.querySelectorAll("button").forEach(function(b){
     ripple(b, function(){
       kind = b.getAttribute("data-k");
@@ -1031,7 +1043,20 @@ function openTipAdd(){
   }
   function paint(){
     form.innerHTML = "";
-    if (kind === "link"){
+    if (kind === "memo"){
+      /* 메모는 모양이 있는 글 — 준비 탭에 있던 메모와 같은 편집기다 */
+      var ed = richEditor({ label: "메모" });
+      var m = el('<div><div class="fld"></div><button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
+      m.firstChild.appendChild(ed.node);
+      ripple(m.querySelector("button.btn"), editing(function(){
+        var html = ed.html();
+        if (!html) return flag(ed.field, "메모를 적어 주세요.");
+        Plan.listAdd("notes", { text: html, rich: true });
+        added();
+      }));
+      form.appendChild(m);
+      setTimeout(function(){ if (ed.field.isConnected) ed.focus(); }, 80);
+    } else if (kind === "link"){
       var g = el('<div><div class="fld"><label for="tp-u">링크</label><input id="tp-u" type="text" inputmode="url" autocomplete="off" placeholder="https://"></div>' +
         '<div class="fld"><label for="tp-t">제목 <span class="opt">선택</span></label><input id="tp-t" type="text" placeholder="예: 공항버스 타는 법"></div>' +
         '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
@@ -1165,7 +1190,6 @@ function renderInfo(root){
     fields: []
   }));
 
-  root.appendChild(memoCard());
   root.appendChild(packCard());
   root.appendChild(dangerCard());
 }
@@ -1393,44 +1417,36 @@ function editRec(o, rec){
    메모는 모양이 있는 글이다(굵게 · 밑줄 · 취소선 · 체크 줄 · 크기 · 색 — `src/ui/rich.js`). 저장하는 것은 걸러 낸 HTML이고
    (`rich: true`), 그 전에 적은 맨글자 메모는 줄마다 한 줄로 읽는다 — 줄을 바꿔 적은 것이 한 줄로 붙어 보이지 않게. */
 function memoHtml(n){ return n.rich ? safeRich(n.text) : richFromText(n.text); }
-function memoCard(){
-  var list = ordered(trip().notes);
-  var card = el('<div class="card t-note"></div>');
-  var head = el('<div class="card-head">' +
-    '<span class="card-ic">' + icon("note") + '</span>' +
-    '<h3>메모' + (list.length ? '<span class="card-n">' + list.length + '</span>' : '') + '</h3></div>');
-  var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
-  ripple(add, function(){ openMemoEditor(null); });
-  head.appendChild(add);
-  card.appendChild(head);
-  if (!list.length){
-    card.appendChild(el('<p class="card-empty">아직 메모가 없습니다.</p>'));
-    return card;
-  }
-  list.forEach(function(n){
-    var row = el('<div class="rowline memorow"></div>');
-    /* 안에 줄(div)과 체크 상자가 있으므로 button이 아니라 div다 */
-    var btn = el('<div class="rowbtn" role="button" tabindex="0"><div class="rowbody rich memo">' + memoHtml(n) + '</div>' +
-      icon("edit", "rowpen") + '</div>');
-    var box = btn.querySelector(".memo");
-    /* 체크 상자를 누르면 그 자리에서 켜고 끈다. 그 밖의 자리는 고치는 창을 연다. */
-    btn.addEventListener("click", function(e){
-      var line = e.target.closest ? e.target.closest(".mk") : null;
-      if (!line || !box.contains(line) || e.clientX - line.getBoundingClientRect().left > 28) return;
-      e.stopImmediatePropagation();
-      if (!mayEdit()) return;
-      line.setAttribute("data-on", line.getAttribute("data-on") === "1" ? "0" : "1");
-      Plan.listEdit("notes", n.id, { text: cleanRich(box), rich: true });
-      repaint();
-    });
-    ripple(btn, function(){ openMemoEditor(n); });
-    btn.addEventListener("keydown", function(e){
-      if ((e.key === "Enter" || e.key === " ") && e.target === btn){ e.preventDefault(); btn.click(); }
-    });
-    row.appendChild(btn);
-    card.appendChild(row);
+/* 메모 하나를 크게 본다: 보는 것은 누구나. 체크 상자는 그 자리에서 켜고 끄고(누르는 순간에 묻는다),
+   고치는 것은 아래의 '수정'이 편집기를 연다. */
+function openMemoView(n){
+  var sheet = sheetShell("메모");
+  var body = sheet.querySelector(".sheet-body");
+  var box = el('<div class="rich memo memoview">' + memoHtml(n) + '</div>');
+  box.addEventListener("click", function(e){
+    var line = e.target.closest ? e.target.closest(".mk") : null;
+    if (!line || !box.contains(line) || e.clientX - line.getBoundingClientRect().left > 30) return;
+    if (!mayEdit()) return;
+    line.setAttribute("data-on", line.getAttribute("data-on") === "1" ? "0" : "1");
+    Plan.listEdit("notes", n.id, { text: cleanRich(box), rich: true });
+    repaint();
   });
-  return card;
+  body.appendChild(box);
+  var foot = sheet.querySelector(".sheet-foot");
+  var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+  ripple(del, editing(function(){
+    askThenDelete(richText(memoHtml(n)).split("\n")[0].slice(0, 24), function(){
+      var undo = undoOf(Plan.listRemove("notes", n.id));
+      repaint();
+      return undo;
+    });
+  }));
+  foot.appendChild(del);
+  var edit = el('<button class="btn btn-primary" type="button">수정</button>');
+  /* 방금 켜고 끈 체크까지 그대로 들고 편집기로 간다 */
+  ripple(edit, function(){ openMemoEditor({ id: n.id, text: cleanRich(box), rich: true }); });
+  foot.appendChild(edit);
+  showOverlay(sheet);
 }
 function openMemoEditor(n){
   if (!mayEdit()) return;

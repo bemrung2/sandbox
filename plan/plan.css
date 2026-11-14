@@ -305,6 +305,21 @@
   .tip .quietbtn.tip-pen{ position: absolute; top: 3px; right: 2px; z-index: 2; color: var(--ink-faint); width: 28px; min-width: 28px; height: 28px; }
   .tip-link .tip-title{ padding-right: 0; }
   .tip-link .tip-ic{ margin-right: 30px; }
+  /* 메모 칸: 글의 모양 그대로 작게 비친다. 칸을 넘는 글은 아래로 옅어지며 사라진다. */
+  .tip-memo{ display: block; width: 100%; cursor: pointer; padding: 9px 10px 0; background: var(--surface); border: 1px solid var(--line); }
+  .tip.tip-memo > .tip-memo-body{
+    --mb: 11.5px; line-height: 1.42; height: 100%; overflow: hidden; pointer-events: none; text-align: left;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  }
+  .tip-memo-body > div{ min-height: 1.42em; }
+  .tip-memo-body .mk{ padding-left: 16px; }
+  .tip-memo-body .mk::before{ width: 10px; height: 10px; border-radius: 3.5px; border-width: 1.3px; left: 0; top: calc(0.71em - 6px); }
+  .tip-memo-body .mk[data-on="1"]::after{ left: 3.6px; top: calc(0.71em - 4.4px); width: 3px; height: 5.5px; border-width: 0 1.5px 1.5px 0; }
+  .tip-memo-body .bl{ padding-left: 11px; }
+  .tip-memo-body .bl::before{ left: 0; }
+  /* 메모를 크게 */
+  .memoview{ --mb: 15.5px; padding: 2px 2px 6px; min-height: 80px; }
+  .memoview .mk::before{ cursor: pointer; }
   /* 사진을 크게 */
   .tipview img{ display: block; width: 100%; max-height: 62vh; object-fit: contain; border-radius: 14px; background: var(--surface-2); min-height: 120px; }
   .tipview-memo{ margin: 12px 2px 0; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
