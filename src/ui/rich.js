@@ -142,10 +142,11 @@ function topBlock(ed, node){
 }
 /* 맨 바깥에 맨글자로 놓인 것(첫 줄이 그렇게 생긴다)을 줄(div)로 감싼다 — 줄에 표시를 달려면 줄이 있어야 한다 */
 function blockify(ed){
-  var run = null;
+  var run = null, moved = false;
   Array.prototype.slice.call(ed.childNodes).forEach(function(n){
     var isBlock = n.nodeType === 1 && BLOCK.test(n.nodeName);
     if (isBlock){ run = null; return; }
+    moved = true;
     if (n.nodeType === 1 && n.nodeName === "BR"){
       if (!run){ var e = document.createElement("div"); ed.insertBefore(e, n); e.appendChild(n); }
       else ed.removeChild(n);
@@ -154,7 +155,8 @@ function blockify(ed){
     if (!run){ run = document.createElement("div"); ed.insertBefore(run, n); }
     run.appendChild(n);
   });
-  if (!ed.firstChild){ var d = document.createElement("div"); d.appendChild(document.createElement("br")); ed.appendChild(d); }
+  if (!ed.firstChild){ var d = document.createElement("div"); d.appendChild(document.createElement("br")); ed.appendChild(d); moved = true; }
+  return moved;   /* 옮긴 것이 있었나 — 없었으면 커서를 건드릴 까닭이 없다 */
 }
 
 export function richEditor(opts){
@@ -209,11 +211,92 @@ export function richEditor(opts){
       b.setAttribute("aria-pressed", String(!!(blk && blk.classList.contains("bl") && blk.getAttribute("data-b") === b.dataset.list)));
     });
   }
+  /* 고른 곳이 편집기 밖으로 나가 있으면(단추를 누르다 초점을 잃는 폰이 있다) 마지막으로 있던 자리를 되살린다 */
+  var saved = null;
+  function ensureSel(){
+    var sel = inEd();
+    if (sel) return sel;
+    ed.focus();
+    sel = window.getSelection();
+    if (saved && ed.contains(saved.startContainer) && ed.contains(saved.endContainer)){
+      sel.removeAllRanges(); sel.addRange(saved);
+    } else if (!sel.rangeCount || !ed.contains(sel.anchorNode)){
+      var r0 = document.createRange(); r0.selectNodeContents(ed); r0.collapse(false);
+      sel.removeAllRanges(); sel.addRange(r0);
+    }
+    return sel;
+  }
+  /* 맨글자로 놓인 줄을 줄(div)로 감싸되, 커서와 고른 곳은 그대로 둔다.
+     노드를 옮기면 브라우저가 그 안에 있던 커서를 바깥으로 내보내므로, 옮기기 전에 자리를 적어 두었다가 되돌려 놓는다. */
+  function tidy(){
+    var sel = window.getSelection();
+    var r = sel.rangeCount && ed.contains(sel.anchorNode) ? sel.getRangeAt(0) : null;
+    function pin(c, o){
+      if (c !== ed) return [c, o];
+      var ch = ed.childNodes[o];
+      if (ch) return [ch, 0];
+      ch = ed.lastChild;
+      return ch ? [ch, ch.nodeType === 3 ? ch.nodeValue.length : ch.childNodes.length] : [null, 0];
+    }
+    var a = r ? pin(r.startContainer, r.startOffset) : null, z = r ? pin(r.endContainer, r.endOffset) : null;
+    /* 옮긴 것이 없으면 커서도 그대로 둔다 — 다시 놓으면 '이제부터 쓸 글의 모양'(크기를 누르고 색을 누른 것)이 지워진다 */
+    if (!blockify(ed) || !r) return;
+    try{
+      var nr = document.createRange();
+      if (a[0] && ed.contains(a[0])) nr.setStart(a[0], a[1]); else { nr.selectNodeContents(ed.firstChild); nr.collapse(true); }
+      if (z[0] && ed.contains(z[0])) nr.setEnd(z[0], z[1]);
+      sel.removeAllRanges(); sel.addRange(nr);
+    }catch(e){}
+  }
+  /* 커서가 있는 줄(맨 바깥 블록). */
+  function lineAt(){
+    tidy();
+    var sel = window.getSelection(), n = sel.anchorNode;
+    if (!n || !ed.contains(n)) return null;
+    if (n === ed){
+      var c = ed.childNodes[Math.min(sel.anchorOffset, ed.childNodes.length - 1)];
+      return c && c.nodeType === 1 ? c : null;
+    }
+    var b = topBlock(ed, n);
+    return b && BLOCK.test(b.nodeName) ? b : null;
+  }
+  function caretTo(node, offset, fallback){
+    var sel = window.getSelection(), r = document.createRange();
+    try{
+      if (!node || !ed.contains(node)) throw 0;
+      r.setStart(node, Math.min(offset, node.nodeType === 3 ? node.nodeValue.length : node.childNodes.length));
+    }catch(e){ r.selectNodeContents(fallback || ed); r.collapse(false); }
+    r.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+  /* 글자 모양(굵게 · 밑줄 · 취소선 · 크기 · 색)을 준다.
+     · 글을 골라 두었으면 고른 곳에.
+     · 고른 것 없이 커서만 있으면 **그 줄에 이미 쓴 글 전체에** 주고, 커서는 제자리에 둔다 — 이어서 쓰는 글도 같은 모양이 된다.
+       (빈 줄이면 이제부터 쓰는 글의 모양만 정해진다.) 이미 쓴 글과 앞으로 쓸 글, 둘 다 된다. */
   function exec(cmd, val){
-    if (!inEd()) ed.focus();
+    var sel = ensureSel();
     try{
       document.execCommand("styleWithCSS", false, false);
-      document.execCommand(cmd, false, val);
+      var blk = sel.isCollapsed ? lineAt() : null;
+      if (blk && (blk.textContent || "").length){
+        /* 커서의 자리는 '줄의 몇 번째 글자'로 기억한다 — 모양을 주면 브라우저가 글자 노드를 새로 만들어서 노드로는 못 찾는다 */
+        sel = window.getSelection();
+        var before = document.createRange();
+        before.selectNodeContents(blk);
+        try{ before.setEnd(sel.anchorNode, sel.anchorOffset); }catch(e){}
+        var at = before.toString().length;
+        var all = document.createRange(); all.selectNodeContents(blk);
+        sel.removeAllRanges(); sel.addRange(all);
+        document.execCommand(cmd, false, val);
+        var w = document.createTreeWalker(blk, NodeFilter.SHOW_TEXT), t, left = at, hit = null;
+        while ((t = w.nextNode())){
+          if (left <= t.nodeValue.length){ hit = t; break; }
+          left -= t.nodeValue.length;
+        }
+        caretTo(hit, left, blk);
+      } else {
+        document.execCommand(cmd, false, val);
+      }
     }catch(e){}
     changed(); states();
   }
@@ -228,15 +311,17 @@ export function richEditor(opts){
   /* 지금 줄(고른 줄들)을 그 종류로 — 체크 줄("check") · 머리표 줄("dash" · "dot"). 이미 모두 그 종류면 보통 줄로 되돌린다.
      한 줄은 한 가지 종류다(체크 줄이면서 머리표 줄일 수는 없다). */
   function toggleLine(kind){
-    if (!inEd()) ed.focus();
-    blockify(ed);
-    var sel = window.getSelection();
-    if (!sel.rangeCount || !ed.contains(sel.anchorNode)){
-      var r0 = document.createRange(); r0.selectNodeContents(ed.lastChild); r0.collapse(false);
-      sel.removeAllRanges(); sel.addRange(r0);
+    var sel = ensureSel(), blocks;
+    if (sel.isCollapsed){
+      /* 커서만 있으면 그 줄 — 아직 아무것도 안 쓴 빈 줄 · 빈 편집기여도 된다(먼저 켜고 쓰는 경우) */
+      var b0 = lineAt();
+      blocks = b0 ? [b0] : [];
+      if (b0 && !b0.contains(window.getSelection().anchorNode)) caretTo(null, 0, b0);
+    } else {
+      tidy();
+      var range = window.getSelection().getRangeAt(0);
+      blocks = Array.prototype.filter.call(ed.children, function(b){ return range.intersectsNode(b); });
     }
-    var range = sel.getRangeAt(0);
-    var blocks = Array.prototype.filter.call(ed.children, function(b){ return range.intersectsNode(b); });
     if (!blocks.length) return;
     var all = blocks.every(function(b){ return isKind(b, kind); });
     blocks.forEach(function(b){
@@ -271,10 +356,10 @@ export function richEditor(opts){
     changed();
   });
   function special(b){ return !!b && (b.classList.contains("mk") || b.classList.contains("bl")); }
-  ed.addEventListener("keydown", function(e){
-    if (e.isComposing) return;
+  /* 줄바꿈과 지우기는 beforeinput으로 받는다 — 폰 자판은 keydown에 어떤 키인지 알려 주지 않는다(229). */
+  ed.addEventListener("beforeinput", function(e){
     var sel = inEd(), blk = sel ? topBlock(ed, sel.anchorNode) : null;
-    if (e.key === "Enter" && !e.shiftKey){
+    if (e.inputType === "insertParagraph"){
       /* 빈 체크 줄 · 머리표 줄에서 Enter는 그 줄에서 나오는 것이다 — 표시가 지워지고 보통 줄이 된다 */
       if (special(blk) && !(blk.textContent || "").trim()){
         e.preventDefault();
@@ -294,7 +379,7 @@ export function richEditor(opts){
         states();
       }, 0);
     }
-    if (e.key === "Backspace" && special(blk) && sel.isCollapsed){
+    if (e.inputType === "deleteContentBackward" && special(blk) && sel.isCollapsed){
       var r = document.createRange();
       r.selectNodeContents(blk); r.setEnd(sel.anchorNode, sel.anchorOffset);
       if (!r.toString()){
@@ -316,6 +401,8 @@ export function richEditor(opts){
   });
   function onSel(){
     if (!ed.isConnected){ document.removeEventListener("selectionchange", onSel); return; }
+    var sel = inEd();
+    if (sel) saved = sel.getRangeAt(0).cloneRange();
     states();
   }
   document.addEventListener("selectionchange", onSel);
