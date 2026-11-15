@@ -120,6 +120,7 @@ alter table entries add column if not exists checkin_time  text;
 alter table entries add column if not exists checkout_time text;
 
 -- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
+-- 파일(kind=file)은 새 칸 없이: title=이름, photo_id=조각 id, text=JSON{parts,size,mime}. 모양 있는 메모는 title='rich'.
 create table if not exists attachments (
   id       text primary key,
   trip_id  text not null references trips(id) on delete cascade,
@@ -133,6 +134,7 @@ create table if not exists attachments (
 );
 
 -- 사진은 무거우니 따로. 목록을 받을 때 같이 오지 않고 id로 한 장씩 가져간다.
+-- 첨부한 파일의 조각도 여기 든다(id가 '<파일 id>.0', '.1' …, 조각 하나는 68만 글자 아래).
 create table if not exists photos (
   id   text primary key,
   data text not null

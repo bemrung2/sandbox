@@ -44,6 +44,8 @@
     /* 사진 위에 얹는 글자와 그 뒤의 그늘 — 사진 위라서 밝은 화면 · 어두운 화면이 같다 */
     --photo-shade: rgba(8, 10, 16, 0.66);
     --on-photo: #FFFFFF;
+    /* 문서의 종이 — PDF 쪽이 그려지기 전의 바탕. 종이는 어두운 화면에서도 희다 */
+    --page: #FFFFFF;
 
     --shadow: rgba(18, 22, 32, 0.10);
     --shadow-soft: rgba(18, 22, 32, 0.04);
@@ -462,6 +464,20 @@
   .attlist-body b{ display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .attlist-body small{ display: block; font-size: 11px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .attlist-body p{ margin: 0; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word; }
+  /* 붙여 둔 메모는 모양 그대로 몇 줄만 비친다 */
+  .attlist-body .att-prev{ --mb: 13px; color: var(--ink-soft); max-height: 6.2em; overflow: hidden; }
+  /* 파일 줄: 줄 전체가 '열기'다 */
+  .attlist-file{
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
+    border: none; background: transparent; color: inherit; font: inherit; text-align: left;
+    padding: 0; border-radius: 10px; cursor: pointer;
+  }
+  .fileic{
+    width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn);
+  }
+  .fileic .icon{ width: 20px; height: 20px; }
 
   /* 가운데 뜨는 창. 글은 넉넉한 폭으로 한두 줄에 끝나고, 단추는 손가락 크기의
      알약이다 — 하려는 일은 색으로, 물러서는 일은 옅은 면으로. */
@@ -502,6 +518,69 @@
     z-index: 80; padding: 16px;
   }
   .photoview img{ max-width: 100%; max-height: 100%; border-radius: 10px; }
+
+  /* 파일 뷰어 (src/ui/files.js): 화면 하나를 덮는다 — 위에는 닫기 · 이름 · 내려받기, 가운데는 쪽들,
+     아래에는 작은 알약(작게 · 몇 쪽 · 크게). 쪽의 폭은 화면 폭 × --z다. */
+  .fileview{
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 80;
+    display: flex; flex-direction: column; background: var(--surface-2); color: var(--ink);
+  }
+  .fv-bar{
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    padding: calc(6px + var(--safe-t)) 8px 6px; background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .fv-name{ flex: 1; min-width: 0; padding: 0 4px; }
+  .fv-name b{ display: block; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fv-name small{ display: block; font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .fv-bar a.icon-btn{ text-decoration: none; }
+  .fv-bar a.icon-btn[hidden]{ display: none; }
+  .fv-scroll{
+    flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y; overscroll-behavior: contain;
+  }
+  .fv-pages{
+    --z: 1; position: relative; box-sizing: border-box;
+    width: calc(min(100%, 880px) * var(--z)); margin: 0 auto;
+    padding: 10px 10px calc(74px + var(--safe-b));
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .fv-page{ width: 100%; background: var(--page); border-radius: 4px; box-shadow: 0 1px 6px var(--shadow); overflow: hidden; }
+  .fv-page canvas{ display: block; width: 100%; height: 100%; }
+  .fv-img{ display: block; width: 100%; height: auto; border-radius: 4px; }
+  .fv-text{
+    margin: 0; padding: 16px 16px calc(24px + var(--safe-b)); font: inherit; font-size: 13.5px; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+  }
+  .fv-wait, .fv-card{
+    min-height: 100%; box-sizing: border-box; padding: 24px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  }
+  .fv-wait p, .fv-card p{ margin: 6px 0 0; font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .fv-card > .icon{ width: 40px; height: 40px; color: var(--ink-faint); stroke-width: 1.4; margin-bottom: 6px; }
+  .fv-card b{ font-size: 15px; font-weight: 700; word-break: break-word; overflow-wrap: anywhere; }
+  .fv-card small{ font-size: 12px; color: var(--ink-faint); }
+  .fv-card .btn{ margin-top: 16px; text-decoration: none; }
+  .fv-spin{
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2.5px solid var(--line-strong); border-top-color: var(--signal);
+    animation: fv-spin 800ms linear infinite;
+  }
+  @keyframes fv-spin{ to{ transform: rotate(360deg); } }
+  .fv-tools{
+    position: absolute; left: 50%; bottom: calc(16px + var(--safe-b)); transform: translateX(-50%);
+    display: flex; align-items: center; gap: 2px; padding: 4px;
+    background: var(--toast-bg); border: 1px solid var(--line); border-radius: 999px;
+    box-shadow: 0 6px 22px -6px var(--shadow);
+  }
+  .fv-tools[hidden]{ display: none; }
+  .fv-tools button{
+    width: 38px; height: 38px; border: none; border-radius: 50%; background: transparent; color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .fv-tools button:disabled{ color: var(--line-strong); cursor: default; }
+  .fv-tools button .icon{ width: 18px; height: 18px; }
+  .fv-pos{ min-width: 58px; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* 알림. 폭은 글이 정한다 — left:50%에 그냥 두면 화면 반쪽 폭에서 접혀 짧은 말도
      두 줄이 된다. 그래서 max-content로 재고, 화면 폭에서 멈춘다.
@@ -857,11 +936,20 @@
     border-radius: 12px; border: 1px solid var(--line);
     background: var(--surface-2); object-fit: cover; cursor: pointer; padding: 0; display: block;
   }
+  /* 붙여 둔 메모는 모양이 있는 글이다(.rich) — 줄의 작은 글씨에 맞춰 바탕 크기와 체크 상자를 줄인다 */
   .att-note{
     font-size: 12.5px; color: var(--ink-soft);
     border-left: 2px solid var(--line-strong); padding: 1px 0 1px 10px;
-    white-space: pre-wrap; word-break: break-word;
+    word-break: break-word;
   }
+  .att-note.rich{ --mb: 12.5px; color: var(--ink-soft); }
+  .att-note .mk{ padding-left: 23px; cursor: pointer; }
+  .att-note .mk::before{ width: 15px; height: 15px; border-radius: 5px; top: calc(0.775em - 7.5px); }
+  .att-note .mk[data-on="1"]::after{ left: 6.4px; top: calc(0.775em - 5px); width: 4px; height: 7.5px; }
+  /* 붙여 둔 파일: 링크 알약과 같은 모양, 끝에 종류와 크기 */
+  .att-file{ border: none; font-family: inherit; cursor: pointer; }
+  .att-link.att-file .icon{ color: var(--warn); flex-shrink: 0; }
+  .att-file small{ flex-shrink: 0; font-size: 11px; font-weight: 500; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .att-link{
     display: inline-flex; align-items: center; gap: 6px;
     align-self: flex-start; max-width: 100%;
@@ -922,10 +1010,10 @@
   @keyframes sink-out{ to{ transform: translateY(26px); opacity: 0; } }
   @keyframes pop-in{ from{ transform: scale(0.94); opacity: 0; } }
   @keyframes pop-out{ to{ transform: scale(0.96); opacity: 0; } }
-  .scrim, .photoview{ animation: fade-in 220ms ease-out; }
+  .scrim, .photoview, .fileview{ animation: fade-in 220ms ease-out; }
   .scrim > .sheet{ animation: rise-in 320ms var(--ease); }
   .scrim > .dialog{ animation: pop-in 240ms var(--ease); }
-  .scrim.leaving, .photoview.leaving{ animation: fade-out 170ms ease-in forwards; pointer-events: none; }
+  .scrim.leaving, .photoview.leaving, .fileview.leaving{ animation: fade-out 170ms ease-in forwards; pointer-events: none; }
   .scrim.leaving > .sheet{ animation: sink-out 170ms ease-in forwards; }
   .scrim.leaving > .dialog{ animation: pop-out 170ms ease-in forwards; }
   /* 탭을 옮기면 내용이 제자리에서 서서히 떠오른다. 움직이지는 않는다. */

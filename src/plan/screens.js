@@ -7,6 +7,7 @@ import {
   savedToast, pickerField, pickGroup, rollEdges, showOverlay, closeOverlay, closeTop, flag
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb, loadPhoto } from "../ui/photos.js";
+import { storeFile, dropFile, openFile, fileMeta, FILE_MAX } from "../ui/files.js";
 import { reorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
@@ -743,11 +744,62 @@ function attachStrip(itemId, atts){
       if (!u) return;
       box.appendChild(el('<a class="att-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
         icon("link") + '<span>' + esc(a.title || hostOf(u)) + '</span></a>'));
+    } else if (a.type === "file"){
+      box.appendChild(fileChip(a));
     } else if (a.type === "note"){
-      box.appendChild(el('<p class="att-note">' + esc(a.text) + '</p>'));
+      box.appendChild(attNote(itemId, a));
     }
   });
   return box;
+}
+/* 첨부한 파일 한 줄: 누르면 이 화면 안에서 열린다(새 탭도, 다른 앱도 아니다) */
+function fileChip(a){
+  var b = el('<button class="att-link att-file" type="button">' + icon("file") +
+    '<span>' + esc(a.title || "파일") + '</span><small>' + esc(fileMeta(a)) + '</small></button>');
+  ripple(b, function(e){ e.stopPropagation(); openFile(a); });
+  return b;
+}
+/* 첨부한 메모: 모양이 있는 글이다(메모 탭의 메모와 같은 편집기 · 같은 체). 체크 상자는 그 자리에서 켜고 끈다. */
+function attHtml(a){ return a.rich ? safeRich(a.text) : richFromText(a.text); }
+function attNote(itemId, a){
+  var box = el('<div class="att-note rich">' + attHtml(a) + '</div>');
+  box.addEventListener("click", function(e){
+    var line = e.target.closest ? e.target.closest(".mk") : null;
+    if (!line || !box.contains(line) || e.clientX - line.getBoundingClientRect().left > 28) return;
+    e.stopPropagation();
+    if (!mayEdit()) return;
+    line.setAttribute("data-on", line.getAttribute("data-on") === "1" ? "0" : "1");
+    Plan.editAttach(itemId, a.id, { text: cleanRich(box), rich: true });
+  });
+  return box;
+}
+/* 파일 고르기: 고르면 조각내어 올리고(얼마나 올라갔는지 단추에 적힌다), 다 올라가면 기억할 것을 건넨다 */
+function filePick(sheet, onStored){
+  var h = el('<div><label class="btn btn-primary" style="width:100%">' + icon("file") + '<span>파일 고르기</span>' +
+    '<input type="file" hidden></label></div>');
+  var input = h.querySelector("input"), word = h.querySelector("span");
+  input.addEventListener("change", async function(){
+    var file = input.files[0];
+    if (!file || !mayEdit()) return;
+    if (file.size > FILE_MAX){ input.value = ""; sheet._clean(); return toast("10MB보다 큰 파일은 넣을 수 없습니다."); }
+    word.textContent = "올리는 중...";
+    input.disabled = true;
+    try{
+      var meta = await storeFile(file, function(done){ word.textContent = "올리는 중... " + Math.round(done * 100) + "%"; });
+      return onStored(meta);
+    }catch(e){
+      var why = String((e && e.message) || "");
+      if (why === "empty") toast("빈 파일은 넣을 수 없습니다.");
+      else if (Store.kind === "remote" && why && why !== "read") Store.failed(why);
+      else toast("파일을 저장하지 못했습니다.");
+    }
+    /* 붙은 것이 없으니 적던 것도 없다 — 닫을 때 묻지 않는다 */
+    sheet._clean();
+    word.textContent = "파일 고르기";
+    input.disabled = false;
+    input.value = "";
+  });
+  return h;
 }
 
 /* ---------- tab: food ---------- */
@@ -966,12 +1018,12 @@ function buyList(card, list, save){
 function renderTips(root){
   /* 메모는 `notes`, 링크와 사진은 `tips`에 있다 — 한 격자에 새것부터 섞어 놓는다 */
   var list = ordered(trip().notes).map(function(n){ return { kind: "memo", rec: n }; })
-    .concat(ordered(trip().tips).map(function(t){ return { kind: t.type === "photo" ? "photo" : "link", rec: t }; }))
+    .concat(ordered(trip().tips).map(function(t){ return { kind: t.type === "photo" ? "photo" : t.type === "file" ? "file" : "link", rec: t }; }))
     .sort(function(a, b){ return (b.rec.ord || 0) - (a.rec.ord || 0) || String(b.rec.id).localeCompare(String(a.rec.id)); });
-  var n = { memo: 0, link: 0, photo: 0 };
+  var n = { memo: 0, link: 0, photo: 0, file: 0 };
   list.forEach(function(x){ n[x.kind]++; });
   var head = el('<div class="day-stat"><span class="mono">' +
-    (list.length ? '메모 ' + n.memo + ' · 링크 ' + n.link + ' · 사진 ' + n.photo : '') + '</span></div>');
+    (list.length ? '메모 ' + n.memo + ' · 링크 ' + n.link + ' · 사진 ' + n.photo + ' · 파일 ' + n.file : '') + '</span></div>');
   head.appendChild(quickAdd(function(){ openTipAdd(); }));
   root.appendChild(head);
   if (!list.length){
@@ -996,6 +1048,19 @@ function tipTile(t){
     ripple(ph, function(){ openTipPhoto(t); });
     return ph;
   }
+  if (t.type === "file"){
+    /* 칸 전체가 '열기'다 — 이 화면 안의 뷰어로. 이름을 고치거나 지우는 것은 모서리의 연필 */
+    var ft = el('<div class="tip tip-link tip-file">' +
+      '<button class="tip-go" type="button" aria-label="' + esc(t.title || "파일") + ' 열기"></button>' +
+      '<span class="tip-ic">' + icon("file") + '</span>' +
+      '<span class="tip-title">' + esc(t.title || "파일") + '</span>' +
+      '<span class="tip-host">' + esc(fileMeta(t)) + '</span></div>');
+    tap(ft.querySelector(".tip-go"), function(){ openFile(t); });
+    var fpen = el('<button class="quietbtn ico tip-pen" type="button" aria-label="수정">' + icon("edit") + '</button>');
+    ripple(fpen, function(){ openTipFile(t); });
+    ft.appendChild(fpen);
+    return ft;
+  }
   var u = safeUrl(t.url);
   /* 칸 전체가 링크다. 연필은 그 위에 따로 얹는다(링크 안에 단추를 넣지 않는다). */
   var tile = el('<div class="tip tip-link">' +
@@ -1008,11 +1073,12 @@ function tipTile(t){
   tile.appendChild(pen);
   return tile;
 }
-function tipName(t){ return t.type === "photo" ? (t.memo || "사진") : (t.title || "링크"); }
+function tipName(t){ return t.type === "photo" ? (t.memo || "사진") : t.type === "file" ? (t.title || "파일") : (t.title || "링크"); }
 /* 지운 사진은 되돌릴 시간이 지나면 저장소에서도 치운다 */
 function removeTip(t){
   var back = Plan.listRemove("tips", t.id), gone = true;
   if (t.type === "photo" && t.pid) setTimeout(function(){ if (gone) dropPhoto(t.pid); }, 6000);
+  if (t.type === "file" && t.pid) setTimeout(function(){ if (gone) dropFile(t); }, 6000);
   repaint();
   return undoOf(back ? function(){ gone = false; back(); } : null);
 }
@@ -1024,7 +1090,8 @@ function openTipAdd(){
   var picker = el('<div class="attpick">' +
     '<button type="button" data-k="memo" aria-pressed="true">' + icon("note") + '메모</button>' +
     '<button type="button" data-k="link" aria-pressed="false">' + icon("link") + '링크</button>' +
-    '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button></div>');
+    '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button>' +
+    '<button type="button" data-k="file" aria-pressed="false">' + icon("file") + '파일</button></div>');
   var form = el('<div></div>');
   body.appendChild(picker); body.appendChild(form);
   var kind = "memo";
@@ -1068,6 +1135,11 @@ function openTipAdd(){
       }));
       form.appendChild(g);
       setTimeout(function(){ var i = g.querySelector("#tp-u"); if (i.isConnected) i.focus(); }, 80);
+    } else if (kind === "file"){
+      form.appendChild(filePick(sheet, function(meta){
+        Plan.listAdd("tips", Object.assign({ type:"file" }, meta));
+        added();
+      }));
     } else {
       var h = el('<div><div class="fld"><label for="tp-m">메모 <span class="opt">선택</span></label>' +
         '<input id="tp-m" type="text" placeholder="예: 이 메뉴 꼭 먹기"></div>' +
@@ -1112,6 +1184,18 @@ function openTipPhoto(t){
   });
   foot.appendChild(memo);
   showOverlay(sheet);
+}
+/* 파일의 이름을 고치거나 지운다 (여는 것은 칸을 누르면 된다) */
+function openTipFile(t){
+  openFormSheet({ title: "파일 수정", fields: [
+      { key:"title", label:"이름", required:true }
+    ] }, t,
+    function(v){
+      var undo = undoEdit(Plan.listEdit("tips", t.id, { title: (v.title || "").trim() || t.title }));
+      repaint();
+      return undo;
+    },
+    function(){ return removeTip(t); });
 }
 function openTipLink(t){
   openFormSheet({ title: "링크 수정", fields: [
@@ -1908,7 +1992,8 @@ function openAttachSheet(item){
   var picker = el('<div class="attpick">' +
     '<button type="button" data-k="note" aria-pressed="true">' + icon("note") + '메모</button>' +
     '<button type="button" data-k="link" aria-pressed="false">' + icon("link") + '링크</button>' +
-    '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button></div>');
+    '<button type="button" data-k="photo" aria-pressed="false">' + icon("image") + '사진</button>' +
+    '<button type="button" data-k="file" aria-pressed="false">' + icon("file") + '파일</button></div>');
   var form = el('<div></div>');
   var listBox = el('<div class="attlist"></div>');
   body.appendChild(picker); body.appendChild(form); body.appendChild(listBox);
@@ -1934,12 +2019,14 @@ function openAttachSheet(item){
   function paintForm(){
     form.innerHTML = "";
     if (kind === "note"){
-      var f = el('<div><div class="fld"><textarea id="a-note" rows="2" placeholder="메모"></textarea></div>' +
-        '<button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
-      ripple(f.querySelector("button"), editing(function(){
-        var v = f.querySelector("#a-note").value.trim();
-        if (!v) return flag(f.querySelector("#a-note"));
-        Plan.addAttach(item.id, { type:"note", text:v });
+      /* 메모는 모양이 있는 글 — 메모 탭의 메모와 같은 편집기다 */
+      var ed = richEditor({ label: "메모" });
+      var f = el('<div><div class="fld"></div><button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
+      f.firstChild.appendChild(ed.node);
+      ripple(f.querySelector("button.btn"), editing(function(){
+        var html = ed.html();
+        if (!html) return flag(ed.field, "메모를 적어 주세요.");
+        Plan.addAttach(item.id, { type:"note", text: html, rich: true });
         added();
       }));
       form.appendChild(f);
@@ -1955,6 +2042,11 @@ function openAttachSheet(item){
         added();
       }));
       form.appendChild(g);
+    } else if (kind === "file"){
+      form.appendChild(filePick(sheet, function(meta){
+        Plan.addAttach(item.id, Object.assign({ type:"file" }, meta));
+        added();
+      }));
     } else {
       var h = el('<div><label class="btn btn-primary" style="width:100%">' + icon("image") + '사진 고르기' +
         '<input type="file" accept="image/*" hidden></label></div>');
@@ -1993,12 +2085,20 @@ function openAttachSheet(item){
         row.appendChild(el('<div class="attlist-body"><b>사진</b></div>'));
       } else if (a.type === "link"){
         row.appendChild(el('<div class="attlist-body"><b>' + esc(a.title) + '</b><small>' + esc(hostOf(a.url)) + '</small></div>'));
+      } else if (a.type === "file"){
+        /* 파일 줄을 누르면 이 화면 안에서 열린다 */
+        var open = el('<button class="attlist-file" type="button"><span class="fileic">' + icon("file") + '</span>' +
+          '<span class="attlist-body"><b>' + esc(a.title || "파일") + '</b><small>' + esc(fileMeta(a)) + '</small></span></button>');
+        ripple(open, function(){ openFile(a); });
+        row.appendChild(open);
       } else {
-        row.appendChild(el('<div class="attlist-body"><p>' + esc(a.text) + '</p></div>'));
+        row.appendChild(el('<div class="attlist-body"><div class="rich att-prev">' + attHtml(a) + '</div></div>'));
+        row.appendChild(penBtn(function(){ openAttachMemo(item, a); }));
       }
       var del = el('<button class="quietbtn" type="button" aria-label="삭제">' + icon("x") + '</button>');
       ripple(del, editing(function(){ openAskDialog({ title: "삭제하시겠습니까?",
-        body: a.type === "photo" ? "사진 한 장을 삭제합니다." : a.type === "link" ? "'" + a.title + "' 링크를 삭제합니다." : "메모 하나를 삭제합니다." },
+        body: a.type === "photo" ? "사진 한 장을 삭제합니다." : a.type === "link" ? "'" + a.title + "' 링크를 삭제합니다."
+            : a.type === "file" ? "'" + (a.title || "파일") + "' 파일을 삭제합니다." : "메모 하나를 삭제합니다." },
         function(){
         var undo = undoOf(Plan.removeAttach(item.id, a.id));
         paintList(); repaint();
@@ -2009,6 +2109,10 @@ function openAttachSheet(item){
           if (!undo) dropPhoto(a.pid);
           else setTimeout(function(){ if (gone) dropPhoto(a.pid); }, 4500);
         }
+        if (a.type === "file"){
+          if (!undo) dropFile(a);
+          else setTimeout(function(){ if (gone) dropFile(a); }, 4500);
+        }
         if (undo) toastUndo("삭제했습니다.", function(){ gone = false; undo(); paintList(); });
       }); }));
       row.appendChild(del);
@@ -2017,5 +2121,25 @@ function openAttachSheet(item){
   }
 
   paintForm(); paintList();
+  showOverlay(sheet);
+}
+/* 붙여 둔 메모를 고친다 — 첨부 창 위에 뜨고, 저장하면 함께 닫힌다 */
+function openAttachMemo(item, a){
+  if (!mayEdit()) return;
+  var sheet = sheetShell("메모 수정", (item.s ? item.s + " " : "") + (item.title || ""));
+  var was = attHtml(a);
+  var ed = richEditor({ html: was, label: "메모" });
+  sheet.querySelector(".sheet-body").appendChild(el('<div class="fld"></div>')).appendChild(ed.node);
+  var save = el('<button class="btn btn-primary" type="button">저장</button>');
+  ripple(save, function(){
+    var html = ed.html();
+    if (!html) return flag(ed.field, "메모를 적어 주세요.");
+    closeOverlay();
+    if (html === was) return;
+    var undo = undoEdit(Plan.editAttach(item.id, a.id, { text: html, rich: true }));
+    savedToast(true, undo);
+    repaint();
+  });
+  sheet.querySelector(".sheet-foot").appendChild(save);
   showOverlay(sheet);
 }

@@ -26,6 +26,13 @@ function strip(body, keys) {
   return out;
 }
 
+/* 파일이 기억하는 것(조각 수 · 크기 · 종류)은 글 칸 하나에 JSON으로 든다 */
+function fileMeta(text) {
+  let v = {};
+  try { v = JSON.parse(text || "{}") || {}; } catch (e) { v = {}; }
+  return { parts: Number(v.parts) || 0, size: Number(v.size) || 0, mime: v.mime || "" };
+}
+
 /* one document -> {table, row} or null when the path is not ours */
 function toRow(path, body) {
   let p = path.split("/");
@@ -95,12 +102,17 @@ function toRow(path, body) {
     } };
   }
   if (group === "attach") {
+    /* 새 칸 없이: 모양이 있는 메모(rich)는 title이 그것을 말하고, 파일은 이름이 title · 조각 id가 photo_id ·
+       조각 수 · 크기 · 종류가 text에 든다 */
+    const kind = body.type || "note";
     return { table: "attachments", key: "id=eq." + id, row: {
       id, trip_id: trip,
       item_id: body.itemId || "",
-      kind: body.type || "note",
-      title: body.title || null,
-      text: body.text || null,
+      kind,
+      title: kind === "note" ? (body.rich ? "rich" : null) : body.title || null,
+      text: kind === "file"
+        ? JSON.stringify({ parts: body.parts || 0, size: body.size || 0, mime: body.mime || "" })
+        : body.text || null,
       url: body.url || null,
       photo_id: body.pid || null,
       ord: body.ord || 0
@@ -122,10 +134,14 @@ function toRow(path, body) {
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
-    /* Tip 탭의 링크 · 사진: tag=종류(link|photo), label=제목, url=주소, sub=사진 id, detail=사진의 메모 — 새 칸 없이 */
+    /* 메모 탭의 링크 · 사진 · 파일: tag=종류(link|photo|file), label=제목(파일 이름), url=주소, sub=사진 · 파일 id,
+       detail=사진의 메모(파일이면 조각 수 · 크기 · 종류) — 새 칸 없이 */
     else if (group === "tips") {
-      row.tag = body.type === "photo" ? "photo" : "link"; row.label = body.title || "";
-      row.url = body.url || null; row.sub = body.pid || null; row.detail = body.memo || null;
+      row.tag = body.type === "photo" ? "photo" : body.type === "file" ? "file" : "link"; row.label = body.title || "";
+      row.url = body.url || null; row.sub = body.pid || null;
+      row.detail = body.type === "file"
+        ? JSON.stringify({ parts: body.parts || 0, size: body.size || 0, mime: body.mime || "" })
+        : body.memo || null;
     }
     /* 지나간 날의 날씨 기록: tag=날짜, label=도시, detail={hi,lo,code} — 새 칸 없이 */
     else if (group === "wx") { row.tag = body.date || id; row.label = body.city || ""; row.detail = JSON.stringify({ hi: body.hi, lo: body.lo, code: body.code }); }
@@ -185,7 +201,10 @@ function toDocs(tables) {
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };
     else if (row.kind === "links") body = { title: row.label, url: row.url };
     else if (row.kind === "packList") body = { text: row.label, on: !!row.done };
-    else if (row.kind === "tips") body = { type: row.tag === "photo" ? "photo" : "link", title: row.label, url: row.url, pid: row.sub, memo: row.detail };
+    else if (row.kind === "tips") {
+      if (row.tag === "file") body = Object.assign({ type: "file", title: row.label, pid: row.sub }, fileMeta(row.detail));
+      else body = { type: row.tag === "photo" ? "photo" : "link", title: row.label, url: row.url, pid: row.sub, memo: row.detail };
+    }
     else if (row.kind === "wx") {
       let v = {};
       try { v = JSON.parse(row.detail || "{}") || {}; } catch (e) { v = {}; }
@@ -196,10 +215,12 @@ function toDocs(tables) {
     docs[PREFIX + "trips/" + row.trip_id + "/" + row.kind + "/" + row.id] = strip(body, Object.keys(body));
   }
   for (const row of tables.attachments || []) {
-    docs[PREFIX + "trips/" + row.trip_id + "/attach/" + row.id] = strip({
-      itemId: row.item_id, type: row.kind, title: row.title,
-      text: row.text, url: row.url, pid: row.photo_id, ord: row.ord
-    }, ["itemId", "type", "title", "text", "url", "pid", "ord"]);
+    const base = { itemId: row.item_id, type: row.kind, title: row.title,
+      text: row.text, url: row.url, pid: row.photo_id, ord: row.ord };
+    if (row.kind === "note") { base.title = null; base.rich = row.title === "rich" ? true : null; }
+    if (row.kind === "file") { base.text = null; Object.assign(base, fileMeta(row.text)); }
+    docs[PREFIX + "trips/" + row.trip_id + "/attach/" + row.id] = strip(base,
+      ["itemId", "type", "title", "text", "url", "pid", "ord", "rich", "parts", "size", "mime"]);
   }
   return docs;
 }

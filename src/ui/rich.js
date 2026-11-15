@@ -356,10 +356,14 @@ export function richEditor(opts){
     changed();
   });
   function special(b){ return !!b && (b.classList.contains("mk") || b.classList.contains("bl")); }
+  var enters = 0;
   /* 줄바꿈과 지우기는 beforeinput으로 받는다 — 폰 자판은 keydown에 어떤 키인지 알려 주지 않는다(229). */
   ed.addEventListener("beforeinput", function(e){
     var sel = inEd(), blk = sel ? topBlock(ed, sel.anchorNode) : null;
     if (e.inputType === "insertParagraph"){
+      /* 줄바꿈이 잇달아 오면 앞의 줄바꿈이 미뤄 둔 일('윗줄의 종류를 잇는다')이 뒤의 것('이 줄에서 나온다')을
+         덮어쓰면 안 된다 — 몇 번째 줄바꿈인지 적어 두고, 그 사이에 또 왔으면 손대지 않는다 */
+      var turn = ++enters;
       /* 빈 체크 줄 · 머리표 줄에서 Enter는 그 줄에서 나오는 것이다 — 표시가 지워지고 보통 줄이 된다 */
       if (special(blk) && !(blk.textContent || "").trim()){
         e.preventDefault();
@@ -369,6 +373,7 @@ export function richEditor(opts){
       }
       /* 새 줄은 윗줄의 종류를 잇는다(브라우저가 속성을 그대로 베낀다). 체크만은 꺼진 채로 시작한다. */
       setTimeout(function(){
+        if (turn !== enters) return;
         var s2 = inEd(), nb = s2 ? topBlock(ed, s2.anchorNode) : null;
         if (nb && nb !== blk && nb.classList.contains("mk") && !(nb.textContent || "").trim()) nb.setAttribute("data-on", "0");
         /* 브라우저가 속성을 베끼지 않았으면 직접 잇는다 */

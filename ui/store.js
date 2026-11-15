@@ -132,11 +132,17 @@ RemoteStore.prototype.watch = function(cb){
   setInterval(tick, 4000);
   document.addEventListener("visibilitychange", function(){ if (!document.hidden) tick(); });
 };
+/* 올라가지 않았으면 올라가지 않았다고 말한다 — 조용히 넘어가면 붙은 줄 알고, 열어 보면 없다 */
 RemoteStore.prototype.blobPut = async function(id, data){
-  await fetch(API, {
+  var res = await fetch(API, {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ writes: { ["blobs/" + id]: { data: data } } })
   });
+  if (!res.ok){
+    var why = "";
+    try{ var d = await res.json(); why = d.message || d.error || ""; }catch(e){ /* 말이 없는 거절 */ }
+    throw new Error(why || ("write " + res.status));
+  }
 };
 RemoteStore.prototype.blobGet = async function(id){
   var res = await fetch(API + "?path=" + encodeURIComponent("blobs/" + id), { cache: "no-store" });

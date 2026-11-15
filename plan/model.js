@@ -7,14 +7,15 @@
  *   travel/trips/<id>/days/<YYYY-MM-DD>    그날 요약 + 동선
  *   travel/trips/<id>/items/<id>           일정 하나
  *   travel/trips/<id>/<목록>/<id>           가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
- *   travel/trips/<id>/attach/<id>          일정 · 숙소 · 예약에 붙인 첨부 (메모 · 링크 · 사진)
+ *   travel/trips/<id>/attach/<id>          일정 · 숙소 · 예약에 붙인 첨부 (메모 · 링크 · 사진 · 파일)
  */
 import { uid } from "../ui/dom.js";
 import { Store } from "../ui/store.js";
 
 export var ROOT = "travel/trips";
 /* wx: 지나간 날의 날씨 기록(travel/trips/<id>/wx/wx-<id>-2026-11-24). */
-/* tips: 메모 탭(주소 이름 tip)의 링크 · 사진 ({type:"link", title, url} · {type:"photo", pid, memo}) */
+/* tips: 메모 탭(주소 이름 tip)의 링크 · 사진 · 파일 ({type:"link", title, url} · {type:"photo", pid, memo} ·
+   {type:"file", title, pid, parts, size, mime}) */
 export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes", "wx", "tips"];
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -803,6 +804,20 @@ export var Plan = {
     var full = Object.assign({ id: uid("t"), itemId: itemId }, att);
     (t.attach[itemId] = t.attach[itemId] || []).push(full);
     this.write(this.path("attach") + "/" + full.id, bodyOf(full));
+  },
+  /* 첨부 하나를 고친다(메모의 글 · 체크). 바뀐 것이 없으면 쓰지 않고 null, 아니면 되돌리는 함수 */
+  editAttach(itemId, attId, patch){
+    var self = this, a = this.attachOf(itemId).filter(function(x){ return x.id === attId; })[0];
+    if (!a || !changed(a, patch)) return null;
+    var was = {};
+    Object.keys(patch).forEach(function(k){ was[k] = a[k]; });
+    var here = this.path("attach") + "/" + attId;
+    Object.assign(a, patch);
+    this.write(here, Object.assign(bodyOf(a), { itemId: itemId }));
+    return function(){
+      Object.assign(a, was);
+      self.write(here, Object.assign(bodyOf(a), { itemId: itemId }));
+    };
   },
   removeAttach(itemId, attId){
     var self = this, t = this.cur(), gone = null;

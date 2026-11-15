@@ -61,6 +61,7 @@ travel/trips/<여행id>/items/<id>          일정 하나
 travel/trips/<여행id>/<목록>/<id>          가게 · 항공 · 숙소 · 예약 · 링크 · 준비물 · 메모
 travel/trips/<여행id>/attach/<id>         일정에 붙인 자료
 blobs/<id>                               사진 한 장 (목록 동기화에서 제외)
+blobs/<id>.<n>                           첨부한 파일의 조각 하나 (사진과 같은 표)
 ```
 
 레코드 하나가 문서 하나라서, 두 사람이 서로 다른 걸 고쳐도 덮어쓰지 않는다.
