@@ -1803,6 +1803,13 @@ function openItemEditor(item, defaultDate, presets){
      밤을 넘는 비행은 시작보다 이른 시각에 다음 날 도착한다. */
   var eFld = pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true,
     min: function(){ return cur.cat === "move" ? "" : sFld.querySelector("input").value; } });
+  /* 시작을 끝보다 늦게 옮기면 끝이 시작을 따라온다(03:00–03:00에서 시작을 04:00으로 → 04:00–04:00).
+     끝이 시작보다 이른 채로 남지 않게 — 이동만은 그대로 둔다(다음 날 도착일 수 있다). 끝이 비어 있으면 비워 둔다. */
+  function pullEnd(){
+    var sv = sFld.querySelector("input").value, ev = eFld.querySelector("input").value;
+    if (cur.cat !== "move" && sv && ev && ev < sv) eFld._set(sv);
+  }
+  sFld.querySelector("input").addEventListener("change", pullEnd);
   row.appendChild(sFld);
   row.appendChild(eFld);
   timeRow.appendChild(el('<p class="fld-hint" id="ed-nextday">종료가 시작보다 이르면 다음 날 도착입니다.</p>'));
@@ -1904,7 +1911,11 @@ function openItemEditor(item, defaultDate, presets){
   var cats = [{ key:"", label:"없음" }].concat(CAT_ORDER.filter(function(k){ return k !== "stay" || !item || legacyStay; })
     .map(function(k){ return { key:k, label: CAT[k].label }; }));
   pickGroup(sheet.querySelector("#ed-cat"), cats,
-    function(){ return cur.cat; }, function(v){ cur.cat = v; syncKinds(); });
+    function(){ return cur.cat; }, function(v){
+      cur.cat = v; syncKinds();
+      /* 이동이 아니게 되면 '다음 날 도착'도 없다 — 시작보다 이른 끝은 시작에 맞춘다. 고를 때만 한다(열기만 해서는 바꾸지 않는다). */
+      pullEnd();
+    });
   pickGroup(mealRow,
     [{ key:"", label:"없음" }].concat(Object.keys(MEAL_LABEL).map(function(k){ return { key:k, label:MEAL_LABEL[k] }; })),
     function(){ return cur.meal; }, function(v){ cur.meal = v; });

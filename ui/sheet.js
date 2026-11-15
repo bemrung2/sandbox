@@ -371,18 +371,21 @@ export function timeField(o){
   var val = wrap.querySelector(".timeval");
   var hidden = wrap.querySelector("input");
 
+  function put(next){
+    hidden.value = next;
+    val.textContent = next || "--:--";
+    box.classList.toggle("blank", !next);
+    box.classList.remove("bad");
+    hidden.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  /* 다른 칸이 이 칸의 값을 맞춰 놓아야 할 때 쓴다 (시작이 끝을 넘어서면 끝이 따라온다) */
+  wrap._set = put;
   ripple(box, function(){
     openTimeWheel({
       title: o.label,
       value: hidden.value,
       min: o.min ? o.min() : ""
-    }, function(next){
-      hidden.value = next;
-      val.textContent = next || "--:--";
-      box.classList.toggle("blank", !next);
-      box.classList.remove("bad");
-      hidden.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    }, put);
   });
   return wrap;
 }
