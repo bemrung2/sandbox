@@ -1015,11 +1015,12 @@ function renderShop(root, days){
     return a.date === b.date ? (mins(a.at) || 0) - (mins(b.at) || 0) : a.date.localeCompare(b.date);
   });
 
-  var total = 0, got = 0;
-  rows.forEach(function(r){ r.buys.forEach(function(i){ total++; if (i.got) got++; }); });
+  var total = 0, got = 0, mustLeft = 0;
+  rows.forEach(function(r){ r.buys.forEach(function(i){ total++; if (i.got) got++; else if (i.pri === "must") mustLeft++; }); });
   function addShop(){ openItemEditor(null, days[state.day] ? days[state.day].date : days[0].date, { cat: "shop" }); }
   var head = el('<div class="group-label"><h3>쇼핑 목록</h3>' +
-    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') + '</span></div>');
+    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') +
+    (mustLeft ? ' · <span class="pri-left">★ 필수 ' + mustLeft + '</span>' : '') + '</span></div>');
   head.appendChild(quickAdd(addShop));
   root.appendChild(head);
 
@@ -1086,17 +1087,27 @@ function linesOf(v){
 }
 function addedMsg(n){ return n > 1 ? n + "개 추가했습니다." : "추가했습니다."; }
 
+/* 살 것마다 '필수' · '고민'을 고를 수 있다(`pri`: "must" | "maybe", 없으면 보통). 줄의 글 앞에 작은 알약 하나로 선다 —
+   필수는 빨간 ★, 고민은 보라 🤔. 산 것(체크)은 알약도 옅어진다. 순서는 손으로 정한다(길게 눌러 옮기기) — 필수를 저절로 올리지 않는다. */
+var PRI = [{ key:"", label:"보통" }, { key:"must", label:"★ 필수" }, { key:"maybe", label:"🤔 고민" }];
+var PRI_WORD = { must: "필수", maybe: "고민" };
+function priPill(pri){
+  if (!PRI_WORD[pri]) return "";
+  return '<span class="pri pri-' + pri + '" aria-label="' + PRI_WORD[pri] + '"><i aria-hidden="true">' +
+    (pri === "must" ? "★" : "🤔") + '</i>' + PRI_WORD[pri] + '</span>';
+}
+function priChoices(value){ return { label: "중요도", options: PRI, value: value || "" }; }
 function buyList(card, list, save){
   list.forEach(function(i){
-    card.appendChild(checkRow(i.text, i.got,
+    var row = checkRow(i.text, i.got,
       function(){
         save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { got: !x.got }) : x; }));
         repaint();
       },
       function(){
-        openTextDialog({ title:"쇼핑리스트 수정", value:i.text },
-          function(v){
-            var undo = undoEdit(save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { text: v }) : x; })));
+        openTextDialog({ title:"쇼핑리스트 수정", value:i.text, choices: priChoices(i.pri) },
+          function(v, pri){
+            var undo = undoEdit(save(list.map(function(x){ return x.id === i.id ? Object.assign({}, x, { text: v, pri: pri || null }) : x; })));
             repaint();
             return undo;
           },
@@ -1105,15 +1116,26 @@ function buyList(card, list, save){
             repaint();
             return undo;
           });
-      }));
+      }, PRI_WORD[i.pri] ? i.pri : "");
+    /* 길게 눌러 옮긴다 — 같은 가게의 살 것끼리. 연필은 손잡이가 아니다. */
+    row.dataset.bid = i.id;
+    holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".checkrow")); }, function(rows){
+      var at = {};
+      list.forEach(function(x){ at[x.id] = x; });
+      var undo = undoEdit(save(rows.map(function(r){ return at[r.dataset.bid]; }).filter(Boolean)));
+      repaint();
+      if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit");
+    }, { can: mayEdit, axis: "y", skip: ".rowedit" });
+    card.appendChild(row);
   });
 
   var addBtn = el('<button class="quietbtn buyadd" type="button">' + icon("plus") + '쇼핑리스트 추가하기</button>');
   ripple(addBtn, function(){
-    /* 줄을 바꾸면 한 줄이 하나다 — 여러 개를 한 번에 적는다 */
-    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 티셔츠", multiline:true, okLabel:"추가" }, function(v){
+    /* 줄을 바꾸면 한 줄이 하나다 — 여러 개를 한 번에 적는다. 고른 중요도는 이번에 적은 것 모두에 붙는다. */
+    openTextDialog({ title:"쇼핑리스트 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 티셔츠", multiline:true, okLabel:"추가",
+      choices: priChoices("") }, function(v, pri){
       var texts = linesOf(v);
-      save(list.concat(texts.map(function(t){ return { id: uid("i"), text: t, got: false }; })));
+      save(list.concat(texts.map(function(t){ return { id: uid("i"), text: t, got: false, pri: pri || null }; })));
       repaint();
       toastDone(addedMsg(texts.length));
     });
@@ -1732,11 +1754,12 @@ function reordered(nodes, desc){
 
 /* 체크하는 줄. 줄 어디를 눌러도 체크가 바뀐다 — 가장 자주 하는 일이 가장 큰 자리를
    가진다. 글을 고치는 것은 끝의 연필이다. */
-function checkRow(text, on, toggle, edit){
+function checkRow(text, on, toggle, edit, pri){
+  /* 줄에는 중요도 클래스를 달지 않는다 — 알약의 .pri-must가 줄 글자까지 빨갛게 칠한다 */
   var row = el('<div class="rowline checkrow' + (on ? " on" : "") + '"></div>');
   var main = el('<button class="rowbtn" type="button" role="checkbox" aria-checked="' + !!on + '">' +
     '<span class="check" aria-pressed="' + !!on + '">' + icon("check") + '</span>' +
-    '<span class="rowbody"><b>' + esc(text) + '</b></span></button>');
+    '<span class="rowbody"><b>' + (pri ? priPill(pri) : '') + esc(text) + '</b></span></button>');
   ripple(main, editing(toggle));
   row.appendChild(main);
   var pen = el('<button class="quietbtn rowedit" type="button" aria-label="' + esc(text) + ' 수정">' + icon("edit") + '</button>');

@@ -248,6 +248,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
     '<h3>' + esc(opts.title) + '</h3><div class="fld">' + field +
     (opts.hint ? '<p class="fld-hint">' + esc(opts.hint) + '</p>' : '') + '</div>' +
+    (opts.choices ? '<div class="fld dlg-choice"><div class="pickrow fit" role="group" aria-label="' + esc(opts.choices.label || "") + '"></div></div>' : '') +
     '<div class="dialog-actions">' +
       (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
       '<span class="spacer"></span>' +
@@ -258,6 +259,10 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   scrim._shut = give;
   scrim.addEventListener("click", function(e){ if (e.target === scrim) give(); });
   var input = scrim.querySelector("#dlg-v");
+  /* 글 아래의 고르는 줄(opts.choices: {label, options:[{key,label}], value}) — 고른 것은 onSave의 둘째 값으로 간다 */
+  var choice = opts.choices ? (opts.choices.value || "") : undefined;
+  if (opts.choices) pickGroup(scrim.querySelector(".dlg-choice .pickrow"), opts.choices.options,
+    function(){ return choice; }, function(k){ choice = k; });
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
   if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
     askThenDelete(opts.what || opts.value, onDelete);
@@ -266,7 +271,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
     var v = input.value.trim();
     if (!v && !opts.optional) return flag(input);   /* optional: 비워서 지우는 것도 저장이다 */
     closeOverlay();
-    var undo = onSave(v);
+    var undo = onSave(v, choice);
     /* 있던 것을 바꿨을 때만 되돌리기를 내민다 — 새로 적은 것은 지우면 된다 */
     if (opts.value && undo) savedToast(true, undo);
   });
