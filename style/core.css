@@ -149,7 +149,15 @@
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   button, label, a, summary{ touch-action: manipulation; }
 
-  html{ height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* 목록 → 여행으로 넘어갈 때 화면이 떨리며 확대되던 자리. 둘을 막는다:
+     · 두 번 눌러 확대 — 카드를 누르고 반응이 늦다 싶어 한 번 더 누르면, 둘째 손가락이 새 화면(단추가 아닌 곳)에 떨어져
+       폰이 확대해 버렸다. 화면 전체를 manipulation으로 둔다(두 손가락으로 벌리는 확대는 그대로 된다).
+     · 넘어가는 순간의 가로 넘침 — 새 화면이 오른쪽에서 16px 밀려 들어오는 동안 문서가 잠깐 넓어지면, 폰(특히 iOS)이
+       맞춰 보려고 배율을 바꿨다 되돌리며 떨린다. 가로로 넘친 것은 body에서 잘라 낸다(clip — 스크롤 상자를 만들지 않아 붙어 따라오는 탭 줄은 그대로). */
+  html{ height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }
+  /* 밀려 들어오는 것은 #view 자체라, 자르는 곳은 그 부모인 body다 — html에 clip을 주면 붙어 따라오는 탭 줄(sticky)이 풀렸다 */
+  body{ overflow-x: clip; }
+  @supports not (overflow: clip){ body{ overflow-x: hidden; } }
   body{
     min-height: 100%;
     margin: 0;
@@ -1096,6 +1104,7 @@
   /* 들어갈 때는 오른쪽에서, 나올 때는 왼쪽에서 — 손가락이 민 방향대로 */
   @keyframes slide-in{ from{ opacity: 0; transform: translateX(16px); } }
   @keyframes slide-back{ from{ opacity: 0; transform: translateX(-16px); } }
+  .slide-in, .slide-back{ backface-visibility: hidden; }
   .slide-in{ animation: slide-in 230ms cubic-bezier(0.2, 0, 0.1, 1); }
   .slide-back{ animation: slide-back 230ms cubic-bezier(0.2, 0, 0.1, 1); }
   @media (prefers-reduced-motion: reduce){

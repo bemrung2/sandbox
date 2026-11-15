@@ -273,7 +273,10 @@ vendor/pdfjs/  PDF를 그리는 pdf.js(3.11.174 legacy)와 글자표(cmaps). 남
   옅은 바탕은 `color-mix(in srgb, var(--accent) 15%, transparent)`로 만든다 — 톤마다
   색을 새로 적어두지 않는다. 분류 배지도 같은 방식으로 `currentColor`를 옅게 깐다.
 - 목록과 여행 사이를 오갈 때만 화면이 한 번 밀린다 (`slide("list"|"trip")` →
-  `.slide-in` · `.slide-back`, 230ms). 탭을 옮길 때는 밀지 않고 제자리에서 서서히
+  `.slide-in` · `.slide-back`, 230ms). **화면 전체는 `touch-action: manipulation`이고 가로로 넘친 것은 잘라 낸다**(`body`의 `overflow-x: clip` — 밀려 들어오는 것이 `#view`
+  자체라 그 부모에서 자른다. `html`에 주면 탭 줄의 sticky가 풀렸다) —
+  카드를 두 번 누르면 둘째 손가락이 새 화면에 떨어져 폰이 확대하고, 오른쪽에서 밀려 들어오는 동안 문서가 잠깐 넓어지면 폰이 배율을 바꿨다
+  되돌리며 떨렸다. `hidden`이 아니라 `clip`이다 — 스크롤 상자를 만들면 붙어 따라오는 탭 줄(sticky)이 풀린다. 탭을 옮길 때는 밀지 않고 제자리에서 서서히
   떠오르기만 한다(`.tab-in`, 투명도만). 날짜를 바꿀 때는 아무것도 움직이지 않는다.
 - 창은 한 번에 튀어나오지 않는다. 바탕은 옅어지며 깔리고, 아래 창은 밑에서 올라오고,
   가운데 창은 살짝 커지며 선다. 닫을 때도 `.leaving`을 붙여 170ms 뒤에 치운다 —
