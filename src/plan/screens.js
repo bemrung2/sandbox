@@ -255,7 +255,7 @@ function tripCard(t, box){
    것은 목록과 여행 사이뿐이다. */
 var lastTab = "", lastTrip = "", tabsX = 0;
 /* 탭: 주소에 쓰는 이름과 화면의 말. '준비'의 주소 이름은 예전 그대로 info다(예전 링크가 살아 있게). */
-var TABS = [["sched","일정"],["food","식사"],["shop","쇼핑"],["tip","Tip"],["info","준비"]];
+var TABS = [["sched","일정"],["food","식사"],["shop","쇼핑"],["tip","메모"],["info","준비"]];
 export function renderTrip(root, keepScroll){
   var days = tripDays();
   var tabTurned = lastTab && lastTab !== state.tripId + "/" + state.tab && lastTab.split("/")[0] === state.tripId;
@@ -975,7 +975,7 @@ function renderTips(root){
   head.appendChild(quickAdd(function(){ openTipAdd(); }));
   root.appendChild(head);
   if (!list.length){
-    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 Tip이 없습니다.</p></div>'));
+    root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 메모가 없습니다.</p></div>'));
     return;
   }
   var grid = el('<div class="tipgrid"></div>');
@@ -1018,7 +1018,7 @@ function removeTip(t){
 }
 function openTipAdd(){
   if (!mayEdit()) return;
-  var sheet = sheetShell("Tip 추가");
+  var sheet = sheetShell("추가");
   var body = sheet.querySelector(".sheet-body");
   sheet.querySelector(".sheet-foot").remove();
   var picker = el('<div class="attpick">' +

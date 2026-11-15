@@ -14,7 +14,7 @@ import { Store } from "../ui/store.js";
 
 export var ROOT = "travel/trips";
 /* wx: 지나간 날의 날씨 기록(travel/trips/<id>/wx/wx-<id>-2026-11-24). */
-/* tips: Tip 탭의 링크 · 사진 ({type:"link", title, url} · {type:"photo", pid, memo}) */
+/* tips: 메모 탭(주소 이름 tip)의 링크 · 사진 ({type:"link", title, url} · {type:"photo", pid, memo}) */
 export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes", "wx", "tips"];
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
