@@ -517,6 +517,23 @@
     100%{ background: transparent; box-shadow: none; }
   }
   @media (prefers-reduced-motion: reduce){ .tl-item.focus .tl-body{ animation: none; } }
+  /* 다른 탭에서 건너와 짚는 카드(쇼핑 탭의 가게) — 카드의 제 색으로 테두리가 한 번 밝아졌다 잦아든다 */
+  .card.focus{ animation: land-card 1.8s var(--ease); }
+  @keyframes land-card{
+    0%, 35%{ box-shadow: 0 0 0 2px var(--accent), 0 0 0 7px color-mix(in srgb, var(--accent) 18%, transparent); }
+    100%{ box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  }
+  @media (prefers-reduced-motion: reduce){ .card.focus{ animation: none; } }
+  /* 일정 줄의 '쇼핑리스트 2/5 ›' — 쇼핑 탭의 그 가게로 가는 단추. 쇼핑의 색, 메모 줄과 같은 크기 */
+  .tl-buys-line{ margin-top: 5px; }
+  .tl-buys{
+    display: inline-flex; align-items: center; gap: 5px; margin: -4px -6px; padding: 4px 6px;
+    border: none; border-radius: 8px; background: transparent; cursor: pointer;
+    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--c-shop);
+  }
+  .tl-buys b{ font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tl-buys .icon{ width: 12px; height: 12px; margin-left: -1px; stroke-width: 2.4; }
+  .tl-buys:focus-visible{ outline: 2px solid var(--signal); outline-offset: 1px; }
   .tl-item.current .tl-dot{
     background: var(--signal); border-color: var(--signal);
     box-shadow: 0 0 0 4px var(--signal-tint);

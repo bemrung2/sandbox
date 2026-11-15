@@ -327,10 +327,27 @@ function focusItem(it){
   focusId = it.id;
   go({ tab: "sched", day: di });
 }
+/* 일정 탭의 '쇼핑리스트 2/5' — 누르면 쇼핑 탭의 그 가게 카드로 가서 짚는다 */
+function buysLine(list, key){
+  var got = list.filter(function(i){ return i.got; }).length;
+  var line = el('<p class="tl-line tl-buys-line"></p>');
+  var btn = el('<button type="button" class="tl-buys" aria-label="쇼핑리스트 ' + list.length + '개 중 ' + got + '개 삼 · 쇼핑 탭에서 보기">' +
+    '쇼핑리스트<b class="mono">' + got + '/' + list.length + '</b>' + icon("go") + '</button>');
+  ripple(btn, function(e){ if (e) e.stopPropagation(); focusShop(key); });
+  line.appendChild(btn);
+  return line;
+}
+function focusShop(key){
+  focusId = key;
+  go({ tab: "shop" });
+}
 function landOn(root){
   var id = focusId;
   focusId = null;
-  var row = [].filter.call(root.querySelectorAll(".tl-item[data-id]"), function(r){ return r.dataset.id === id; })[0];
+  /* 일정 탭의 줄(.tl-item[data-id]) 또는 다른 탭의 카드(data-focus) */
+  var row = [].filter.call(root.querySelectorAll(".tl-item[data-id], [data-focus]"), function(r){
+    return (r.dataset.focus || r.dataset.id) === id;
+  })[0];
   if (!row) return;
   requestAnimationFrame(function(){
     var tabs = root.querySelector(".tabs"), strip = root.querySelector(".dayrow");
@@ -587,10 +604,7 @@ function shopTimelineRow(sh){
     '</div>'
   );
   var body = row.querySelector(".tl-body");
-  var bought = sh.items.filter(function(i){ return i.got; }).length;
-  if (sh.items.length){
-    body.appendChild(el('<p class="tl-line">살 것 ' + bought + '/' + sh.items.length + '</p>'));
-  }
+  if (sh.items.length) body.appendChild(buysLine(sh.items, "shop-" + sh.id));
   var meta = el('<div class="tl-meta"></div>');
   meta.appendChild(el('<span class="badge cat" style="color:' + cat.color + '">쇼핑</span>'));
   if (sh.area) meta.appendChild(el('<span class="badge">' + esc(sh.area) + '</span>'));
@@ -754,9 +768,7 @@ function timelineItem(it, pair){
   if (mk) row.querySelector(".tl-head").appendChild(mk);
   (it.lines || []).forEach(function(l){ body.appendChild(el('<p class="tl-line">' + esc(l) + '</p>')); });
   var buys = it.buys || [];
-  if (buys.length){
-    body.appendChild(el('<p class="tl-line">살 것 ' + buys.filter(function(i){ return i.got; }).length + '/' + buys.length + '</p>'));
-  }
+  if (buys.length) body.appendChild(buysLine(buys, it.id));
 
   var atts = Plan.attachOf(it.id);
   if (atts.length) body.appendChild(attachStrip(it.id, atts));
@@ -1057,6 +1069,7 @@ function shopHead(when, onEdit, target){
 
 function shopItemCard(it){
   var card = el('<div class="card t-shop"></div>');
+  card.dataset.focus = it.id;
   card.appendChild(shopHead(spanOf(it), function(){ openItemEditor(it, null); }, it));
   var top = el('<div class="card-top"><p class="card-name">' +
     (it.emo ? '<span class="emo">' + esc(it.emo) + '</span>' : '') + titleHtml(it) + '</p></div>');
@@ -1073,6 +1086,7 @@ function shopItemCard(it){
 /* 예전에 쇼핑 탭에서 가게로 따로 적어둔 것. 옮겨지기 전까지만 보인다. */
 function shopCard(s){
   var card = el('<div class="card t-shop"></div>');
+  card.dataset.focus = "shop-" + s.id;
   card.appendChild(shopHead(s.time || "", function(){ openShopEditor(s); }));
   card.appendChild(el('<div class="card-top"><p class="card-name">' + placeHtml(s.name, s.map || s.name) + '</p></div>'));
   if (s.area) card.appendChild(el('<p class="card-kind">' + esc(s.area) + '</p>'));
