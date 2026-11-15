@@ -864,20 +864,37 @@
   .checkrow .check{ margin-top: 0; width: 26px; height: 26px; border-radius: 9px; transition: background-color 160ms ease, border-color 160ms ease; }
   .checkrow .check .icon{ width: 15px; height: 15px; }
   .checkrow.on .rowbody b{ font-weight: 500; }
-  /* 살 것의 중요도 — 글 앞의 작은 알약. 필수는 빨강(★), 고민은 보라(🤔). 산 것은 알약도 옅어지고 줄이 그어지지 않는다. */
+  /* 체크하는 줄의 글은 줄 높이를 20px로 못박는다. 글이 길어 두 줄이 되어도 체크 상자 · 연필은 첫 줄에 맞춰 위에 서고
+     (가운데로 내려앉지 않는다), 한 줄일 때는 예전과 같은 자리다(첫 줄 가운데 = 줄 가운데). */
+  .checkrow{ align-items: flex-start; }
+  .checkrow .rowbtn{ align-items: flex-start; }
+  .checkrow .rowbody{ padding-top: 3px; }
+  .checkrow .rowbody b{ line-height: 20px; }
+  .checkrow .rowedit{ margin-top: 4px; }
+  /* 살 것의 중요도 — 글 앞의 작은 알약. 필수는 빨간 별, 고민은 보라 물음표. 두 알약은 같은 높이 · 같은 폭이다
+     (그림은 같은 칸에 같은 크기, 글은 둘 다 두 글자). 글과 나란히 서서, 글이 줄을 바꾸면 둘째 줄은 글 밑에서 시작한다. */
+  .rowbody b.has-pri{ display: flex; align-items: flex-start; gap: 7px; }
+  .rowbody b.has-pri .txt{ flex: 1; min-width: 0; }
   .pri{
-    display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px;
-    margin-right: 7px; padding: 2px 7px 2px 6px; border-radius: 999px;
-    font-size: 11px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; white-space: nowrap;
-    background: color-mix(in srgb, currentColor 13%, transparent); text-decoration: none;
+    flex: none; box-sizing: border-box; width: 47px; height: 20px; padding: 0 2px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+    border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; white-space: nowrap;
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
-  .pri i{ font-style: normal; font-size: 10.5px; line-height: 1; }
+  .pri .icon{ width: 11px; height: 11px; flex: none; stroke-width: 2.2; }
   .pri-must{ color: var(--danger); }
   .pri-maybe{ color: var(--c-free); }
-  .pri-maybe i{ font-size: 11px; }
+  /* 산 것: 알약은 옅게, 줄은 글에만 긋는다(알약에 줄이 번지지 않게 b가 아니라 글에) */
+  .rowline.on .rowbody b.has-pri{ text-decoration: none; }
+  .rowline.on .rowbody b.has-pri .txt{ text-decoration: line-through; }
   .checkrow.on .pri{ opacity: .45; }
-  .rowline.on .rowbody b .pri{ text-decoration: none; display: inline-flex; }
-  .pri-left{ color: var(--danger); font-weight: 700; }
+  .pri-left{ display: inline-flex; align-items: center; gap: 2px; color: var(--danger); font-weight: 700; }
+  .pri-left .icon{ width: 10px; height: 10px; }
+  /* 고르는 단추 안의 그림 — 고르지 않았을 때는 제 색, 골랐을 때는 단추의 글자색 */
+  .pick .pi{ display: inline-flex; margin-right: 4px; }
+  .pick .pi .icon{ width: 12px; height: 12px; stroke-width: 2.2; }
+  .pick[aria-pressed="false"] .pi-must{ color: var(--danger); }
+  .pick[aria-pressed="false"] .pi-maybe{ color: var(--c-free); }
   /* 글 아래의 고르는 줄(openTextDialog의 choices) */
   .dlg-choice{ margin-top: 10px; }
   .dlg-choice .pickrow.fit{ margin: 0; padding: 0; }

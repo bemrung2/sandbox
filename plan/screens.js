@@ -1020,7 +1020,7 @@ function renderShop(root, days){
   function addShop(){ openItemEditor(null, days[state.day] ? days[state.day].date : days[0].date, { cat: "shop" }); }
   var head = el('<div class="group-label"><h3>쇼핑 목록</h3>' +
     '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') +
-    (mustLeft ? ' · <span class="pri-left">★ 필수 ' + mustLeft + '</span>' : '') + '</span></div>');
+    (mustLeft ? ' · <span class="pri-left">' + icon("pri-must") + '필수 ' + mustLeft + '</span>' : '') + '</span></div>');
   head.appendChild(quickAdd(addShop));
   root.appendChild(head);
 
@@ -1088,13 +1088,14 @@ function linesOf(v){
 function addedMsg(n){ return n > 1 ? n + "개 추가했습니다." : "추가했습니다."; }
 
 /* 살 것마다 '필수' · '고민'을 고를 수 있다(`pri`: "must" | "maybe", 없으면 보통). 줄의 글 앞에 작은 알약 하나로 선다 —
-   필수는 빨간 ★, 고민은 보라 🤔. 산 것(체크)은 알약도 옅어진다. 순서는 손으로 정한다(길게 눌러 옮기기) — 필수를 저절로 올리지 않는다. */
-var PRI = [{ key:"", label:"보통" }, { key:"must", label:"★ 필수" }, { key:"maybe", label:"🤔 고민" }];
+   필수는 빨간 별, 고민은 보라 물음표(둘 다 같은 크기의 그림 · 같은 폭의 알약). 산 것(체크)은 알약도 옅어진다. 순서는 손으로 정한다(길게 눌러 옮기기) — 필수를 저절로 올리지 않는다. */
 var PRI_WORD = { must: "필수", maybe: "고민" };
+var PRI = [{ key:"", label:"보통" },
+  { key:"must", label:"필수", html: '<span class="pi pi-must">' + icon("pri-must") + '</span>필수' },
+  { key:"maybe", label:"고민", html: '<span class="pi pi-maybe">' + icon("pri-maybe") + '</span>고민' }];
 function priPill(pri){
   if (!PRI_WORD[pri]) return "";
-  return '<span class="pri pri-' + pri + '" aria-label="' + PRI_WORD[pri] + '"><i aria-hidden="true">' +
-    (pri === "must" ? "★" : "🤔") + '</i>' + PRI_WORD[pri] + '</span>';
+  return '<span class="pri pri-' + pri + '">' + icon("pri-" + pri) + '<span>' + PRI_WORD[pri] + '</span></span>';
 }
 function priChoices(value){ return { label: "중요도", options: PRI, value: value || "" }; }
 function buyList(card, list, save){
@@ -1759,7 +1760,9 @@ function checkRow(text, on, toggle, edit, pri){
   var row = el('<div class="rowline checkrow' + (on ? " on" : "") + '"></div>');
   var main = el('<button class="rowbtn" type="button" role="checkbox" aria-checked="' + !!on + '">' +
     '<span class="check" aria-pressed="' + !!on + '">' + icon("check") + '</span>' +
-    '<span class="rowbody"><b>' + (pri ? priPill(pri) : '') + esc(text) + '</b></span></button>');
+    /* 중요도 알약은 글과 나란히 선다 — 글이 길어 줄을 바꿔도 둘째 줄은 알약 밑이 아니라 글 밑에서 시작한다 */
+    '<span class="rowbody">' + (pri ? '<b class="has-pri">' + priPill(pri) + '<span class="txt">' + esc(text) + '</span></b>'
+                                    : '<b>' + esc(text) + '</b>') + '</span></button>');
   ripple(main, editing(toggle));
   row.appendChild(main);
   var pen = el('<button class="quietbtn rowedit" type="button" aria-label="' + esc(text) + ' 수정">' + icon("edit") + '</button>');

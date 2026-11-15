@@ -508,7 +508,9 @@ export function pickGroup(row, options, get, set){
   row.innerHTML = "";
   var rolls = row.classList.contains("scroll");
   options.forEach(function(o){
-    var b = el('<button class="pick" type="button" aria-pressed="' + (get() === o.key) + '">' + esc(o.label) + '</button>');
+    /* o.html이 있으면 그것으로(아이콘이 든 단추) — 부르는 쪽이 만든 것이다 */
+    var b = el('<button class="pick" type="button" aria-pressed="' + (get() === o.key) + '" aria-label="' + esc(o.label) + '">' +
+      (o.html || esc(o.label)) + '</button>');
     ripple(b, function(){
       set(o.key);
       row.querySelectorAll(".pick").forEach(function(x, i){
