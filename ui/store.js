@@ -52,6 +52,8 @@ function RemoteStore(){
   this.me = null;
   this.canWrite = false;  /* 서버가 "당신은 고쳐도 된다"고 한 경우에만 참 */
   this.pending = {};
+  this.inflight = 0;      /* 서버로 가는 중인 쓰기 묶음의 수 */
+  this.wrote = 0;         /* 이 기기에서 고친 횟수 — 읽어 온 것이 고치기 전에 출발했는지 가린다 */
   this._t = null;
 }
 /* "ok" — signed in, loaded · "signin" — there, but nobody is signed in
@@ -74,7 +76,16 @@ RemoteStore.prototype.probe = async function(){
 RemoteStore.prototype.write = function(path, body){
   if (body === null) delete this.map[path]; else this.map[path] = body;
   this.pending[path] = body === null ? null : body;
+  this.wrote++;
+  this.lastWrite = Date.now();
   this.send();
+};
+/* 이 기기가 고친 것이 아직 서버에 다 닿지 않았다 — 지금 읽어 오는 것은 고치기 전 모습일 수 있다 */
+RemoteStore.prototype.busy = function(){
+  if (this.inflight > 0) return true;
+  /* 못 보낸 것이 남아 다시 보내는 중이라도 20초가 지나면 다시 묻는다 — 남이 고친 것을 영영 못 받으면 안 된다
+     (그때는 받아 온 것 위에 못 보낸 것을 얹는다) */
+  return Object.keys(this.pending).length > 0 && Date.now() - (this.lastWrite || 0) < 20000;
 };
 RemoteStore.prototype.send = function(){
   var self = this;
@@ -90,6 +101,7 @@ RemoteStore.prototype.flush = async function(){
     delete self.pending[path];
   });
   if (Object.keys(this.pending).length) setTimeout(function(){ self.flush(); }, 60);
+  this.inflight++;
   try{
     var res = await fetch(API, {
       method: "POST", headers: { "content-type": "application/json" },
@@ -103,18 +115,25 @@ RemoteStore.prototype.flush = async function(){
       throw new Error(why || ("write " + res.status));
     }
     var data = await res.json();
-    this.rev = data.rev || this.rev;
+    /* 서버의 판 번호가 우리가 쓴 만큼(하나)만 올랐을 때만 따라간다. 그 사이 다른 사람이 고쳤다면(둘 이상 올랐다면)
+       번호를 그대로 두어, 다음 물음이 전체를 다시 받아 오게 한다 — 남이 고친 것을 건너뛰지 않는다. */
+    if (data.rev && data.rev === this.rev + 1) this.rev = data.rev;
   }catch(e){
     Object.assign(this.pending, writes);
     Store.failed(String((e && e.message) || ""));
     var retry = this;
     setTimeout(function(){ retry.send(); }, 4000);
+  }finally{
+    this.inflight--;
   }
 };
 RemoteStore.prototype.watch = function(cb){
   var self = this;
   var tick = async function(){
     if (document.hidden) return;
+    /* 고친 것이 가는 중이면 묻지 않는다 — 돌아온 답은 고치기 전 모습이라, 지운 것이 잠깐 되살아나 보인다 */
+    if (self.busy()) return;
+    var asked = self.wrote;
     try{
       var res = await fetch(API + "?rev=" + self.rev, { cache: "no-store" });
       if (res.status === 401){ Store.signedOut(); return; }
@@ -124,7 +143,13 @@ RemoteStore.prototype.watch = function(cb){
       if (data.me) self.me = data.me;
       self.canWrite = !!data.canWrite;
       if (data.unchanged) return;
-      self.map = data.docs || {};
+      /* 묻는 사이에 이 기기에서 고쳤다면 이 답은 버린다(번호도 그대로) — 다음 물음이 고친 뒤의 모습을 받아 온다 */
+      if (self.wrote !== asked || self.busy()) return;
+      var next = data.docs || {};
+      Object.keys(self.pending).forEach(function(path){
+        if (self.pending[path] === null) delete next[path]; else next[path] = self.pending[path];
+      });
+      self.map = next;
       self.rev = data.rev || self.rev;
       cb();
     }catch(e){ /* a poll that fails is the next one's problem */ }
