@@ -486,11 +486,14 @@ function paintWeather(node, w){
     node.innerHTML = icon(w.desc.icon) + '<span class="wx-txt"><span class="wx-temp"><b class="wx-hi">' + w.hi +
       '°</b><span class="wx-lo">' + w.lo + '°</span></span><span class="wx-city">' + esc(w.city) + '</span></span>';
   } else if (w){
+    /* 어느 도시인지는 읽었는데 예보가 아직 없는 날(16일보다 먼 날)이면 도시 이름은 적어 둔다 — 장소를 못 읽은 것과 갈린다 */
+    var city = w.place && w.place.city ? w.place.city : "";
     node.className = "wx none";
     node.setAttribute("role", "img");
-    node.setAttribute("aria-label", "날씨 없음");
-    node.title = "";
-    node.innerHTML = '<span class="wx-word">날씨 없음</span>';
+    node.setAttribute("aria-label", "날씨 없음" + (city ? " · " + city : ""));
+    node.title = w.far ? "예보는 16일 뒤까지만 있습니다." : "";
+    node.innerHTML = '<span class="wx-txt"><span class="wx-word">날씨 없음</span>' +
+      (city ? '<span class="wx-city">' + esc(city) + '</span>' : '') + '</span>';
   } else {
     node.className = "wx wait";
     node.setAttribute("role", "img");

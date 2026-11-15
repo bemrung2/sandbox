@@ -38,6 +38,98 @@ var ALIAS = {
   "런던": ["london"], "바르셀로나": ["barcelona"], "마드리드": ["madrid"]
 };
 
+/* ---------- 한국 ----------
+   한국의 도시는 좌표까지 들고 있다 — 이름으로 찾는 길(geocoding)을 거치지 않는다. 그 길은 두 글자 이름("서울" · "부산")을
+   글자가 똑같은 것만 찾고, 주소("경기도 성남시 분당구")나 동네("청담" · "해운대")는 아예 못 읽는다.
+   · KR: 도시 → [위도, 경도]   · KR_SPOT: 동네 · 장소 → 도시   · KR_PROV: 도 → 도청이 있는 도시 (도시를 못 찾았을 때만)
+   '고양' · '진주' · '세종' · '양산' · '이천' · '공주'처럼 흔한 말과 겹치는 이름은 '…시'로만 읽는다(고양이 · 진주 목걸이 · 세종문화회관 ·
+   양산(우산) · 이천 원 · 공주). 도도 '경기도'처럼 끝까지 적은 것만 — '축구 경기'가 수원이 되면 안 된다. */
+var KR = {
+  "서울":[37.5665,126.9780], "부산":[35.1796,129.0756], "대구":[35.8714,128.6014], "인천":[37.4563,126.7052],
+  "광주":[35.1595,126.8526], "대전":[36.3504,127.3845], "울산":[35.5384,129.3114], "세종":[36.4800,127.2890],
+  "수원":[37.2636,127.0286], "성남":[37.4200,127.1267], "고양":[37.6584,126.8320], "용인":[37.2411,127.1776],
+  "부천":[37.5034,126.7660], "안산":[37.3219,126.8309], "안양":[37.3943,126.9568], "남양주":[37.6360,127.2165],
+  "화성":[37.1995,126.8312], "평택":[36.9921,127.1129], "의정부":[37.7381,127.0337], "파주":[37.7599,126.7802],
+  "시흥":[37.3800,126.8030], "김포":[37.6153,126.7156], "광명":[37.4786,126.8646], "하남":[37.5393,127.2149],
+  "이천":[37.2720,127.4350], "가평":[37.8315,127.5105], "양평":[37.4917,127.4875],
+  "춘천":[37.8813,127.7298], "원주":[37.3422,127.9202], "강릉":[37.7519,128.8761], "속초":[38.2070,128.5918],
+  "양양":[38.0754,128.6190], "평창":[37.3705,128.3903], "동해":[37.5247,129.1143], "삼척":[37.4499,129.1652],
+  "청주":[36.6424,127.4890], "충주":[36.9910,127.9259], "제천":[37.1326,128.1910],
+  "천안":[36.8151,127.1139], "아산":[36.7898,127.0019], "공주":[36.4465,127.1190], "보령":[36.3333,126.6128], "홍성":[36.6013,126.6608],
+  "전주":[35.8242,127.1480], "군산":[35.9676,126.7369], "익산":[35.9483,126.9577], "남원":[35.4164,127.3904],
+  "여수":[34.7604,127.6622], "순천":[34.9506,127.4872], "목포":[34.8118,126.3922], "무안":[34.9904,126.4817],
+  "광양":[34.9407,127.6959], "담양":[35.3211,126.9882],
+  "포항":[36.0190,129.3435], "경주":[35.8562,129.2247], "안동":[36.5684,128.7294], "구미":[36.1195,128.3446],
+  "창원":[35.2280,128.6811], "김해":[35.2285,128.8894], "진주":[35.1800,128.1076], "통영":[34.8544,128.4331],
+  "거제":[34.8806,128.6211], "남해":[34.8377,127.8924], "양산":[35.3350,129.0373], "울릉":[37.4844,130.9058],
+  "제주":[33.4996,126.5312], "서귀포":[33.2541,126.5600]
+};
+var KR_SPOT = {
+  /* 흔한 말과 겹치는 도시 이름은 이 꼴로만 */
+  "고양시":"고양", "일산":"고양", "진주시":"진주", "세종시":"세종", "세종특별자치시":"세종", "화성시":"화성", "동탄":"화성", "구미시":"구미",
+  "남해군":"남해", "동해시":"동해", "이천시":"이천", "공주시":"공주", "양산시":"양산",
+  /* 서울 */
+  "강남":"서울", "서초":"서울", "송파":"서울", "잠실":"서울", "청담":"서울", "압구정":"서울", "신사동":"서울", "논현":"서울",
+  "역삼":"서울", "삼성동":"서울", "선릉":"서울", "코엑스":"서울", "여의도":"서울", "영등포":"서울", "마포":"서울", "홍대":"서울",
+  "합정":"서울", "연남":"서울", "망원":"서울", "상암":"서울", "성수":"서울", "건대":"서울", "왕십리":"서울", "용산":"서울",
+  "이태원":"서울", "한남동":"서울", "종로":"서울", "광화문":"서울", "세종문화회관":"서울", "명동":"서울", "을지로":"서울",
+  "인사동":"서울", "북촌":"서울", "동대문":"서울", "신촌":"서울", "반포":"서울", "잠원":"서울", "목동":"서울", "마곡":"서울",
+  "구로":"서울", "가산디지털":"서울", "노원":"서울", "성북":"서울", "남산":"서울", "롯데월드":"서울", "워커힐":"서울",
+  /* 부산 · 인천 · 경기 · 제주 · 강원 */
+  "해운대":"부산", "광안리":"부산", "광안대교":"부산", "남포동":"부산", "기장군":"부산", "센텀":"부산",
+  "송도":"인천", "영종":"인천", "을왕리":"인천", "인천국제공항":"인천", "인천공항":"인천",
+  "분당":"성남", "판교":"성남", "광교":"수원",
+  "애월":"제주", "협재":"제주", "한림":"제주", "함덕":"제주", "중문":"서귀포", "성산":"서귀포", "표선":"서귀포",
+  "경포":"강릉", "주문진":"강릉", "대관령":"평창"
+};
+var KR_PROV = {
+  "경기도":"수원", "강원도":"춘천", "강원특별자치도":"춘천", "충청북도":"청주", "충북":"청주", "충청남도":"홍성", "충남":"홍성",
+  "전라북도":"전주", "전북":"전주", "전라남도":"무안", "전남":"무안", "경상북도":"안동", "경북":"안동",
+  "경상남도":"창원", "경남":"창원", "제주도":"제주"
+};
+var KR_ROMAN = {
+  seoul:"서울", busan:"부산", pusan:"부산", incheon:"인천", daegu:"대구", gwangju:"광주", daejeon:"대전", ulsan:"울산",
+  sejong:"세종", suwon:"수원", seongnam:"성남", goyang:"고양", ilsan:"고양", gimpo:"김포", chuncheon:"춘천",
+  gangneung:"강릉", sokcho:"속초", pyeongchang:"평창", jeonju:"전주", yeosu:"여수", suncheon:"순천", mokpo:"목포",
+  pohang:"포항", gyeongju:"경주", changwon:"창원", tongyeong:"통영", geoje:"거제", jeju:"제주", seogwipo:"서귀포"
+};
+var KR_UNSAFE = { "고양":1, "진주":1, "세종":1, "화성":1, "구미":1, "남해":1, "동해":1, "이천":1, "공주":1, "양산":1 };
+/* "한국" · "대한민국" · "국내"처럼 나라만 적힌 것 */
+var KR_COUNTRY = /^(대한민국|한국|남한|국내|korea|south korea|republic of korea)$/i;
+var KR_NAMES = Object.keys(KR).filter(function(k){ return !KR_UNSAFE[k]; }).concat(Object.keys(KR_SPOT))
+  .sort(function(a, b){ return b.length - a.length; });
+function krPlace(city){ return KR[city] ? { city: city, country: "대한민국", geo: KR[city] } : null; }
+/* 글에서 한국의 도시를 읽는다 — 동네 · 장소 이름(긴 것부터), 영어 표기, 마지막으로 도 이름 */
+function krIn(text){
+  var raw = String(text || "");
+  if (!raw.trim()) return null;
+  for (var i = 0; i < KR_NAMES.length; i++){
+    if (raw.indexOf(KR_NAMES[i]) >= 0) return krPlace(KR_SPOT[KR_NAMES[i]] || KR_NAMES[i]);
+  }
+  var low = raw.toLowerCase();
+  for (var r in KR_ROMAN){
+    if (new RegExp("(^|[^a-z])" + r + "($|[^a-z])").test(low)) return krPlace(KR_ROMAN[r]);
+  }
+  for (var pv in KR_PROV){
+    if (raw.indexOf(pv) >= 0) return krPlace(KR_PROV[pv]);
+  }
+  return null;
+}
+/* 여행 전체에서 가장 많이 나온 한국의 도시 — 그날 읽을 것이 없을 때 쓴다 */
+function krMost(t){
+  var count = {}, best = null;
+  (t.items || []).forEach(function(it){
+    var hit = krIn((it.places || []).join(" ") + " " + (it.title || ""));
+    if (hit) count[hit.city] = (count[hit.city] || 0) + 1;
+  });
+  (t.stays || []).forEach(function(st){
+    var hit = krIn((st.area || "") + " " + (st.name || ""));
+    if (hit) count[hit.city] = (count[hit.city] || 0) + 1;
+  });
+  Object.keys(count).forEach(function(c){ if (!best || count[c] > count[best]) best = c; });
+  return best ? krPlace(best) : null;
+}
+
 /* 이 여행에서 이름이 알려진 도시 — 숙소의 지역 끝말. { 도시: 나라 } */
 function knownCities(t){
   var out = {};
@@ -50,7 +142,14 @@ function knownCities(t){
 function inText(text, known){
   var low = String(text || "").toLowerCase();
   if (!low) return null;
-  var names = Object.keys(known).concat(Object.keys(ALIAS).filter(function(k){ return !(k in known); }));
+  /* 이 여행의 숙소에 적힌 도시가 먼저 */
+  var own = Object.keys(known).sort(function(a, b){ return b.length - a.length; });
+  for (var o = 0; o < own.length; o++){
+    if (low.indexOf(own[o].toLowerCase()) >= 0) return krPlace(own[o]) || { city: own[o], country: known[own[o]] || "" };
+  }
+  var kr = krIn(text);
+  if (kr) return kr;
+  var names = Object.keys(ALIAS);
   names.sort(function(a, b){ return b.length - a.length; });
   for (var i = 0; i < names.length; i++){
     var n = names[i], hit = low.indexOf(n.toLowerCase()) >= 0;
@@ -63,7 +162,7 @@ function inText(text, known){
 function airportCity(text){
   if (!/공항|airport/i.test(text || "")) return null;
   var w = String(text).trim().split(/\s+/)[0].replace(/(국제)?공항$/, "");
-  return w ? { city: w, country: "" } : null;
+  return w ? (krPlace(w) || { city: w, country: "" }) : null;
 }
 function arrow(text){
   var parts = String(text || "").split(/\s*(?:→|➔|->|=>|>)\s*/);
@@ -78,7 +177,7 @@ function arrivalOf(it, known){
   if (it.cat === "move" || it.cat === "air"){
     var to = arrow(it.title);
     var dest = to || (places.length ? places[places.length - 1] : "");
-    hit = inText(dest, known) || airportCity(dest) || (to ? { city: to, country: "" } : null);
+    hit = inText(dest, known) || airportCity(dest) || (to ? (krPlace(to) || { city: to, country: "" }) : null);
   } else {
     hit = inText(places.join(" ") + " " + (it.title || ""), known);
   }
@@ -108,7 +207,7 @@ export function placeOn(date){
   var tail = arrow(theme);
   var fromTheme = inText(tail || theme, known);
   if (fromTheme) return fromTheme;
-  if (tail) return { city: tail, country: "" };
+  if (tail) return krPlace(tail) || { city: tail, country: "" };
 
   var st = stayOn(date);
   if (!st){
@@ -123,9 +222,20 @@ export function placeOn(date){
     st = best;
   }
   var area = (st && st.area) || t.city || "";
+  /* 지역이 주소 · 동네라도 한국이면 도시로 읽는다("서울 강남구" · "경기도 가평" · "청담") */
+  var krArea = krIn(area);
+  if (krArea) return krArea;
   var parts = String(area).split(/[·,/]/).map(function(x){ return x.trim(); }).filter(Boolean);
-  if (!parts.length) return null;
-  return { city: parts[parts.length - 1], country: parts.length > 1 ? parts[0] : "" };
+  var last = parts.length ? parts[parts.length - 1] : "";
+  /* 나라만 적혔거나(한국 · 대한민국) 아무것도 없으면 — 이 여행의 일정 · 숙소에 가장 많이 나온 한국 도시,
+     그것도 없는데 나라가 한국이면 서울 */
+  if (!last || KR_COUNTRY.test(last)){
+    var most = krMost(t);
+    if (most) return most;
+    if (last) return krPlace("서울");
+    return null;
+  }
+  return { city: last, country: parts.length > 1 ? parts[0] : "" };
 }
 
 function load(){
@@ -161,12 +271,23 @@ function getJSON(url){
 
 /* 도시 이름 → 좌표. 나라 이름이 같은 것을 먼저 고른다. */
 function geocode(p){
-  var url = GEO + "?name=" + encodeURIComponent(p.city) + "&count=8&language=ko&format=json";
-  return getJSON(url).then(function(d){
-    var rs = (d && d.results) || [];
-    if (!rs.length) return null;
-    var hit = rs.filter(function(r){ return p.country && (r.country === p.country); })[0] || rs[0];
-    return { lat: hit.latitude, lon: hit.longitude, name: hit.name };
+  /* 한국의 도시는 들고 있는 좌표로 — 부르지 않는다 */
+  var own = p.geo || KR[p.city];
+  if (own) return Promise.resolve({ lat: own[0], lon: own[1], name: p.city });
+  var korean = p.country === "대한민국";
+  function ask(name){
+    var url = GEO + "?name=" + encodeURIComponent(name) + "&count=8&language=ko&format=json" + (korean ? "&countryCode=KR" : "");
+    return getJSON(url).then(function(d){
+      var rs = (d && d.results) || [];
+      if (!rs.length) return null;
+      var hit = rs.filter(function(r){ return p.country && (r.country === p.country); })[0] || rs[0];
+      return { lat: hit.latitude, lon: hit.longitude, name: hit.name };
+    });
+  }
+  return ask(p.city).then(function(g){
+    /* "가평군" · "속초시"처럼 끝말이 붙은 한글 이름은 끝말을 떼고 한 번 더 */
+    var bare = String(p.city).replace(/(특별자치시|특별자치도|특별시|광역시|시|군|구)$/, "");
+    return g || (bare !== p.city && bare.length >= 2 ? ask(bare) : null);
   });
 }
 
@@ -197,6 +318,12 @@ function archiveDay(geo, date){
     return hi == null || lo == null || code == null ? null : { hi: Math.round(hi), lo: Math.round(lo), code: code };
   }, function(){ return null; });
 }
+/* 예보가 닿는 마지막 날 — 오늘에서 15일 뒤 */
+function fcEnd(){
+  var d = new Date(todayISO() + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 15);
+  return d.toISOString().slice(0, 10);
+}
 function daysAgo(date){ return Math.round((Date.parse(todayISO()) - Date.parse(date)) / 86400000); }
 
 /* 적어 둔 기록 — 지나간 날은 이것이 먼저다 */
@@ -207,7 +334,7 @@ function recorded(date){
 
 function reading(rec, date, p){
   var w = rec && rec.daily && rec.daily[date];
-  if (!w) return { ok: false, place: p };
+  if (!w) return { ok: false, place: p, far: date > fcEnd() };
   return { ok: true, place: p, city: p.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code) };
 }
 
