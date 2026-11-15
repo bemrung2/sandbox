@@ -8,7 +8,7 @@ import {
 } from "../ui/sheet.js";
 import { storePhoto, dropPhoto, thumb, loadPhoto } from "../ui/photos.js";
 import { storeFile, dropFile, openFile, fileMeta, FILE_MAX } from "../ui/files.js";
-import { reorder } from "../ui/reorder.js";
+import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
@@ -1137,7 +1137,14 @@ function renderTips(root){
     return;
   }
   var grid = el('<div class="tipgrid"></div>');
-  list.forEach(function(x){ grid.appendChild(x.kind === "memo" ? memoTile(x.rec) : tipTile(x.rec)); });
+  list.forEach(function(x){
+    var tile = x.kind === "memo" ? memoTile(x.rec) : tipTile(x.rec);
+    /* 칸을 길게 눌러 옮긴다(홈 화면의 아이콘처럼). 메모와 링크 · 사진 · 파일이 한 격자에 섞여 있으므로 순서도 함께 매긴다. */
+    tile.dataset.key = x.kind === "memo" ? "notes" : "tips"; tile.dataset.id = x.rec.id;
+    holdReorder(tile, function(){ return [].slice.call(grid.children); },
+      function(tiles){ reordered(tiles, true); }, { can: mayEdit, skip: ".tip-pen" });
+    grid.appendChild(tile);
+  });
   root.appendChild(grid);
 }
 /* 메모 칸: 글의 모양 그대로 작게 비친다. 누르면 크게 본다. */
@@ -1695,7 +1702,7 @@ function packCard(){
   card.appendChild(head);
 
   list.forEach(function(p){
-    card.appendChild(checkRow(p.text, p.on,
+    var row = checkRow(p.text, p.on,
       function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); },
       function(){
         openTextDialog({ title:"준비물 수정", value:p.text },
@@ -1705,9 +1712,19 @@ function packCard(){
             repaint();
             return undo;
           });
-      }));
+      });
+    /* 길게 눌러 옮긴다 — 줄 전체가 손잡이다(연필만 빼고). 놓으면 그 순서가 저장된다. */
+    row.dataset.key = "packList"; row.dataset.id = p.id;
+    holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".checkrow")); },
+      function(rows){ reordered(rows, false); }, { can: mayEdit, axis: "y", skip: ".rowedit" });
+    card.appendChild(row);
   });
   return card;
+}
+/* 손으로 옮긴 순서를 적는다. 화면은 이미 그 순서라 다시 그리지 않는다 — 되돌릴 때만 그린다. */
+function reordered(nodes, desc){
+  var undo = undoEdit(Plan.setOrder(nodes.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), desc));
+  if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit");
 }
 
 /* 체크하는 줄. 줄 어디를 눌러도 체크가 바뀐다 — 가장 자주 하는 일이 가장 큰 자리를

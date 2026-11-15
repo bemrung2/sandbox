@@ -750,6 +750,38 @@ export var Plan = {
     this.write(here, bodyOf(next));
     return function(){ self.write(here, bodyOf(was)); };
   },
+  /* 줄의 순서를 손으로 바꾼다. `refs`는 화면에 놓인 순서대로의 [{key, id}] — 한 목록일 수도, 한 화면에 섞여 놓인 두 목록
+     (메모 탭의 notes · tips)일 수도 있다. `desc`면 큰 ord가 앞이다(새것 먼저 놓는 화면).
+     쓰던 ord 값들을 놓인 순서대로 다시 나눠 주므로 자리가 바뀐 줄만 쓴다. 값이 겹쳐 있으면(예전 자료) 새로 매긴다 —
+     지금 시각을 끝으로 잡아, 나중에 더하는 것이 여전히 제 끝(목록은 맨 아래, 새것 먼저인 화면은 맨 앞)에 선다.
+     바뀐 것이 없으면 null, 아니면 되돌리는 함수. */
+  setOrder(refs, desc){
+    var self = this, c = this.cur();
+    var recs = refs.map(function(r){
+      var rec = (c[r.key] || []).filter(function(x){ return x.id === r.id; })[0];
+      return rec ? { key: r.key, rec: rec } : null;
+    }).filter(Boolean);
+    var ords = recs.map(function(r){ return r.rec.ord || 0; }).sort(function(a, b){ return desc ? b - a : a - b; });
+    var distinct = ords.every(function(v, i){ return !i || v !== ords[i - 1]; });
+    if (!distinct){
+      var base = Date.now();
+      ords = recs.map(function(_, i){ return desc ? base - i : base - recs.length + 1 + i; });
+    }
+    var was = [];
+    recs.forEach(function(r, i){
+      if ((r.rec.ord || 0) === ords[i]) return;
+      was.push({ key: r.key, rec: r.rec, ord: r.rec.ord });
+      r.rec.ord = ords[i];
+      self.write(self.path(r.key) + "/" + r.rec.id, bodyOf(r.rec));
+    });
+    if (!was.length) return null;
+    return function(){
+      was.forEach(function(w){
+        w.rec.ord = w.ord;
+        self.write(self.path(w.key) + "/" + w.rec.id, bodyOf(w.rec));
+      });
+    };
+  },
   /* 지운 것들은 되살릴 수 있게 돌려준다: 부른 쪽이 그 함수를 쥐고 있다가
      "되돌리기"를 누르면 지우기 전 모습 그대로 다시 쓴다. */
   listRemove(key, id){
