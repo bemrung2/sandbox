@@ -20,6 +20,7 @@ export var ICONS = {
   plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   go: '<polyline points="10 5 17 12 10 19"/>',
   check: '<polyline points="5 12.5 10 17 19 7"/>',
+  down: '<polyline points="6 9.5 12 15.5 18 9.5"/>',
   cash: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.8"/><line x1="6" y1="9.5" x2="6" y2="9.5"/><line x1="18" y1="14.5" x2="18" y2="14.5"/>',
   card: '<rect x="2.5" y="5" width="19" height="14" rx="2.2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/>',
   undo: '<polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',

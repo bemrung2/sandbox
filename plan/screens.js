@@ -565,6 +565,8 @@ function renderSchedule(root, days){
     var tl = el('<div class="tl"></div>');
     rows.forEach(function(r){ tl.appendChild(r.draw()); });
     root.appendChild(tl);
+    /* 접을 것이 있는 날에만 머리에 '모두 접기'가 선다 */
+    if (tl.querySelector(".can-fold")) stat.insertBefore(foldAllBtn(tl), stat.lastChild);
   } else {
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없습니다.</p></div>'));
   }
@@ -593,7 +595,7 @@ function shopTimelineRow(sh){
   actions.appendChild(penBtn(function(){ openShopEditor(sh); }));
   meta.appendChild(actions);
   body.appendChild(meta);
-  return row;
+  return foldable(row, "shop-" + sh.id);
 }
 
 /* 정보 탭의 숙소를 그날에 세운 줄 — 체크인하는 날과 체크아웃하는 날. 시설은 여기 보이지 않는다(정보 탭에만).
@@ -625,7 +627,108 @@ function stayTimelineRow(r){
   actions.appendChild(penBtn(function(){ openStayEditor(st); }));
   meta.appendChild(actions);
   body.appendChild(meta);
+  return foldable(row, st.id + "-" + r.kind);
+}
+
+/* ---------- 접기 ----------
+   메모 · 첨부 · 태그가 긴 줄은 접어 둘 수 있다. 접으면 이름 · 분류 알약 · 표시(예약 확정 등)만 남는다.
+   · 접는 단추는 줄 왼쪽의 시간 칸이다(시각 아래 작은 화살표). 접혀 있든 펴져 있든 같은 자리이고, 오른쪽 단추들의
+     세로줄(첨부 · 연필 · 표시)을 건드리지 않는다. 칸 전체가 눌린다 — 긴 줄의 아래쪽에서도 닿는다.
+   · 다시 그리지 않는다. 그 줄의 클래스만 바꾸므로 스크롤이 움직이지 않고, 높이는 부드럽게 줄어든다.
+   · 접어 둔 것은 이 기기가 기억한다(여행마다). 보는 방식이지 계획을 고치는 것이 아니라서 누구나 접을 수 있다. */
+var FOLD_KEY = "bemtrip.fold.v1";
+var folds = null;
+function foldsOf(){
+  if (!folds){
+    try{ folds = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}") || {}; }catch(e){ folds = {}; }
+  }
+  var id = trip().id;
+  return folds[id] || (folds[id] = {});
+}
+function saveFolds(){
+  try{ localStorage.setItem(FOLD_KEY, JSON.stringify(folds)); }catch(e){ /* 기억하지 못해도 접히기는 한다 */ }
+}
+function markFold(row, on){
+  row.classList.toggle("folded", on);
+  var m = foldsOf();
+  if (on) m[row.dataset.fold] = 1; else delete m[row.dataset.fold];
+  var btn = row.querySelector(".tl-toggle");
+  btn.setAttribute("aria-expanded", String(!on));
+  btn.setAttribute("aria-label", (btn.dataset.at ? btn.dataset.at + " " : "") + (on ? "펼치기" : "접기"));
+}
+/* 줄 하나를 접을 수 있게 만든다. 접을 것(메모 줄 · 첨부 · 태그 · 장소 알약)이 없는 줄은 그대로 둔다 —
+   단추만 숨기자고 화살표를 달지 않는다. */
+function foldable(row, key){
+  var body = row.querySelector(".tl-body");
+  var head = body.querySelector(".tl-head") || body.firstElementChild;
+  var meta = [].filter.call(body.children, function(c){ return c.classList.contains("tl-meta"); })[0] || null;
+  var extra = [].filter.call(body.children, function(c){ return c !== head && c !== meta; });
+  var tags = meta ? (meta.querySelector(".tl-tags") || meta) : null;
+  var chips = tags ? [].filter.call(tags.children, function(c){
+    return !c.classList.contains("tl-actions") && !c.classList.contains("cat") && !c.classList.contains("live");
+  }) : [];
+  if (!extra.length && !chips.length) return row;
+
+  /* 이름 줄과 알약 줄 사이의 것들은 한 상자에 담아 높이를 줄인다 */
+  if (extra.length){
+    var fold = el('<div class="tl-fold"><div class="tl-fold-in"></div></div>');
+    extra.forEach(function(c){ fold.firstChild.appendChild(c); });
+    body.insertBefore(fold, head.nextSibling);
+  }
+  /* 접으면 사라지는 것들: 분류 알약이 아닌 알약, 단추 */
+  chips.forEach(function(c){ c.classList.add("fold-x"); });
+  [].forEach.call(row.querySelectorAll(".tl-actions"), function(a){ a.classList.add("fold-x"); });
+  if (meta && !tags.querySelector(".badge.cat, .badge.live")) meta.classList.add("fold-x");
+
+  var time = row.querySelector(".tl-time");
+  var btn = el('<button type="button" class="' + time.className + ' tl-toggle"></button>');
+  btn.dataset.at = (time.firstChild && time.firstChild.nodeType === 3 ? time.firstChild.nodeValue : "").trim();
+  while (time.firstChild) btn.appendChild(time.firstChild);
+  btn.appendChild(el('<span class="tl-chev">' + icon("down") + '</span>'));
+  time.parentNode.replaceChild(btn, time);
+  row.classList.add("can-fold");
+  row.dataset.fold = key;
+  markFold(row, !!foldsOf()[key]);
+  ripple(btn, function(){ toggleFold(row); });
+  /* 접힌 줄은 줄을 눌러도 펴진다 (이름의 지도 링크는 링크대로 간다) */
+  body.addEventListener("click", function(e){
+    if (!row.classList.contains("folded")) return;
+    if (e.target.closest && e.target.closest("a[href], button")) return;
+    toggleFold(row, false);
+  });
   return row;
+}
+function toggleFold(row, want){
+  var on = want == null ? !row.classList.contains("folded") : want;
+  /* 긴 줄을 아래쪽에서 접으면 줄의 머리는 이미 화면 위로 넘어가 있다 — 그대로 접으면 줄이 통째로 화면 밖으로 사라지고
+     아래 일정들이 딸려 올라온다. 그때는 움직임 없이 접고, 그 줄의 머리를 날짜 줄 바로 아래에 세운다. */
+  var bar = document.querySelector(".dayrow");
+  var edge = bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+  var lost = on && row.getBoundingClientRect().top < edge;
+  if (lost) row.classList.add("nofx");
+  markFold(row, on);
+  saveFolds();
+  if (lost){
+    window.scrollBy(0, row.getBoundingClientRect().top - edge - 6);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ row.classList.remove("nofx"); }); });
+  }
+  var all = document.querySelector(".foldall");
+  if (all && all._sync) all._sync();
+}
+/* 머리의 '모두 접기 · 모두 펼치기'. 접을 수 있는 줄이 전부 접혀 있을 때만 '모두 펼치기'다. */
+function foldAllBtn(tl){
+  var b = el('<button class="quietbtn foldall" type="button"></button>');
+  function rows(){ return [].slice.call(tl.querySelectorAll(".tl-item.can-fold")); }
+  function allFolded(){ return rows().every(function(r){ return r.classList.contains("folded"); }); }
+  b._sync = function(){ b.textContent = allFolded() ? "모두 펼치기" : "모두 접기"; };
+  b._sync();
+  ripple(b, function(){
+    var on = !allFolded();
+    rows().forEach(function(r){ markFold(r, on); });
+    saveFolds();
+    b._sync();
+  });
+  return b;
 }
 
 function timelineItem(it, pair){
@@ -693,7 +796,7 @@ function timelineItem(it, pair){
     wrap.appendChild(actions);
     body.appendChild(wrap);
   }
-  return row;
+  return foldable(row, it.id);
 }
 /* 줄의 표시(예약 확정 · 현금 Only · 카드 Only)는 이름 줄 오른쪽 끝에, 위아래로 쌓아 둔다 —
    분류 · 태그 알약 틈에 섞이면 가장 중요한 것이 묻힌다. 색도 갈린다: 예약 확정은 초록,

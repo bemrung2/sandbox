@@ -454,6 +454,37 @@
     width: 4px; height: 4px; border-radius: 50%; background: var(--line-strong);
   }
   .tl-head + .tl-line{ margin-top: 6px; }
+  .tl-fold-in > .tl-line:first-child, .tl-fold-in > .tl-dock:first-child > .tl-line{ margin-top: 6px; }
+  /* ----- 접기 -----
+     접는 단추는 시간 칸 전체다(시각 아래 작은 화살표). 접힌 줄에는 이름 · 분류 알약 · 표시만 남는다.
+     이름 줄과 알약 줄 사이의 것들(.tl-fold)은 높이가 부드럽게 줄어든다 — 칸의 줄 높이를 1fr ↔ 0fr로 바꾼다.
+     안쪽 아래 6px은 단추가 줄 밖으로 살짝 내려앉는 자리(.tl-dock의 -5px)가 잘리지 않게 둔 것이고, 바깥의 -6px이 그것을 되돌린다. */
+  button.tl-time{
+    border: none; background: transparent; color: inherit; font-family: inherit; margin: 0; cursor: pointer;
+    padding: 13px 0 8px; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: flex-end;
+  }
+  button.tl-time:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+  .tl-chev{ display: flex; margin-top: 5px; color: var(--ink-faint); transition: transform 240ms var(--ease); }
+  .tl-chev .icon{ width: 14px; height: 14px; }
+  .tl-item:not(.folded) .tl-chev{ transform: rotate(180deg); }
+  .tl-fold{
+    display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr); overflow: hidden; margin-bottom: -6px;
+    transition: grid-template-rows 240ms var(--ease), margin-bottom 240ms var(--ease), opacity 200ms ease, visibility 0s;
+  }
+  /* 칸의 폭은 줄의 폭에서 멈춘다(minmax(0,1fr) · min-width:0) — 긴 링크 제목이 칸을 넓혀 단추를 밖으로 밀어내면 안 된다 */
+  .tl-fold-in{ min-height: 0; min-width: 0; padding-bottom: 6px; }
+  .tl-item.folded .tl-fold{
+    grid-template-rows: 0fr; margin-bottom: 0; opacity: 0; visibility: hidden;
+    transition: grid-template-rows 240ms var(--ease), margin-bottom 240ms var(--ease), opacity 160ms ease, visibility 0s 240ms;
+  }
+  .tl-item.folded .fold-x{ display: none; }
+  .tl-item.folded .tl-body{ cursor: pointer; }
+  .tl-item.nofx .tl-fold, .tl-item.nofx .tl-chev{ transition: none; }
+  @media (prefers-reduced-motion: reduce){ .tl-fold, .tl-item.folded .tl-fold, .tl-chev{ transition: none; } }
+  /* 머리의 '모두 접기': '추가' 왼쪽에 조용히 선다 */
+  .foldall{ margin-left: auto; flex-shrink: 0; }
+  .foldall + .quickadd{ margin-left: 0; }
   .tl-meta{ display: flex; align-items: flex-end; gap: 6px; margin-top: 8px; }
   .tl-meta > .badge{ align-self: center; }
   .tl-tags{ flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
