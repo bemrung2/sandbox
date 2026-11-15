@@ -318,12 +318,12 @@ export var CAT = {
 export var CAT_ORDER = ["food","sight","shop","move","stay"];
 /* 이동은 무엇으로 가는지까지 적는다. 항공기는 정보 탭의 항공 칸에도 선다. */
 export var MODES = [
-  { key:"walk", label:"도보" }, { key:"bus", label:"버스" }, { key:"subway", label:"지하철" },
+  { key:"walk", label:"도보" }, { key:"bus", label:"버스" }, { key:"subway", label:"지하철" }, { key:"train", label:"기차" },
   { key:"taxi", label:"택시" }, { key:"car", label:"자차(렌트)" }, { key:"plane", label:"항공기" }, { key:"other", label:"기타" }
 ];
-export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", taxi:"택시", car:"자차(렌트)", walk:"도보", other:"기타" };
+export var MODE_LABEL = { plane:"항공기", bus:"버스", subway:"지하철", train:"기차", taxi:"택시", car:"자차(렌트)", walk:"도보", other:"기타" };
 /* 이동 수단마다의 대표 이모티콘 — 편집 창에서 수단을 고르면 아이콘 칸이 비어 있을 때 이것으로 채운다. */
-export var MODE_EMO = { plane:"✈️", bus:"🚌", subway:"🚇", taxi:"🚕", car:"🚗", walk:"🚶" };
+export var MODE_EMO = { plane:"✈️", bus:"🚌", subway:"🚇", train:"🚆", taxi:"🚕", car:"🚗", walk:"🚶" };
 /* 숙소의 소분류 — 이동의 수단처럼 `mode` 칸에 적는다 */
 export var STAY_KINDS = [ { key:"checkin", label:"체크인" }, { key:"checkout", label:"체크아웃" } ];
 export var STAY_KIND_LABEL = { checkin:"체크인", checkout:"체크아웃" };
