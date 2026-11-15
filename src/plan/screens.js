@@ -1804,10 +1804,17 @@ function openItemEditor(item, defaultDate, presets){
   var eFld = pickerField({ type:"time", id:"ed-e", label:"종료", value: item && item.e ? item.e : "", col:true,
     min: function(){ return cur.cat === "move" ? "" : sFld.querySelector("input").value; } });
   /* 시작을 끝보다 늦게 옮기면 끝이 시작을 따라온다(03:00–03:00에서 시작을 04:00으로 → 04:00–04:00).
-     끝이 시작보다 이른 채로 남지 않게 — 이동만은 그대로 둔다(다음 날 도착일 수 있다). 끝이 비어 있으면 비워 둔다. */
+     끝이 시작보다 이른 채로 남지 않게. 어느 탭에서 열었든, 어느 분류든 같다 — 이동도 그렇다.
+     다만 이동에서 **이미 다음 날 도착이던 것**(고치기 전에도 끝이 시작보다 일렀던 것, 23:00–06:45)은 그대로 둔다 —
+     시작을 조금 옮겼다고 도착 시각이 지워지면 안 된다. 끝이 비어 있으면 비워 둔다. */
+  var prevS = step5(startAt) || "";
   function pullEnd(){
     var sv = sFld.querySelector("input").value, ev = eFld.querySelector("input").value;
-    if (cur.cat !== "move" && sv && ev && ev < sv) eFld._set(sv);
+    var was = prevS;
+    prevS = sv;
+    if (!sv || !ev || ev >= sv) return;
+    if (cur.cat === "move" && (!was || ev < was)) return;
+    eFld._set(sv);
   }
   sFld.querySelector("input").addEventListener("change", pullEnd);
   row.appendChild(sFld);
