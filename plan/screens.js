@@ -12,7 +12,7 @@ import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -1415,7 +1415,9 @@ function renderInfo(root){
       return (h.area ? '<span class="lbl mono">' + esc(h.area) + '</span>' : '') +
         '<b>' + link + '</b>' +
         (h.room ? '<span class="roomtag">' + esc(h.room) + '</span>' : '') +
-        (h.period ? '<small>' + esc(h.period) + '</small>' : '') +
+        /* 예약 플랫폼은 기간 줄 끝에 조용히 붙는다(기간이 없으면 그 자리에 혼자) */
+        (h.period || h.platform ? '<small>' + esc(h.period || "") +
+          (h.platform ? (h.period ? '<span class="via-sep"> · </span>' : '') + '<span class="via">' + esc(h.platform) + '</span>' : '') + '</small>' : '') +
         (h.inAt || h.outAt ? '<small>' + (h.inAt ? '체크인 ' + esc(h.inAt) : '') + (h.inAt && h.outAt ? ' · ' : '') +
           (h.outAt ? '체크아웃 ' + esc(h.outAt) : '') + '</small>' : '') +
         notes.map(function(x){ return '<small>' + esc(x) + '</small>'; }).join("");
@@ -1528,6 +1530,34 @@ function buildStayFields(sheet, box, st, fromDate){
   trow.appendChild(pickerField({ type:"time", id:"s-out-t", label:"체크아웃 예상 시간", value: st ? st.outAt : "", col:true }));
   box.appendChild(tr);
 
+  /* 예약 플랫폼 — 시설 바로 위. 하나만 고르고, 고른 것을 다시 누르면 풀린다. 목록에 없는 곳은 '기타'를 고르고 적는다.
+     일정 탭에는 보이지 않는다(준비 탭의 숙소 줄에만). */
+  var had = st && st.platform ? st.platform : "";
+  var platform = had && PLATFORMS.indexOf(had) < 0 ? "기타" : had;
+  var platFld = el('<div class="fld"><label>예약 플랫폼 <span class="opt">선택</span></label>' +
+    '<div class="pickrow fit scroll" id="s-plat"></div>' +
+    '<input id="s-plat-etc" type="text" class="plat-etc" placeholder="예: 마이리얼트립" value="' + esc(platform === "기타" ? had : "") + '"' +
+    (platform === "기타" ? "" : " hidden") + '></div>');
+  box.appendChild(platFld);
+  var platRow = platFld.querySelector("#s-plat"), platEtc = platFld.querySelector("#s-plat-etc");
+  PLATFORMS.concat(["기타"]).forEach(function(name){
+    var b = el('<button class="pick" type="button" aria-pressed="' + (platform === name) + '">' + esc(name) + '</button>');
+    ripple(b, function(){
+      platform = platform === name ? "" : name;
+      platRow.querySelectorAll(".pick").forEach(function(x){ x.setAttribute("aria-pressed", String(x.textContent === platform)); });
+      platEtc.hidden = platform !== "기타";
+      if (platform === "기타") setTimeout(function(){ platEtc.focus(); }, 30);
+      if (platform && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      platRow.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    platRow.appendChild(b);
+  });
+  rollEdges(platRow);
+  requestAnimationFrame(function(){
+    var on = platRow.querySelector('.pick[aria-pressed="true"]');
+    if (on && platRow.scrollWidth > platRow.clientWidth) platRow.scrollLeft = on.offsetLeft - (platRow.clientWidth - on.offsetWidth) / 2;
+  });
+
   /* 시설은 메모와 따로다 — 눌러서 켜고 끈다. 한 줄로 구르고, 더 있는 쪽 가장자리는 옅어진다. */
   var perksFld = el('<div class="fld"><label>시설 <span class="opt">선택</span></label><div class="pickrow fit scroll" id="s-perks"></div></div>');
   box.appendChild(perksFld);
@@ -1573,6 +1603,8 @@ function buildStayFields(sheet, box, st, fromDate){
         period: periodText(inEl.value, outEl.value),
         inAt: sheet.querySelector("#s-in-t").value || "", outAt: sheet.querySelector("#s-out-t").value || "",
         perks: AMENITIES.filter(function(x){ return on.indexOf(x) >= 0; }),
+        /* 고른 적이 없으면 아예 보내지 않는다 — 비워 둔 숙소는 예약 플랫폼 칸이 없는 표에도 그대로 저장된다 */
+        platform: (platform === "기타" ? platEtc.value.trim() : platform) || (had ? "" : undefined),
         memo: lines().join("\n"),
         mapUrl: mapLink
       };

@@ -119,6 +119,9 @@ alter table entries add column if not exists perks  jsonb;
 alter table entries add column if not exists checkin_time  text;
 alter table entries add column if not exists checkout_time text;
 
+-- 숙소를 예약한 곳(아고다 · 부킹닷컴 · 직접 적은 이름). 준비 탭의 숙소 줄에만 보인다.
+alter table entries add column if not exists platform text;
+
 -- 첨부: 일정 · 숙소 · 예약에 붙인 메모 · 링크 · 사진. item_id는 붙은 것의 id다 (일정만이 아니다).
 -- 파일(kind=file)은 새 칸 없이: title=이름, photo_id=조각 id, text=JSON{parts,size,mime}. 모양 있는 메모는 title='rich'.
 create table if not exists attachments (

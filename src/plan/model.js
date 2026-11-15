@@ -495,6 +495,8 @@ function shopToItem(sh, t){
    detail 한 칸에 섞여 있었다 — 두 날짜가 보이면 기간이고, 아니면 메모로 가른다.
    읽을 때만 가르고 저장은 고칠 때 새 모양으로 간다. */
 /* 숙소에 달아둘 수 있는 시설. 메모와는 따로 모은다. */
+/* 숙소를 예약한 곳 — 고르는 줄의 선택지. 여기 없는 곳은 '기타'로 직접 적는다(적은 글이 그대로 저장된다). */
+export var PLATFORMS = ["아고다", "부킹닷컴", "호텔스닷컴", "익스피디아", "트립닷컴", "에어비앤비", "야놀자", "여기어때", "공식 홈페이지"];
 export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나", "세탁"];
 function normStay(st){
   if (st.period === undefined){
@@ -509,6 +511,7 @@ function normStay(st){
   st.mapUrl = st.mapUrl || "";
   st.inAt = st.inAt || "";      /* 체크인 · 체크아웃 예상 시간 "HH:MM" */
   st.outAt = st.outAt || "";
+  st.platform = st.platform || "";   /* 예약 플랫폼(아고다 · 부킹닷컴 …) — 준비 탭에만 보인다 */
   /* 시설이 메모 한 줄로 적혀 있던 때(바로 앞 모양)의 것은 시설로 옮겨 읽는다 */
   if (!Array.isArray(st.perks)){
     var rows = st.memo.split("\n").map(function(x){ return x.trim(); }).filter(Boolean);

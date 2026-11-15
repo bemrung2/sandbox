@@ -130,6 +130,8 @@ function toRow(path, body) {
       row.url = body.mapUrl || null;       /* 직접 적은 구글 지도 주소 */
       row.checkin_time = body.inAt || null;     /* 체크인 · 체크아웃 예상 시간 */
       row.checkout_time = body.outAt || null;
+      /* 예약 플랫폼 — 화면이 보낸 때만 쓴다(고른 적 없는 숙소는 이 칸 없이도 저장된다). 비우면 null */
+      if (body.platform !== undefined && body.platform !== null) row.platform = body.platform || null;
     }
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
@@ -195,7 +197,7 @@ function toDocs(tables) {
       /* period 칸이 없던 때의 숙소는 기간과 메모가 detail 한 칸에 있다 — 화면이 갈라 읽는다 */
       const old = row.period === undefined || row.period === null;
       body = { name: row.label, area: row.sub, room: row.tag, period: row.period, perks: row.perks, mapUrl: row.url,
-               inAt: row.checkin_time, outAt: row.checkout_time,
+               inAt: row.checkin_time, outAt: row.checkout_time, platform: row.platform || undefined,
                memo: old ? undefined : row.detail, detail: old ? row.detail : undefined };
     }
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };

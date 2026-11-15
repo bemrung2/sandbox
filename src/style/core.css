@@ -1048,6 +1048,11 @@
   }
   /* 시설은 줄 폭 전체로 한 줄. 아주 좁은 화면에서만 접힌다. */
   .rowbelow{ padding: 0 0 12px 27px; margin-top: -4px; }
+  /* 숙소 줄의 예약 플랫폼 — 기간 줄 끝에 같은 크기로, 조금 굵게만. 상자를 두르지 않는다. */
+  .rowbody small .via{ font-weight: 600; color: var(--ink); }
+  .rowbody small .via-sep{ color: var(--ink-faint); }
+  /* 예약 플랫폼의 '기타' — 고르는 줄 바로 밑에 붙는 한 줄 칸 */
+  .plat-etc{ margin-top: 8px; }
   .perks{ display: flex; flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .perks::-webkit-scrollbar{ display: none; }
   .perk{ flex-shrink: 0; }
