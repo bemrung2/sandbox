@@ -773,10 +773,13 @@ function attNote(itemId, a){
   });
   return box;
 }
+var FILE_ACCEPT = "application/pdf,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.zip";
 /* 파일 고르기: 고르면 조각내어 올리고(얼마나 올라갔는지 단추에 적힌다), 다 올라가면 기억할 것을 건넨다 */
 function filePick(sheet, onStored){
+  /* accept에 사진 · 영상 종류를 넣지 않는다 — 넣거나 비워 두면 폰이 '사진 찍기 · 사진 보관함'을 먼저 내민다.
+     문서 종류만 적어 두면 바로 파일 고르는 화면이 뜬다. 사진은 '사진' 칸이 따로 있다. */
   var h = el('<div><label class="btn btn-primary" style="width:100%">' + icon("file") + '<span>파일 고르기</span>' +
-    '<input type="file" hidden></label></div>');
+    '<input type="file" accept="' + FILE_ACCEPT + '" hidden></label></div>');
   var input = h.querySelector("input"), word = h.querySelector("span");
   input.addEventListener("change", async function(){
     var file = input.files[0];

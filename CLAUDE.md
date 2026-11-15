@@ -302,6 +302,9 @@ vendor/pdfjs/  PDF를 그리는 pdf.js(3.11.174 legacy)와 글자표(cmaps). 남
   적는다: 첨부는 `attachments`(kind=file, title=이름, photo_id=id, text=JSON{parts,size,mime}), 메모 탭은 `entries`(tag=file, label=이름,
   sub=id, detail=같은 JSON). 올리는 동안 단추에 얼마나 올라갔는지 적히고("올리는 중... 40%"), 못 올렸으면 서버가 말한 이유를
   띄우고 붙이지 않는다(`Store.blobPut`은 실패를 던진다 — 조용히 넘어가면 붙은 줄 알고 열어 보면 없다).
+  **'파일 고르기'는 파일 고르는 화면만 띄운다** — 사진 찍기 · 사진 보관함은 뜨지 않는다. 그러려고 고르는 칸의 `accept`에 문서 종류만
+  적는다(`FILE_ACCEPT`: PDF · txt · csv · 오피스 · 한글 · zip). 비워 두거나 사진 · 영상 종류를 넣으면 폰이 카메라를 먼저 내민다 —
+  넣지 않는다. 사진은 '사진' 칸으로 붙인다.
   한 번 받은 파일은 기기에 둔다(IndexedDB `bemtrip.files`) — 여행지의 느린 연결에서 다시 받지 않는다. 서버가 없는 사본(아티팩트 ·
   내 브라우저)은 조각을 올리지 않고 그 기기에만 둔다(`parts: 0`). 지운 파일의 조각은 되돌릴 시간이 지난 뒤에 치운다(`dropFile`).
 - **파일은 이 화면 안에서 열린다**(`openFile` → `.fileview`). 새 탭도, 다른 앱도 아니다. 화면 하나를 덮는 뷰어다: 위에 닫기 · 이름 ·
