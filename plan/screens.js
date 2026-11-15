@@ -770,8 +770,11 @@ function timelineItem(it, pair){
   var buys = it.buys || [];
   if (buys.length) body.appendChild(buysLine(buys, it.id));
 
+  /* 일정 탭의 쇼핑 줄에는 첨부한 사진을 내지 않는다 — 가게마다 사진이 줄줄이 서면 하루가 길어진다(사진은 쇼핑 탭에서 본다).
+     메모 · 링크 · 파일은 그대로 보인다. 첨부 수(클립의 숫자)는 사진까지 센다. */
   var atts = Plan.attachOf(it.id);
-  if (atts.length) body.appendChild(attachStrip(it.id, atts));
+  var shown = it.cat === "shop" ? atts.filter(function(a){ return a.type !== "photo"; }) : atts;
+  if (shown.length) body.appendChild(attachStrip(it.id, shown));
 
   /* 알약은 왼쪽 상자(.tl-tags)에서 줄을 바꾸고, 단추는 그 오른쪽 아래 끝에 선다 — 알약이 줄을 꽉 채워도
      단추만 다음 줄로 밀려 빈 줄을 만들지 않는다. */
@@ -1027,12 +1030,11 @@ function renderShop(root, days){
     return a.date === b.date ? (mins(a.at) || 0) - (mins(b.at) || 0) : a.date.localeCompare(b.date);
   });
 
-  var total = 0, got = 0, mustLeft = 0;
-  rows.forEach(function(r){ r.buys.forEach(function(i){ total++; if (i.got) got++; else if (i.pri === "must") mustLeft++; }); });
+  var total = 0, got = 0;
+  rows.forEach(function(r){ r.buys.forEach(function(i){ total++; if (i.got) got++; }); });
   function addShop(){ openItemEditor(null, days[state.day] ? days[state.day].date : days[0].date, { cat: "shop" }); }
   var head = el('<div class="group-label"><h3>쇼핑 목록</h3>' +
-    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 살 것 ' + got + '/' + total : '') +
-    (mustLeft ? ' · <span class="pri-left">' + icon("pri-must") + '필수 ' + mustLeft + '</span>' : '') + '</span></div>');
+    '<span class="group-count mono">' + rows.length + '곳' + (total ? ' · 쇼핑리스트 ' + got + '/' + total : '') + '</span></div>');
   head.appendChild(quickAdd(addShop));
   root.appendChild(head);
 

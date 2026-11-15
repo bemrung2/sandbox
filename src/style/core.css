@@ -888,8 +888,6 @@
   .rowline.on .rowbody b.has-pri{ text-decoration: none; }
   .rowline.on .rowbody b.has-pri .txt{ text-decoration: line-through; }
   .checkrow.on .pri{ opacity: .45; }
-  .pri-left{ display: inline-flex; align-items: center; gap: 2px; color: var(--danger); font-weight: 700; }
-  .pri-left .icon{ width: 10px; height: 10px; }
   /* 고르는 단추 안의 그림 — 고르지 않았을 때는 제 색, 골랐을 때는 단추의 글자색 */
   .pick .pi{ display: inline-flex; margin-right: 4px; }
   .pick .pi .icon{ width: 12px; height: 12px; stroke-width: 2.2; }
