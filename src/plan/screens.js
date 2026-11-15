@@ -6,7 +6,7 @@ import {
   sheetShell, openFormSheet, openTextDialog, openConfirmDialog, openAskDialog, askThenDelete,
   savedToast, pickerField, pickGroup, rollEdges, showOverlay, closeOverlay, closeTop, flag
 } from "../ui/sheet.js";
-import { storePhoto, dropPhoto, thumb, loadPhoto } from "../ui/photos.js";
+import { storePhoto, dropPhoto, thumb, fillPhoto } from "../ui/photos.js";
 import { storeFile, dropFile, openFile, fileMeta, FILE_MAX } from "../ui/files.js";
 import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
@@ -1199,7 +1199,7 @@ function tipTile(t){
   if (t.type === "photo"){
     var ph = el('<button class="tip tip-photo" type="button" aria-label="사진' + (t.memo ? " · " + esc(t.memo) : "") + '">' +
       '<img alt="">' + (t.memo ? '<span class="tip-cap">' + esc(t.memo) + '</span>' : '') + '</button>');
-    loadPhoto(t.pid).then(function(d){ if (d) ph.querySelector("img").src = d; else ph.classList.add("lost"); });
+    fillPhoto(ph.querySelector("img"), t.pid, ph, function(){ ph.classList.add("lost"); });
     ripple(ph, function(){ openTipPhoto(t); });
     return ph;
   }
@@ -1326,7 +1326,7 @@ function openTipPhoto(t){
   var sheet = sheetShell("사진");
   var body = sheet.querySelector(".sheet-body");
   var view = el('<div class="tipview"><img alt="">' + (t.memo ? '<p class="tipview-memo">' + esc(t.memo) + '</p>' : '') + '</div>');
-  loadPhoto(t.pid).then(function(d){ if (d) view.querySelector("img").src = d; else toast("사진을 불러오지 못했습니다."); });
+  fillPhoto(view.querySelector("img"), t.pid, null, function(){ toast("사진을 불러오지 못했습니다."); });
   body.appendChild(view);
   var foot = sheet.querySelector(".sheet-foot");
   var del = el('<button class="btn btn-danger" type="button">삭제</button>');

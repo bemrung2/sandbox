@@ -43,6 +43,8 @@
 
     /* 사진 위에 얹는 글자와 그 뒤의 그늘 — 사진 위라서 밝은 화면 · 어두운 화면이 같다 */
     --photo-shade: rgba(8, 10, 16, 0.66);
+    /* 사진을 기다리는 자리의 물결 — 바탕(--surface-2) 위를 지나가는 밝은 띠 */
+    --shim-hi: #FAFBFD;
     --on-photo: #FFFFFF;
     /* 문서의 종이 — PDF 쪽이 그려지기 전의 바탕. 종이는 어두운 화면에서도 희다 */
     --page: #FFFFFF;
@@ -60,6 +62,7 @@
       --paper: #0D1016;
       --surface: #151A22;
       --surface-2: #1C222C;
+      --shim-hi: #2A3341;
       --surface-3: #27303C;
       --ink: #E8ECF3;
       --ink-soft: #9EA8B7;
@@ -103,6 +106,7 @@
     --paper: #0D1016;
     --surface: #151A22;
     --surface-2: #1C222C;
+    --shim-hi: #2A3341;
     --surface-3: #27303C;
     --ink: #E8ECF3;
     --ink-soft: #9EA8B7;
@@ -518,6 +522,22 @@
     z-index: 80; padding: 16px;
   }
   .photoview img{ max-width: 100%; max-height: 100%; border-radius: 10px; }
+  /* 크게 보기에서 사진이 도착하기 전: 가운데 물결 칸 하나 */
+  .photoview.waiting img{ width: min(78vw, 420px); height: min(58vw, 315px); border-radius: 14px; }
+  .photoview.waiting img.shim{ --shim-lo: rgba(255,255,255,0.06); --shim-hi: rgba(255,255,255,0.16); }
+
+  /* 사진을 기다리는 자리(.shim): 글자 대신, 바탕 위로 밝은 띠가 천천히 흘러 지나간다. 도착한 사진은 서서히 떠오른다(.photo-in). */
+  /* (사진 자리마다 제 바탕을 적어 두었으므로 — .att-thumb · .tip · .tipview img — 그것들을 이기도록 한 단 더 구체적으로 적는다) */
+  .shim, img.shim, .tip.shim, .tipview img.shim{
+    background-color: var(--shim-lo, var(--surface-2));
+    background-image: linear-gradient(105deg, transparent 0%, transparent 35%, var(--shim-hi) 50%, transparent 65%, transparent 100%);
+    background-size: 220% 100%; background-repeat: no-repeat;
+    animation: shim 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  @keyframes shim{ from{ background-position: 130% 0; } to{ background-position: -30% 0; } }
+  .photo-in{ animation: photo-in 320ms var(--ease); }
+  @keyframes photo-in{ from{ opacity: 0; transform: scale(1.015); } to{ opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce){ .shim, img.shim, .tip.shim, .tipview img.shim{ animation: none; background-image: none; } .photo-in{ animation: none; } }
 
   /* 파일 뷰어 (src/ui/files.js): 화면 하나를 덮는다 — 위에는 닫기 · 이름 · 내려받기, 가운데는 쪽들,
      아래에는 작은 알약(작게 · 몇 쪽 · 크게). 쪽의 폭은 화면 폭 × --z다. */
