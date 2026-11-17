@@ -57,6 +57,10 @@ const html = `<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BEMTRIP">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- 홈 화면에 올렸을 때의 얼굴 — 첫 화면의 로고 그대로(BEM 글자색 · TRIP 그라데이션). icons/ 와 manifest는 생성물이 아니다. -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 ${head}
 </head>
 <body>

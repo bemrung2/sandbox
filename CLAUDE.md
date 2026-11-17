@@ -331,6 +331,9 @@ vendor/pdfjs/  PDF를 그리는 pdf.js(3.11.174 legacy)와 글자표(cmaps). 남
 - 앱 이름은 **BEMTRIP**이다. 화면에서는 `brandMark()`(`src/ui/shell.js`)로 그린다 —
   BEM은 글자색(`--ink`, 어두운 화면에서 흰색), TRIP은 `--brand-1 → --brand-2`
   그라데이션. `src/app.html`의 기다리는 화면과 `<title>`도 같은 이름이다.
+  **홈 화면 아이콘도 이 로고 그대로다**(`icons/`: `apple-touch-icon.png` 180 · `icon-192` · `icon-512` · `maskable-512`(안전 구역 80%) · `favicon-32`,
+  `manifest.webmanifest`) — 밝은 바탕에 BEM(글자색) / TRIP(`--brand-1 → --brand-2`)을 두 줄로, Inter 800 · 자간 -0.035em. 모서리는 폰이 깎으므로
+  그림은 네모 그대로 둔다. 링크는 `build.js`가 머리에 넣는다. `icons/`와 매니페스트는 생성물이 아니다 — 빌드가 건드리지 않는다.
 - 알림(토스트)은 폭을 글이 정한다(`width: max-content`, 화면 폭에서 멈춤). `left:50%`에
   그냥 두면 화면 반쪽 폭에서 접혀 짧은 말도 두 줄이 된다. 바탕을 뒤집지 않고 화면 위에
   한 겹 뜬 판(`--toast-bg`)이다. 되돌릴 수 있는 알림(`toastUndo(말, 되돌리기, kind)`)은
