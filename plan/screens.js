@@ -12,7 +12,7 @@ import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, CLOTH_KINDS, CLOTH_OF, OUTFIT_SCENES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, CLOTH_KINDS, CLOTH_OF, wearKind, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -1859,19 +1859,18 @@ function outfitCard(o){
 }
 /* 착장 만들기 · 이름 바꾸기 · 지우기. 이름은 상황이다 — 관광 · 수영 · 저녁 … 을 눌러 채우거나 직접 적는다. */
 function openOutfitDialog(o, date){
-  openTextDialog({ title: o ? "착장 이름" : "착장 추가", value: o ? o.label : "", placeholder: "예: 관광 · 수영 · 저녁", okLabel: o ? "저장" : "추가",
-    what: o ? o.label : "", choices: { label: "상황", fill: true, scroll: true, value: o ? o.label : "",
-      options: OUTFIT_SCENES.map(function(x){ return { key: x, label: x }; }) } },
+  openTextDialog({ title: o ? "착장 이름" : "착장 추가", value: o ? o.label : "", placeholder: "예: 로마 시내", okLabel: o ? "저장" : "추가",
+    what: o ? o.label : "" },
     function(v){
       if (!o){ Plan.listAdd("outfits", { dayDate: date, label: v, slots: [] }); repaint(); toastDone("추가했습니다."); return null; }
       var undo = undoEdit(Plan.listEdit("outfits", o.id, { label: v })); repaint(); return undo;
     },
     o ? function(){ var undo = undoOf(Plan.listRemove("outfits", o.id)); repaint(); return undo; } : null);
 }
-/* 옷 고르기: 그 종류의 가져갈 옷이 사진으로 놓인다. 위의 줄에서 종류를 바꿔 볼 수도 있다(원피스 대신 상의 …).
+/* 옷 고르기: 그 종류의 가져갈 옷이 사진으로 놓인다. 위의 줄에서 종류를 바꿔 볼 수도 있다(상의 대신 이너 …).
    고르면 닫히며 onPick(옷 id). 없으면 그 자리에서 새 옷을 등록해 바로 고른다. */
 function openClothPicker(kind, current, onPick){
-  var shown = kind;
+  var shown = wearKind(kind);
   var sheet = sheetShell((CLOTH_OF[kind] || CLOTH_OF.etc).label + " 고르기");
   sheet.classList.add("t-wear");   /* 카드 밖에서도 착장의 색 — 옷 얼굴의 옅은 바탕이 거기서 나온다 */
   var body = sheet.querySelector(".sheet-body");
@@ -1882,7 +1881,7 @@ function openClothPicker(kind, current, onPick){
   body.appendChild(grid);
   function paint(){
     grid.innerHTML = "";
-    var list = clothesOf().filter(function(c){ return c.kind === shown; });
+    var list = clothesOf().filter(function(c){ return wearKind(c.kind) === shown; });
     if (!list.length) grid.appendChild(el('<p class="cgrid-empty">아직 ' + withIga((CLOTH_OF[shown] || CLOTH_OF.etc).label) + ' 없습니다.</p>'));
     list.forEach(function(c){
       var t = el('<button type="button" class="ctile' + (c.id === current ? " on" : "") + '" aria-pressed="' + (c.id === current) + '"></button>');
@@ -1911,7 +1910,7 @@ function openClothEditor(c, opt){
   var sheet = sheetShell(c ? "옷 수정" : "옷 등록");
   sheet.classList.add("t-wear");
   var body = sheet.querySelector(".sheet-body");
-  body.appendChild(el('<div class="fld"><label for="cl-name">이름</label><input id="cl-name" type="text" placeholder="예: 베이지 트렌치코트" value="' + esc(c ? c.name : "") + '"></div>'));
+  body.appendChild(el('<div class="fld"><label for="cl-name">이름</label><input id="cl-name" type="text" placeholder="예: 스톤아일랜드 오버셔츠" value="' + esc(c ? c.name : "") + '"></div>'));
   var kf = el('<div class="fld"><label>종류</label><div class="pickrow fit scroll" id="cl-kind"></div></div>');
   body.appendChild(kf);
   pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.emo + " " + k.label }; }),
@@ -1992,7 +1991,7 @@ function wardrobeCard(){
   card.appendChild(head);
   if (!list.length){ card.appendChild(el('<p class="card-empty">아직 옷이 없습니다.</p>')); return card; }
   CLOTH_KINDS.forEach(function(k){
-    var mine = list.filter(function(c){ return (CLOTH_OF[c.kind] ? c.kind : "etc") === k.key; });
+    var mine = list.filter(function(c){ return wearKind(c.kind) === k.key; });
     if (!mine.length) return;
     card.appendChild(el('<p class="wr-kind"><span aria-hidden="true">' + k.emo + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
     var grid = el('<div class="cgrid"></div>');

@@ -985,6 +985,8 @@
   .wr-kind{ display: flex; align-items: center; gap: 6px; margin: 14px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
   .wr-kind .mono{ font-size: 11px; font-weight: 600; color: var(--ink-faint); }
   .wardrobe .card-head + .wr-kind{ margin-top: 8px; }
+  /* 가져갈 옷은 그날의 착장과 다른 무리다 — '착장 추가' 바로 밑에 붙이지 않고 한 칸 띄운다 */
+  .addcard + .card.wardrobe{ margin-top: 32px; }
   .wear-kinds{ margin-bottom: 4px; }
   .cl-photo{ display: flex; align-items: center; gap: 12px; }
   .cl-pick{ width: 100%; }

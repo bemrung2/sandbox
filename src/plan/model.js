@@ -502,14 +502,17 @@ function shopToItem(sh, t){
 /* 숙소에 달아둘 수 있는 시설. 메모와는 따로 모은다. */
 /* 옷의 종류 — 착장에 더할 때 고르는 순서이기도 하다(착장 안에서는 이 순서로 선다). 이모티콘은 사진 없는 옷의 얼굴이다. */
 export var CLOTH_KINDS = [
-  { key:"outer", label:"아우터", emo:"🧥" }, { key:"top", label:"상의", emo:"👕" }, { key:"dress", label:"원피스", emo:"👗" },
-  { key:"bottom", label:"하의", emo:"👖" }, { key:"swim", label:"수영복", emo:"🩱" }, { key:"shoes", label:"신발", emo:"👟" },
-  { key:"bag", label:"가방", emo:"👜" }, { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"etc", label:"기타", emo:"🧦" }
+  { key:"outer", label:"아우터", emo:"🧥" }, { key:"top", label:"상의", emo:"👕" }, { key:"inner", label:"이너", emo:"🎽" },
+  { key:"bottom", label:"하의", emo:"👖" }, { key:"shoes", label:"신발", emo:"👟" }, { key:"bag", label:"가방", emo:"👜" },
+  { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"sleep", label:"잠옷", emo:"🛌" }, { key:"swim", label:"수영복", emo:"🩱" },
+  { key:"etc", label:"기타", emo:"🧦" }
 ];
 export var CLOTH_OF = {};
 CLOTH_KINDS.forEach(function(k, i){ CLOTH_OF[k.key] = Object.assign({ i: i }, k); });
-/* 착장 이름을 고를 때 내미는 것 — 누르면 이름 칸에 들어간다 */
-export var OUTFIT_SCENES = ["관광", "수영", "저녁", "이동", "액티비티", "잠옷"];
+/* 고를 수 없게 된 예전 종류 — 그렇게 저장된 옷 · 칸이 그대로 보여야 해서 이름만 남긴다(가져갈 옷에서는 기타에 모인다). */
+CLOTH_OF.dress = { key:"dress", label:"원피스", emo:"👗", i: 2.5, old: true };
+/* 고르는 자리(가져갈 옷의 무리 · 고르는 창)에서의 종류 — 예전 종류는 기타로 */
+export function wearKind(k){ return CLOTH_OF[k] && !CLOTH_OF[k].old ? k : "etc"; }
 /* 숙소를 예약한 곳 — 고르는 줄의 선택지. 여기 없는 곳은 '기타'로 직접 적는다(적은 글이 그대로 저장된다). */
 export var PLATFORMS = ["아고다", "부킹닷컴", "호텔스닷컴", "익스피디아", "트립닷컴", "에어비앤비", "야놀자", "여기어때", "공식 홈페이지"];
 export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나", "세탁"];
