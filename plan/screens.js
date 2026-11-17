@@ -12,7 +12,7 @@ import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, CLOTH_KINDS, CLOTH_OF, OUTFIT_SCENES, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -256,7 +256,7 @@ function tripCard(t, box){
    것은 목록과 여행 사이뿐이다. */
 var lastTab = "", lastTrip = "", tabsX = 0;
 /* 탭: 주소에 쓰는 이름과 화면의 말. '준비'의 주소 이름은 예전 그대로 info다(예전 링크가 살아 있게). */
-var TABS = [["sched","일정"],["food","식사"],["shop","쇼핑"],["tip","메모"],["info","준비"]];
+var TABS = [["sched","일정"],["food","식사"],["shop","쇼핑"],["tip","메모"],["info","준비"],["wear","착장"]];
 export function renderTrip(root, keepScroll){
   var days = tripDays();
   var tabTurned = lastTab && lastTab !== state.tripId + "/" + state.tab && lastTab.split("/")[0] === state.tripId;
@@ -294,6 +294,7 @@ export function renderTrip(root, keepScroll){
   else if (state.tab === "food") renderFood(body, days);
   else if (state.tab === "shop") renderShop(body, days);
   else if (state.tab === "tip") renderTips(body);
+  else if (state.tab === "wear") renderWear(body, days);
   else renderInfo(body);
 
   /* 날짜 줄은 탭 줄 바로 아래에 붙는다. 탭 줄의 높이는 글꼴에 따라 달라지니 재서 알려준다.
@@ -1754,6 +1755,259 @@ function openMemoEditor(n){
   foot.appendChild(save);
   showOverlay(sheet);
   if (!n) setTimeout(ed.focus, 80);
+}
+
+/* ---------- tab: 착장 ----------
+   가져갈 옷을 등록해 두고(`clothes`), 날마다 상황별 착장(`outfits` — 관광 · 수영 · 저녁 …)을 그 옷들로 맞춘다.
+   · 착장은 칸이 정해져 있지 않다 — '+ 아우터' · '+ 상의'처럼 그날 입을 것만 더하고, 더하는 순간 그 종류의 옷을 고르는 창이 뜬다.
+     같은 종류를 여럿 더할 수도 있다(액세서리 둘). 착장 안에서는 종류의 차례(아우터 → 상의 → … → 액세서리)로 선다.
+   · 고르는 창에는 그 종류의 가져갈 옷이 사진(없으면 이모티콘)으로 놓이고, 없으면 그 자리에서 새로 등록해 바로 고른다.
+   · 가져갈 옷 카드는 종류별로 모아 보이고, 옷마다 몇 번 입는지(착장 수)를 적는다 — 한 번도 안 입는 옷은 빼고 가도 된다.
+   · 옷을 지워도 착장은 그대로 두고 그 칸만 비어 보인다(되돌리면 다시 채워진다). */
+/* 받침이 있으면 '이', 없으면 '가' — "아직 아우터가 없습니다." · "아직 수영복이 없습니다." */
+function withIga(w){
+  var c = String(w).charCodeAt(String(w).length - 1) - 0xAC00;
+  return w + (c >= 0 && c < 11172 && c % 28 ? "이" : "가");
+}
+function clothesOf(){ return ordered(trip().clothes || []); }
+function clothById(id){ return (trip().clothes || []).filter(function(c){ return c.id === id; })[0] || null; }
+function wearCount(id){
+  var n = 0;
+  (trip().outfits || []).forEach(function(o){ (o.slots || []).forEach(function(sl){ if (sl.cloth === id) n++; }); });
+  return n;
+}
+/* 옷의 얼굴: 사진이 있으면 사진, 없으면 종류의 이모티콘 */
+function clothFace(c, kind, cls){
+  var k = CLOTH_OF[(c && c.kind) || kind] || CLOTH_OF.etc;
+  var box = el('<span class="cface ' + (cls || "") + '"><span class="cface-emo" aria-hidden="true">' + k.emo + '</span></span>');
+  if (c && c.pid){
+    var img = el('<img alt="" role="img" aria-label="' + esc(c.name) + '">');
+    box.appendChild(img);
+    box.classList.add("has-photo");
+    fillPhoto(img, c.pid, box, function(){ box.classList.remove("has-photo"); img.remove(); });
+  }
+  return box;
+}
+function sortSlots(slots){
+  return slots.map(function(sl, i){ return { sl: sl, i: i }; }).sort(function(a, b){
+    return ((CLOTH_OF[a.sl.kind] || CLOTH_OF.etc).i - (CLOTH_OF[b.sl.kind] || CLOTH_OF.etc).i) || (a.i - b.i);
+  });
+}
+function renderWear(root, days){
+  root.appendChild(dayRow(days));
+  var day = days[state.day];
+  var outs = ordered(trip().outfits || []).filter(function(o){ return o.dayDate === day.date; });
+  var stat = el('<div class="day-stat"><span class="mono">' + (outs.length ? "착장 " + outs.length : "") + '</span></div>');
+  stat.appendChild(quickAdd(function(){ openOutfitDialog(null, day.date); }));
+  root.appendChild(stat);
+  if (!outs.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 착장이 없습니다.</p></div>'));
+  outs.forEach(function(o){ root.appendChild(outfitCard(o)); });
+  var add = el('<button class="addcard" type="button">' + icon("plus") + '착장 추가</button>');
+  ripple(add, function(){ openOutfitDialog(null, day.date); });
+  root.appendChild(add);
+  root.appendChild(wardrobeCard());
+}
+function outfitCard(o){
+  var card = el('<div class="card t-wear outfit" data-focus="' + esc(o.id) + '"></div>');
+  var slots = o.slots || [];
+  var head = el('<div class="card-head"><span class="card-ic">' + icon("shirt") + '</span>' +
+    '<h3 class="outfit-name">' + esc(o.label || "착장") + (slots.length ? '<span class="card-n">' + slots.length + '</span>' : '') + '</h3></div>');
+  head.appendChild(penBtn(editing(function(){ openOutfitDialog(o); })));
+  card.appendChild(head);
+  var list = el('<div class="wear-slots"></div>');
+  sortSlots(slots).forEach(function(x){
+    var sl = x.sl, c = sl.cloth ? clothById(sl.cloth) : null, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
+    var row = el('<div class="wear-slot"></div>');
+    var pick = el('<button type="button" class="wear-pick" aria-label="' + esc(k.label) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
+    pick.appendChild(clothFace(c, sl.kind, "sm"));
+    pick.appendChild(el('<span class="wear-txt"><small>' + esc(k.label) + '</small>' +
+      (c ? '<b>' + esc(c.name) + '</b>' : '<b class="wear-none">' + (sl.cloth ? "지운 옷" : "옷 고르기") + '</b>') + '</span>'));
+    ripple(pick, editing(function(){
+      openClothPicker(sl.kind, c ? c.id : null, function(id){
+        var next = slots.slice(); next[x.i] = { kind: next[x.i].kind, cloth: id };
+        var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: next })); repaint();
+        if (undo && c) toastUndo("바꿨습니다.", undo, "edit");
+      });
+    }));
+    row.appendChild(pick);
+    var out = el('<button type="button" class="quietbtn ico wear-out" aria-label="' + esc(k.label) + ' 빼기">' + icon("x") + '</button>');
+    ripple(out, editing(function(){
+      var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: slots.filter(function(_, i){ return i !== x.i; }) }));
+      repaint();
+      if (undo) toastUndo("뺐습니다.", undo, "edit");
+    }));
+    row.appendChild(out);
+    list.appendChild(row);
+  });
+  if (slots.length) card.appendChild(list);
+  /* 입을 것 더하기 — 종류를 누르면 바로 그 종류의 옷을 고른다. 고르면 칸이 생긴다(고르지 않고 닫으면 아무것도 생기지 않는다). */
+  var more = el('<div class="wear-add"><div class="wear-add-row" role="group" aria-label="입을 것 더하기"></div></div>');
+  var rowEl = more.firstChild;
+  CLOTH_KINDS.forEach(function(k){
+    var b = el('<button type="button" class="wear-chip"><span aria-hidden="true">＋</span>' + esc(k.label) + '</button>');
+    ripple(b, editing(function(){
+      openClothPicker(k.key, null, function(id){
+        Plan.listEdit("outfits", o.id, { slots: (o.slots || []).concat([{ kind: k.key, cloth: id }]) });
+        repaint();
+      });
+    }));
+    rowEl.appendChild(b);
+  });
+  rollEdges(rowEl);
+  card.appendChild(more);
+  return card;
+}
+/* 착장 만들기 · 이름 바꾸기 · 지우기. 이름은 상황이다 — 관광 · 수영 · 저녁 … 을 눌러 채우거나 직접 적는다. */
+function openOutfitDialog(o, date){
+  openTextDialog({ title: o ? "착장 이름" : "착장 추가", value: o ? o.label : "", placeholder: "예: 관광 · 수영 · 저녁", okLabel: o ? "저장" : "추가",
+    what: o ? o.label : "", choices: { label: "상황", fill: true, scroll: true, value: o ? o.label : "",
+      options: OUTFIT_SCENES.map(function(x){ return { key: x, label: x }; }) } },
+    function(v){
+      if (!o){ Plan.listAdd("outfits", { dayDate: date, label: v, slots: [] }); repaint(); toastDone("추가했습니다."); return null; }
+      var undo = undoEdit(Plan.listEdit("outfits", o.id, { label: v })); repaint(); return undo;
+    },
+    o ? function(){ var undo = undoOf(Plan.listRemove("outfits", o.id)); repaint(); return undo; } : null);
+}
+/* 옷 고르기: 그 종류의 가져갈 옷이 사진으로 놓인다. 위의 줄에서 종류를 바꿔 볼 수도 있다(원피스 대신 상의 …).
+   고르면 닫히며 onPick(옷 id). 없으면 그 자리에서 새 옷을 등록해 바로 고른다. */
+function openClothPicker(kind, current, onPick){
+  var shown = kind;
+  var sheet = sheetShell((CLOTH_OF[kind] || CLOTH_OF.etc).label + " 고르기");
+  sheet.classList.add("t-wear");   /* 카드 밖에서도 착장의 색 — 옷 얼굴의 옅은 바탕이 거기서 나온다 */
+  var body = sheet.querySelector(".sheet-body");
+  sheet.querySelector(".sheet-foot").remove();
+  var kinds = el('<div class="pickrow fit scroll wear-kinds"></div>');
+  body.appendChild(kinds);
+  var grid = el('<div class="cgrid"></div>');
+  body.appendChild(grid);
+  function paint(){
+    grid.innerHTML = "";
+    var list = clothesOf().filter(function(c){ return c.kind === shown; });
+    if (!list.length) grid.appendChild(el('<p class="cgrid-empty">아직 ' + withIga((CLOTH_OF[shown] || CLOTH_OF.etc).label) + ' 없습니다.</p>'));
+    list.forEach(function(c){
+      var t = el('<button type="button" class="ctile' + (c.id === current ? " on" : "") + '" aria-pressed="' + (c.id === current) + '"></button>');
+      t.appendChild(clothFace(c));
+      t.appendChild(el('<span class="ctile-name">' + esc(c.name) + '</span>'));
+      ripple(t, function(){ closeTop(sheet); onPick(c.id); });
+      grid.appendChild(t);
+    });
+    var nu = el('<button type="button" class="ctile ctile-new">' + '<span class="cface"><span class="cface-plus">' + icon("plus") + '</span></span><span class="ctile-name">새 옷 등록</span></button>');
+    ripple(nu, function(){
+      openClothEditor(null, { kind: shown, onSaved: function(id){ closeTop(sheet); onPick(id); } });
+    });
+    grid.appendChild(nu);
+  }
+  pickGroup(kinds, CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.label }; }),
+    function(){ return shown; }, function(k){ shown = k; paint(); });
+  paint();
+  showOverlay(sheet);
+}
+/* 옷 하나: 이름 · 종류 · 사진(선택) · 메모(선택). 새로 등록하거나 고친다. */
+function openClothEditor(c, opt){
+  opt = opt || {};
+  if (!mayEdit()) return;
+  var kind = c ? c.kind : (opt.kind || "top");
+  var pid = c ? (c.pid || "") : "", pidWas = pid;
+  var sheet = sheetShell(c ? "옷 수정" : "옷 등록");
+  sheet.classList.add("t-wear");
+  var body = sheet.querySelector(".sheet-body");
+  body.appendChild(el('<div class="fld"><label for="cl-name">이름</label><input id="cl-name" type="text" placeholder="예: 베이지 트렌치코트" value="' + esc(c ? c.name : "") + '"></div>'));
+  var kf = el('<div class="fld"><label>종류</label><div class="pickrow fit scroll" id="cl-kind"></div></div>');
+  body.appendChild(kf);
+  pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.emo + " " + k.label }; }),
+    function(){ return kind; }, function(k){ kind = k; });
+  var pf = el('<div class="fld"><label>사진 <span class="opt">선택</span></label><div class="cl-photo"></div></div>');
+  body.appendChild(pf);
+  var pbox = pf.querySelector(".cl-photo");
+  function paintPhoto(){
+    pbox.innerHTML = "";
+    if (pid){
+      var face = clothFace({ name: "", kind: kind, pid: pid }, kind, "lg");
+      pbox.appendChild(face);
+      var rm = el('<button type="button" class="quietbtn">' + icon("x") + '사진 빼기</button>');
+      ripple(rm, function(){ pid = ""; paintPhoto(); sheet.dispatchEvent(new Event("change")); });
+      pbox.appendChild(rm);
+    } else {
+      var lab = el('<label class="btn cl-pick">' + icon("image") + '<span>사진 고르기</span><input type="file" accept="image/*" hidden></label>');
+      var input = lab.querySelector("input");
+      input.addEventListener("change", async function(){
+        var f = input.files[0];
+        if (!f) return;
+        lab.querySelector("span").textContent = "저장 중...";
+        try{ pid = await storePhoto(f); }catch(e){ toast("사진을 저장하지 못했습니다."); }
+        paintPhoto();
+      });
+      pbox.appendChild(lab);
+    }
+  }
+  paintPhoto();
+  body.appendChild(el('<div class="fld"><label for="cl-memo">메모 <span class="opt">선택</span></label><input id="cl-memo" type="text" placeholder="예: 비 오는 날" value="' + esc(c && c.memo ? c.memo : "") + '"></div>'));
+  var foot = sheet.querySelector(".sheet-foot");
+  if (c){
+    var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+    ripple(del, function(){
+      var n = wearCount(c.id);
+      openAskDialog({ title: "삭제하시겠습니까?", body: "'" + c.name + "'을(를) 삭제합니다." + (n ? " 착장 " + n + "곳에서 그 칸이 비어 보입니다." : "") }, function(){
+        closeOverlay();
+        var back = Plan.listRemove("clothes", c.id), gone = true;
+        if (c.pid) setTimeout(function(){ if (gone) dropPhoto(c.pid); }, 6000);
+        var undo = undoOf(back ? function(){ gone = false; back(); } : null);
+        repaint();
+        if (undo) toastUndo("삭제했습니다.", undo);
+      });
+    });
+    foot.appendChild(del);
+  }
+  var save = el('<button class="btn btn-primary" type="button">' + (c ? "저장" : "등록") + '</button>');
+  ripple(save, function(){
+    var nameEl = sheet.querySelector("#cl-name"), name = nameEl.value.trim();
+    if (!name) return flag(nameEl, "이름을 적어 주세요.");
+    var rec = { name: name, kind: kind, pid: pid || null, memo: sheet.querySelector("#cl-memo").value.trim() || null };
+    closeTop(sheet);
+    if (!c){
+      var made = Plan.listAdd("clothes", rec);
+      repaint();
+      toastDone("등록했습니다.");
+      if (opt.onSaved) opt.onSaved(made.id);
+      return;
+    }
+    if (pidWas && pidWas !== pid) setTimeout(function(){ dropPhoto(pidWas); }, 6000);
+    var undo = undoEdit(Plan.listEdit("clothes", c.id, rec));
+    savedToast(true, undo);
+    repaint();
+  });
+  foot.appendChild(save);
+  showOverlay(sheet);
+  if (!c) setTimeout(function(){ var i = sheet.querySelector("#cl-name"); if (i && i.isConnected) i.focus(); }, 80);
+}
+/* 가져갈 옷: 종류별로 모아 사진 칸으로. 칸마다 몇 번 입는지(착장 수)를 적는다. 누르면 고친다. */
+function wardrobeCard(){
+  var list = clothesOf();
+  var card = el('<div class="card t-wear wardrobe"></div>');
+  var head = el('<div class="card-head"><span class="card-ic">' + icon("hanger") + '</span>' +
+    '<h3>가져갈 옷' + (list.length ? '<span class="card-n">' + list.length + '</span>' : '') + '</h3></div>');
+  var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
+  ripple(add, function(){ openClothEditor(null); });
+  head.appendChild(add);
+  card.appendChild(head);
+  if (!list.length){ card.appendChild(el('<p class="card-empty">아직 옷이 없습니다.</p>')); return card; }
+  CLOTH_KINDS.forEach(function(k){
+    var mine = list.filter(function(c){ return (CLOTH_OF[c.kind] ? c.kind : "etc") === k.key; });
+    if (!mine.length) return;
+    card.appendChild(el('<p class="wr-kind"><span aria-hidden="true">' + k.emo + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
+    var grid = el('<div class="cgrid"></div>');
+    mine.forEach(function(c){
+      var n = wearCount(c.id);
+      var t = el('<button type="button" class="ctile" aria-label="' + esc(c.name) + (n ? " · 착장 " + n : " · 아직 안 입음") + '"></button>');
+      t.appendChild(clothFace(c));
+      t.appendChild(el('<span class="ctile-name">' + esc(c.name) + '</span>'));
+      t.appendChild(el('<span class="ctile-n' + (n ? '' : ' zero') + '">' + (n ? n + "회" : "0회") + '</span>'));
+      ripple(t, function(){ openClothEditor(c); });
+      grid.appendChild(t);
+    });
+    card.appendChild(grid);
+  });
+  return card;
 }
 
 /* ---------- 준비물: 묶음(폴더) ----------

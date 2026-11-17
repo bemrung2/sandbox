@@ -17,7 +17,8 @@ export var ROOT = "travel/trips";
 /* tips: 메모 탭(주소 이름 tip)의 링크 · 사진 · 파일 ({type:"link", title, url} · {type:"photo", pid, memo} ·
    {type:"file", title, pid, parts, size, mime}) */
 /* packGroups: 준비물의 묶음(폴더) {name}. 준비물은 grp에 묶음 id를 든다(없으면 묶지 않은 것) */
-export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "packGroups", "notes", "wx", "tips"];
+/* clothes: 가져갈 옷 {name, kind, pid(사진), memo}. outfits: 그날의 착장 {dayDate, label(상황), slots:[{kind, cloth}]} */
+export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "packGroups", "notes", "wx", "tips", "clothes", "outfits"];
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
 /* Emoji are deliberately rare: only where one carries meaning on its own
@@ -48,6 +49,8 @@ export function newTrip(o){
     notes: o.notes || [],
     wx: o.wx || [],
     tips: o.tips || [],
+    clothes: o.clothes || [],
+    outfits: o.outfits || [],
     attach: o.attach || {}
   };
 }
@@ -497,6 +500,16 @@ function shopToItem(sh, t){
    detail 한 칸에 섞여 있었다 — 두 날짜가 보이면 기간이고, 아니면 메모로 가른다.
    읽을 때만 가르고 저장은 고칠 때 새 모양으로 간다. */
 /* 숙소에 달아둘 수 있는 시설. 메모와는 따로 모은다. */
+/* 옷의 종류 — 착장에 더할 때 고르는 순서이기도 하다(착장 안에서는 이 순서로 선다). 이모티콘은 사진 없는 옷의 얼굴이다. */
+export var CLOTH_KINDS = [
+  { key:"outer", label:"아우터", emo:"🧥" }, { key:"top", label:"상의", emo:"👕" }, { key:"dress", label:"원피스", emo:"👗" },
+  { key:"bottom", label:"하의", emo:"👖" }, { key:"swim", label:"수영복", emo:"🩱" }, { key:"shoes", label:"신발", emo:"👟" },
+  { key:"bag", label:"가방", emo:"👜" }, { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"etc", label:"기타", emo:"🧦" }
+];
+export var CLOTH_OF = {};
+CLOTH_KINDS.forEach(function(k, i){ CLOTH_OF[k.key] = Object.assign({ i: i }, k); });
+/* 착장 이름을 고를 때 내미는 것 — 누르면 이름 칸에 들어간다 */
+export var OUTFIT_SCENES = ["관광", "수영", "저녁", "이동", "액티비티", "잠옷"];
 /* 숙소를 예약한 곳 — 고르는 줄의 선택지. 여기 없는 곳은 '기타'로 직접 적는다(적은 글이 그대로 저장된다). */
 export var PLATFORMS = ["아고다", "부킹닷컴", "호텔스닷컴", "익스피디아", "트립닷컴", "에어비앤비", "야놀자", "여기어때", "공식 홈페이지"];
 export var AMENITIES = ["조식", "피트니스", "수영장", "대욕탕(온천)", "사우나", "세탁"];

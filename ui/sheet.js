@@ -262,8 +262,13 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   var input = scrim.querySelector("#dlg-v");
   /* 글 아래의 고르는 줄(opts.choices: {label, options:[{key,label}], value}) — 고른 것은 onSave의 둘째 값으로 간다 */
   var choice = opts.choices ? (opts.choices.value || "") : undefined;
+  /* choices.fill: 고르면 그 이름이 글 칸에 들어간다(제안 — 눌러 채우고 고쳐 쓸 수도 있다) */
   if (opts.choices) pickGroup(scrim.querySelector(".dlg-choice .pickrow"), opts.choices.options,
-    function(){ return choice; }, function(k){ choice = k; });
+    function(){ return opts.choices.fill ? (input.value.trim() === choice ? choice : "") : choice; },
+    function(k){
+      choice = k;
+      if (opts.choices.fill){ input.value = k; input.classList.remove("bad"); input.dispatchEvent(new Event("input", { bubbles: true })); }
+    });
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
   if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
     askThenDelete(opts.what || opts.value, onDelete);
