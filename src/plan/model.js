@@ -503,8 +503,8 @@ function shopToItem(sh, t){
 /* 옷의 종류 — 착장에 더할 때 고르는 순서이기도 하다(착장 안에서는 이 순서로 선다). 이모티콘은 사진 없는 옷의 얼굴이다. */
 export var CLOTH_KINDS = [
   { key:"outer", label:"아우터", emo:"🧥" }, { key:"top", label:"상의", emo:"👕" }, { key:"inner", label:"이너", emo:"🎽" },
-  { key:"bottom", label:"하의", emo:"👖" }, { key:"shoes", label:"신발", emo:"👟" }, { key:"bag", label:"가방", emo:"👜" },
-  { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"sleep", label:"잠옷", emo:"🛌" }, { key:"swim", label:"수영복", emo:"🩱" },
+  { key:"bottom", label:"하의", emo:"👖" }, { key:"shoes", label:"신발", emo:"👟" }, { key:"bag", label:"가방", emo:"🎒" },
+  { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"sleep", label:"잠옷", emo:"🛌" }, { key:"swim", label:"수영복", emo:"🩳" },
   { key:"etc", label:"기타", emo:"🧦" }
 ];
 export var CLOTH_OF = {};
