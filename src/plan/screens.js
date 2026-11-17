@@ -1779,6 +1779,8 @@ function wearCount(id){
 /* 옷의 그림 — 소분류가 있으면 소분류의 것(모자, 수영복 상의 = 래시가드), 없으면 종류의 것. 모두 같은 체로 그린 선 아이콘(ICONS의 w-*). */
 function lookOf(kind, part){ return clothPart(kind, part) || CLOTH_OF[kind] || CLOTH_OF.etc; }
 function lookHtml(lk){ return lk.ico ? icon(lk.ico, "cface-ico").replace("<svg ", '<svg data-ico="' + lk.ico + '" ') : esc(lk.emo || ""); }
+/* 종류의 색 — 종류마다 하나(.k-outer …, core.css). 옷 얼굴 · 종류 글자 · ＋단추 · 무리 머리가 같은 색을 쓴다. */
+function kindCls(kind){ return "k-" + (CLOTH_OF[kind] ? kind : "etc"); }
 /* 종류 이름 — 소분류가 있으면 '수영복 · 상의' */
 function kindText(kind, part){
   var p = clothPart(kind, part);
@@ -1787,7 +1789,7 @@ function kindText(kind, part){
 /* 옷의 얼굴: 사진이 있으면 사진, 없으면 소분류 · 종류의 그림 */
 function clothFace(c, kind, cls){
   var lk = c ? lookOf(c.kind, c.part) : lookOf(kind);
-  var box = el('<span class="cface ' + (cls || "") + '"><span class="cface-emo" aria-hidden="true">' + lookHtml(lk) + '</span></span>');
+  var box = el('<span class="cface ' + kindCls(c ? c.kind : kind) + ' ' + (cls || "") + '"><span class="cface-emo" aria-hidden="true">' + lookHtml(lk) + '</span></span>');
   if (c && c.pid){
     var img = el('<img alt="" role="img" aria-label="' + esc(c.name) + '">');
     box.appendChild(img);
@@ -1827,7 +1829,7 @@ function renderWear(root, days){
 function outfitCard(o){
   var slots = o.slots || [], done = !!o.done && slots.length > 0;
   var card = el('<div class="card t-wear outfit' + (done ? " done" : "") + '" data-focus="' + esc(o.id) + '"></div>');
-  var head = el('<div class="card-head"><span class="card-ic">' + icon("shirt") + '</span>' +
+  var head = el('<div class="card-head">' +
     '<h3 class="outfit-name">' + esc(o.label || "착장") + (slots.length ? '<span class="card-n">' + slots.length + '</span>' : '') + '</h3></div>');
   if (slots.length){
     var lock = el('<button type="button" class="wear-done" aria-pressed="' + done + '">' + icon("check") + '<span>확정</span></button>');
@@ -1844,7 +1846,7 @@ function outfitCard(o){
   sortSlots(slots).forEach(function(x){
     var sl = x.sl, c = x.c, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
     var kt = c && c.kind === sl.kind ? kindText(c.kind, c.part) : k.label;
-    var row = el('<div class="wear-slot"></div>');
+    var row = el('<div class="wear-slot ' + kindCls(c && c.kind === sl.kind ? c.kind : sl.kind) + '"></div>');
     /* 확정된 착장의 칸은 누르는 곳이 아니다 — 보기만 */
     var pick = el(done ? '<div class="wear-pick"></div>'
       : '<button type="button" class="wear-pick" aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
@@ -1877,7 +1879,7 @@ function outfitCard(o){
     var more = el('<div class="wear-add"><div class="wear-add-row" role="group" aria-label="입을 것 더하기"></div></div>');
     var rowEl = more.firstChild;
     CLOTH_KINDS.forEach(function(k){
-      var b = el('<button type="button" class="wear-chip">' + icon("plus") + esc(k.label) + '</button>');
+      var b = el('<button type="button" class="wear-chip ' + kindCls(k.key) + '">' + icon("plus") + esc(k.label) + '</button>');
       ripple(b, editing(function(){
         openClothPicker(k.key, null, function(id){
           Plan.listEdit("outfits", o.id, { slots: (o.slots || []).concat([{ kind: k.key, cloth: id }]) });
@@ -1948,7 +1950,7 @@ function openClothEditor(c, opt){
   body.appendChild(el('<div class="fld"><label for="cl-name">이름</label><input id="cl-name" type="text" placeholder="예: 스톤아일랜드 오버셔츠" value="' + esc(c ? c.name : "") + '"></div>'));
   var kf = el('<div class="fld"><label>종류</label><div class="pickrow fit scroll" id="cl-kind"></div></div>');
   body.appendChild(kf);
-  pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.label, html: '<span class="cl-part-emo" aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) }; }),
+  pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.label, html: '<span class="cl-part-emo ' + kindCls(k.key) + '" aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) }; }),
     function(){ return kind; }, function(k){ if (k !== kind) part = ""; kind = k; paintPart(); });
   /* 소분류 — 종류 바로 밑. 소분류가 있는 종류(액세서리 · 잠옷 · 수영복)에서만 선다. 고르지 않아도 되고, 다시 누르면 풀린다. */
   var partF = el('<div class="fld cl-partf"><label>소분류 <span class="opt">선택</span></label><div class="pickrow fit scroll" id="cl-part"></div></div>');
@@ -1958,7 +1960,7 @@ function openClothEditor(c, opt){
     partF.style.display = parts.length ? "" : "none";
     if (!parts.length) return;
     pickGroup(partF.querySelector("#cl-part"), parts.map(function(p){
-        return { key: p.key, label: p.label, html: '<span class="cl-part-emo" aria-hidden="true">' + lookHtml(p) + '</span>' + esc(p.label) }; }),
+        return { key: p.key, label: p.label, html: '<span class="cl-part-emo ' + kindCls(kind) + '" aria-hidden="true">' + lookHtml(p) + '</span>' + esc(p.label) }; }),
       function(){ return part; }, function(k){ part = part === k ? "" : k; });
   }
   paintPart();
@@ -2065,7 +2067,7 @@ function wardrobeCard(){
   CLOTH_KINDS.forEach(function(k){
     var mine = list.filter(function(c){ return wearKind(c.kind) === k.key; });
     if (!mine.length) return;
-    card.appendChild(el('<p class="wr-kind"><span aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
+    card.appendChild(el('<p class="wr-kind ' + kindCls(k.key) + '"><span aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
     var grid = el('<div class="cgrid"></div>');
     mine.forEach(function(c){
       var n = wearCount(c.id);
