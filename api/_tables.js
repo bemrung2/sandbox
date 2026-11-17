@@ -139,7 +139,7 @@ function toRow(path, body) {
     else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; row.sub = body.grp || null; }
     else if (group === "packGroups") { row.label = body.name || ""; }
     /* 착장 탭 — 새 칸 없이. 옷: label=이름, tag=종류, sub=사진 id, detail=메모. 착장: label=상황, tag=날짜, detail=JSON[{kind, cloth}] */
-    else if (group === "clothes") { row.label = body.name || ""; row.tag = body.kind || "etc"; row.sub = body.pid || null; row.detail = body.memo || null; }
+    else if (group === "clothes") { row.label = body.name || ""; row.tag = (body.kind || "etc") + (body.part ? "." + body.part : ""); row.sub = body.pid || null; row.detail = body.qty > 1 ? JSON.stringify({ memo: body.memo || "", n: body.qty }) : (body.memo || null); }
     else if (group === "outfits") { row.label = body.label || ""; row.tag = body.dayDate || null; row.detail = JSON.stringify(body.slots || []); }
     /* 메모 탭의 링크 · 사진 · 파일: tag=종류(link|photo|file), label=제목(파일 이름), url=주소, sub=사진 · 파일 id,
        detail=사진의 메모(파일이면 조각 수 · 크기 · 종류) — 새 칸 없이 */
@@ -209,7 +209,9 @@ function toDocs(tables) {
     else if (row.kind === "links") body = { title: row.label, url: row.url };
     else if (row.kind === "packList") body = { text: row.label, on: !!row.done, grp: row.sub || undefined };
     else if (row.kind === "packGroups") body = { name: row.label };
-    else if (row.kind === "clothes") body = { name: row.label, kind: row.tag || "etc", pid: row.sub || undefined, memo: row.detail || undefined };
+    else if (row.kind === "clothes") { var kp = String(row.tag || "etc").split("."); body = { name: row.label, kind: kp[0] || "etc", part: kp[1] || undefined, pid: row.sub || undefined, memo: row.detail || undefined };
+      /* 개수가 있으면 detail은 {memo, n} — 예전 메모는 맨글자 그대로 */
+      if (/^\{"memo"/.test(row.detail || "")) { try { var dq = JSON.parse(row.detail); body.memo = dq.memo || undefined; body.qty = dq.n > 1 ? dq.n : undefined; } catch (e) {} } }
     else if (row.kind === "outfits") {
       let slots = [];
       try { slots = JSON.parse(row.detail || "[]") || []; } catch (e) { slots = []; }

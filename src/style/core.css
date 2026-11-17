@@ -939,6 +939,11 @@
     background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   }
   .cface-emo{ font-size: 30px; line-height: 1; }
+  /* 이모티콘이 없는 소분류(벨트)는 그린 아이콘 — 이모티콘과 같은 크기, 카드 색 */
+  .cface-ico{ width: 1.15em; height: 1.15em; display: block; color: var(--accent); stroke-width: 1.7; }
+  .wr-kind .cface-ico{ width: 14px; height: 14px; display: inline-block; vertical-align: -2px; color: var(--accent); }
+  .cl-part-emo{ display: inline-flex; align-items: center; margin-right: 5px; font-size: 15px; line-height: 1; }
+  .cl-part-emo .cface-ico{ width: 15px; height: 15px; }
   .cface img{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .cface.has-photo .cface-emo{ visibility: hidden; }
   .cface.sm{ width: 44px; border-radius: 11px; }
@@ -976,6 +981,17 @@
   .ctile.on .cface{ box-shadow: 0 0 0 2px var(--accent); }
   .ctile-name{ font-size: 11.5px; font-weight: 600; line-height: 1.3; color: var(--ink);
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; word-break: keep-all; overflow-wrap: anywhere; }
+  /* 여럿 가져가는 옷: 얼굴 왼쪽 아래에 ×7 */
+  .ctile-q{ position: absolute; left: 4px; bottom: 4px; z-index: 2; padding: 1px 6px; border-radius: 999px;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 10.5px; font-weight: 800; color: var(--ink);
+    background: var(--surface); box-shadow: 0 1px 2px var(--shadow-soft); }
+  /* 개수: − 숫자 ＋ */
+  .qty{ display: inline-flex; align-items: stretch; gap: 6px; }
+  .qty-b{ width: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px;
+    border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .qty-b .icon{ width: 16px; height: 16px; }
+  .fld .qty input{ width: 64px; text-align: center; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .ctile-part{ margin-bottom: -4px; font-size: 10px; font-weight: 600; line-height: 1.25; color: var(--ink-faint); }
   .ctile-n{ position: absolute; top: 4px; right: 4px; z-index: 2; padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 700;
     background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px var(--shadow-soft); font-variant-numeric: tabular-nums; }
   .ctile-n.zero{ color: var(--ink-faint); }

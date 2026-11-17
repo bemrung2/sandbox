@@ -12,7 +12,7 @@ import { reorder, holdReorder } from "../ui/reorder.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
-  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, CLOTH_KINDS, CLOTH_OF, wearKind, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
+  Plan, ROOT, CAT, CAT_ORDER, MEALS, MEAL_LABEL, MODES, MODE_LABEL, MODE_EMO, STAY_KIND_LABEL, catBadgeText, isFlight, AMENITIES, PLATFORMS, CLOTH_KINDS, CLOTH_OF, CLOTH_PARTS, clothPart, wearKind, SEED_REVISIONS, MARKS, marksOf, stayOn, stayRowsOn, stayDates, periodText, overnight, spanOf, ordered, seedTrip, seedId, tripToMap,
   mins, hhmm, step5, fmtMD, dowOf, todayISO, dayDiff,
   trip, tripsForList, isPinned, tripDaysOf, tripDays, nightsOf, nightsLabel, tripStatus,
   tripName, tripPlace, spanLabel, emoPrefix, itemsOn, itemsOfCat, shopsOn,
@@ -1776,10 +1776,18 @@ function wearCount(id){
   (trip().outfits || []).forEach(function(o){ (o.slots || []).forEach(function(sl){ if (sl.cloth === id) n++; }); });
   return n;
 }
-/* 옷의 얼굴: 사진이 있으면 사진, 없으면 종류의 이모티콘 */
+/* 옷의 그림 — 소분류가 있으면 소분류의 것(모자 🧢, 수영복 상의 👙), 없으면 종류의 것. 벨트처럼 이모티콘이 없으면 그린 아이콘. */
+function lookOf(kind, part){ return clothPart(kind, part) || CLOTH_OF[kind] || CLOTH_OF.etc; }
+function lookHtml(lk){ return lk.ico ? icon(lk.ico, "cface-ico") : lk.emo; }
+/* 종류 이름 — 소분류가 있으면 '수영복 · 상의' */
+function kindText(kind, part){
+  var p = clothPart(kind, part);
+  return (CLOTH_OF[kind] || CLOTH_OF.etc).label + (p ? " · " + p.label : "");
+}
+/* 옷의 얼굴: 사진이 있으면 사진, 없으면 소분류 · 종류의 그림 */
 function clothFace(c, kind, cls){
-  var k = CLOTH_OF[(c && c.kind) || kind] || CLOTH_OF.etc;
-  var box = el('<span class="cface ' + (cls || "") + '"><span class="cface-emo" aria-hidden="true">' + k.emo + '</span></span>');
+  var lk = c ? lookOf(c.kind, c.part) : lookOf(kind);
+  var box = el('<span class="cface ' + (cls || "") + '"><span class="cface-emo" aria-hidden="true">' + lookHtml(lk) + '</span></span>');
   if (c && c.pid){
     var img = el('<img alt="" role="img" aria-label="' + esc(c.name) + '">');
     box.appendChild(img);
@@ -1788,9 +1796,10 @@ function clothFace(c, kind, cls){
   }
   return box;
 }
+function partRank(c){ var p = c && clothPart(c.kind, c.part); return p ? p.i : 0; }
 function sortSlots(slots){
-  return slots.map(function(sl, i){ return { sl: sl, i: i }; }).sort(function(a, b){
-    return ((CLOTH_OF[a.sl.kind] || CLOTH_OF.etc).i - (CLOTH_OF[b.sl.kind] || CLOTH_OF.etc).i) || (a.i - b.i);
+  return slots.map(function(sl, i){ return { sl: sl, i: i, c: sl.cloth ? clothById(sl.cloth) : null }; }).sort(function(a, b){
+    return ((CLOTH_OF[a.sl.kind] || CLOTH_OF.etc).i - (CLOTH_OF[b.sl.kind] || CLOTH_OF.etc).i) || (partRank(a.c) - partRank(b.c)) || (a.i - b.i);
   });
 }
 function renderWear(root, days){
@@ -1816,11 +1825,12 @@ function outfitCard(o){
   card.appendChild(head);
   var list = el('<div class="wear-slots"></div>');
   sortSlots(slots).forEach(function(x){
-    var sl = x.sl, c = sl.cloth ? clothById(sl.cloth) : null, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
+    var sl = x.sl, c = x.c, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
+    var kt = c && c.kind === sl.kind ? kindText(c.kind, c.part) : k.label;
     var row = el('<div class="wear-slot"></div>');
-    var pick = el('<button type="button" class="wear-pick" aria-label="' + esc(k.label) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
+    var pick = el('<button type="button" class="wear-pick" aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
     pick.appendChild(clothFace(c, sl.kind, "sm"));
-    pick.appendChild(el('<span class="wear-txt"><small>' + esc(k.label) + '</small>' +
+    pick.appendChild(el('<span class="wear-txt"><small>' + esc(kt) + '</small>' +
       (c ? '<b>' + esc(c.name) + '</b>' : '<b class="wear-none">' + (sl.cloth ? "지운 옷" : "옷 고르기") + '</b>') + '</span>'));
     ripple(pick, editing(function(){
       openClothPicker(sl.kind, c ? c.id : null, function(id){
@@ -1886,7 +1896,7 @@ function openClothPicker(kind, current, onPick){
     list.forEach(function(c){
       var t = el('<button type="button" class="ctile' + (c.id === current ? " on" : "") + '" aria-pressed="' + (c.id === current) + '"></button>');
       t.appendChild(clothFace(c));
-      t.appendChild(el('<span class="ctile-name">' + esc(c.name) + '</span>'));
+      tileName(t, c);
       ripple(t, function(){ closeTop(sheet); onPick(c.id); });
       grid.appendChild(t);
     });
@@ -1906,6 +1916,7 @@ function openClothEditor(c, opt){
   opt = opt || {};
   if (!mayEdit()) return;
   var kind = c ? c.kind : (opt.kind || "top");
+  var part = c ? (c.part || "") : "";
   var pid = c ? (c.pid || "") : "", pidWas = pid;
   var sheet = sheetShell(c ? "옷 수정" : "옷 등록");
   sheet.classList.add("t-wear");
@@ -1914,7 +1925,19 @@ function openClothEditor(c, opt){
   var kf = el('<div class="fld"><label>종류</label><div class="pickrow fit scroll" id="cl-kind"></div></div>');
   body.appendChild(kf);
   pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.emo + " " + k.label }; }),
-    function(){ return kind; }, function(k){ kind = k; });
+    function(){ return kind; }, function(k){ if (k !== kind) part = ""; kind = k; paintPart(); });
+  /* 소분류 — 종류 바로 밑. 소분류가 있는 종류(액세서리 · 잠옷 · 수영복)에서만 선다. 고르지 않아도 되고, 다시 누르면 풀린다. */
+  var partF = el('<div class="fld cl-partf"><label>소분류 <span class="opt">선택</span></label><div class="pickrow fit scroll" id="cl-part"></div></div>');
+  body.appendChild(partF);
+  function paintPart(){
+    var parts = CLOTH_PARTS[kind] || [];
+    partF.style.display = parts.length ? "" : "none";
+    if (!parts.length) return;
+    pickGroup(partF.querySelector("#cl-part"), parts.map(function(p){
+        return { key: p.key, label: p.label, html: '<span class="cl-part-emo" aria-hidden="true">' + lookHtml(p) + '</span>' + esc(p.label) }; }),
+      function(){ return part; }, function(k){ part = part === k ? "" : k; });
+  }
+  paintPart();
   var pf = el('<div class="fld"><label>사진 <span class="opt">선택</span></label><div class="cl-photo"></div></div>');
   body.appendChild(pf);
   var pbox = pf.querySelector(".cl-photo");
@@ -1941,6 +1964,22 @@ function openClothEditor(c, opt){
   }
   paintPhoto();
   body.appendChild(el('<div class="fld"><label for="cl-memo">메모 <span class="opt">선택</span></label><input id="cl-memo" type="text" placeholder="예: 비 오는 날" value="' + esc(c && c.memo ? c.memo : "") + '"></div>'));
+  /* 몇 개 가져가나 — 양말 7켤레처럼. 비우거나 1이면 하나(적지 않는다). − ＋로도, 숫자로도. */
+  var qf = el('<div class="fld"><label for="cl-qty">개수 <span class="opt">선택</span></label><div class="qty">' +
+    '<button type="button" class="qty-b" data-d="-1" aria-label="하나 빼기">' + icon("minus") + '</button>' +
+    '<input id="cl-qty" type="text" inputmode="numeric" maxlength="2" placeholder="1" value="' + (c && c.qty > 1 ? c.qty : "") + '">' +
+    '<button type="button" class="qty-b" data-d="1" aria-label="하나 더하기">' + icon("plus") + '</button></div></div>');
+  body.appendChild(qf);
+  var qIn = qf.querySelector("#cl-qty");
+  function qVal(){ var n = parseInt(qIn.value, 10); return n > 0 ? Math.min(n, 99) : 1; }
+  qIn.addEventListener("input", function(){ qIn.value = qIn.value.replace(/\D/g, "").slice(0, 2); });
+  qf.querySelectorAll(".qty-b").forEach(function(b){
+    ripple(b, function(){
+      var n = Math.max(1, Math.min(99, qVal() + Number(b.dataset.d)));
+      qIn.value = n > 1 ? String(n) : "";
+      sheet.dispatchEvent(new Event("change"));
+    });
+  });
   var foot = sheet.querySelector(".sheet-foot");
   if (c){
     var del = el('<button class="btn btn-danger" type="button">삭제</button>');
@@ -1961,7 +2000,7 @@ function openClothEditor(c, opt){
   ripple(save, function(){
     var nameEl = sheet.querySelector("#cl-name"), name = nameEl.value.trim();
     if (!name) return flag(nameEl, "이름을 적어 주세요.");
-    var rec = { name: name, kind: kind, pid: pid || null, memo: sheet.querySelector("#cl-memo").value.trim() || null };
+    var rec = { name: name, kind: kind, part: (CLOTH_PARTS[kind] || []).some(function(p){ return p.key === part; }) ? part : null, pid: pid || null, memo: sheet.querySelector("#cl-memo").value.trim() || null, qty: qVal() > 1 ? qVal() : null };
     closeTop(sheet);
     if (!c){
       var made = Plan.listAdd("clothes", rec);
@@ -1980,6 +2019,15 @@ function openClothEditor(c, opt){
   if (!c) setTimeout(function(){ var i = sheet.querySelector("#cl-name"); if (i && i.isConnected) i.focus(); }, 80);
 }
 /* 가져갈 옷: 종류별로 모아 사진 칸으로. 칸마다 몇 번 입는지(착장 수)를 적는다. 누르면 고친다. */
+/* 칸의 이름 — 소분류가 있으면 그 위에 작게(사진이면 그림으로는 모자인지 알 수 없다) */
+function tileName(t, c){
+  var p = clothPart(c.kind, c.part);
+  /* 여럿 가져가는 옷은 얼굴 왼쪽 아래에 ×7 */
+  var face = t.querySelector(".cface");
+  if (c.qty > 1 && face) face.appendChild(el('<span class="ctile-q" aria-label="' + c.qty + '개">×' + c.qty + '</span>'));
+  if (p) t.appendChild(el('<span class="ctile-part">' + esc(p.label) + '</span>'));
+  t.appendChild(el('<span class="ctile-name">' + esc(c.name) + '</span>'));
+}
 function wardrobeCard(){
   var list = clothesOf();
   var card = el('<div class="card t-wear wardrobe"></div>');
@@ -1993,15 +2041,18 @@ function wardrobeCard(){
   CLOTH_KINDS.forEach(function(k){
     var mine = list.filter(function(c){ return wearKind(c.kind) === k.key; });
     if (!mine.length) return;
-    card.appendChild(el('<p class="wr-kind"><span aria-hidden="true">' + k.emo + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
+    card.appendChild(el('<p class="wr-kind"><span aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) + '<span class="mono">' + mine.length + '</span></p>'));
     var grid = el('<div class="cgrid"></div>');
     mine.forEach(function(c){
       var n = wearCount(c.id);
       var t = el('<button type="button" class="ctile" aria-label="' + esc(c.name) + (n ? " · 착장 " + n : " · 아직 안 입음") + '"></button>');
       t.appendChild(clothFace(c));
-      t.appendChild(el('<span class="ctile-name">' + esc(c.name) + '</span>'));
+      tileName(t, c);
       t.appendChild(el('<span class="ctile-n' + (n ? '' : ' zero') + '">' + (n ? n + "회" : "0회") + '</span>'));
       ripple(t, function(){ openClothEditor(c); });
+      /* 길게 눌러 옮긴다 — 같은 종류 안에서(종류끼리는 섞지 않는다). 이 순서가 고르는 창의 순서다. */
+      t.dataset.key = "clothes"; t.dataset.id = c.id;
+      holdReorder(t, function(){ return [].slice.call(grid.children); }, function(tiles){ reordered(tiles, false); }, { can: mayEdit });
       grid.appendChild(t);
     });
     card.appendChild(grid);

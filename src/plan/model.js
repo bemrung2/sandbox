@@ -504,11 +504,23 @@ function shopToItem(sh, t){
 export var CLOTH_KINDS = [
   { key:"outer", label:"아우터", emo:"🧥" }, { key:"top", label:"상의", emo:"👕" }, { key:"inner", label:"이너", emo:"🎽" },
   { key:"bottom", label:"하의", emo:"👖" }, { key:"shoes", label:"신발", emo:"👟" }, { key:"bag", label:"가방", emo:"🎒" },
-  { key:"acc", label:"액세서리", emo:"🕶️" }, { key:"sleep", label:"잠옷", emo:"🛌" }, { key:"swim", label:"수영복", emo:"🩳" },
+  { key:"acc", label:"액세서리", emo:"💍" }, { key:"sleep", label:"잠옷", emo:"🛌" }, { key:"swim", label:"수영복", emo:"🩳" },
   { key:"etc", label:"기타", emo:"🧦" }
 ];
 export var CLOTH_OF = {};
 CLOTH_KINDS.forEach(function(k, i){ CLOTH_OF[k.key] = Object.assign({ i: i }, k); });
+/* 소분류 — 고르지 않아도 된다(목걸이는 그냥 액세서리, 원피스 수영복은 그냥 수영복). 얼굴 그림은 소분류가 있으면 그것.
+   벨트는 이모티콘이 없어서 그린 아이콘(ico)이다. 저장은 종류와 한 칸(entries.tag = "acc.hat") — 새 칸이 없다. */
+export var CLOTH_PARTS = {
+  acc:   [{ key:"sunglasses", label:"선글라스", emo:"🕶️" }, { key:"hat", label:"모자", emo:"🧢" }, { key:"belt", label:"벨트", ico:"belt" }],
+  sleep: [{ key:"top", label:"상의", emo:"👚" }, { key:"bottom", label:"하의", emo:"👖" }],
+  swim:  [{ key:"top", label:"상의", emo:"👙" }, { key:"bottom", label:"하의", emo:"🩳" }]
+};
+export function clothPart(kind, part){
+  var list = CLOTH_PARTS[kind] || [];
+  for (var i = 0; i < list.length; i++) if (list[i].key === part) return Object.assign({ i: i + 1 }, list[i]);
+  return null;
+}
 /* 고를 수 없게 된 예전 종류 — 그렇게 저장된 옷 · 칸이 그대로 보여야 해서 이름만 남긴다(가져갈 옷에서는 기타에 모인다). */
 CLOTH_OF.dress = { key:"dress", label:"원피스", emo:"👗", i: 2.5, old: true };
 /* 고르는 자리(가져갈 옷의 무리 · 고르는 창)에서의 종류 — 예전 종류는 기타로 */

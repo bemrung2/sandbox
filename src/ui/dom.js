@@ -48,6 +48,7 @@ export var ICONS = {
   image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-5.5 5.5L8 14l-5 5"/>',
   folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
   shirt: '<path d="M8.6 4 4 6.4l1.9 3.7 1.9-.9V20h8.4V9.2l1.9.9L20 6.4 15.4 4c-.6 1.3-1.9 2.2-3.4 2.2S9.2 5.3 8.6 4z"/>',
+  belt: '<rect x="2" y="9.2" width="20" height="5.6" rx="1.4"/><rect x="7.4" y="7" width="6.4" height="10" rx="1.6"/><path d="M10.6 12h3.2"/><circle cx="17.2" cy="12" r=".5" fill="currentColor"/><circle cx="19.4" cy="12" r=".5" fill="currentColor"/>',
   hanger: '<path d="M10.2 6.6a1.8 1.8 0 1 1 2.6 1.6c-.5.3-.8.7-.8 1.3v.3"/><path d="M12 9.8 3.6 15.6c-.8.6-.4 1.9.6 1.9h15.6c1 0 1.4-1.3.6-1.9z"/>',
   bag: '<path d="M7 8h10l1 12H6L7 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   /* 중요도 알약 둘(필수 · 고민)은 같은 24칸 안에 같은 키로 그린다 — 크기가 어긋나 보이지 않게 */
