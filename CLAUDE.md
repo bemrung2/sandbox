@@ -344,7 +344,7 @@ vendor/pdfjs/  PDF를 그리는 pdf.js(3.11.174 legacy)와 글자표(cmaps). 남
   BEM은 글자색(`--ink`, 어두운 화면에서 흰색), TRIP은 `--brand-1 → --brand-2`
   그라데이션. `src/app.html`의 기다리는 화면과 `<title>`도 같은 이름이다.
   **홈 화면 아이콘은 BEMESTATE(같은 주인의 다른 앱) 아이콘과 한 식구다**(`icons/`: `apple-touch-icon.png` 180 · `icon-192` · `icon-512` ·
-  `maskable-512`(가운데 82%) · `favicon-32`, `manifest.webmanifest`): 어두운 바탕(#0F131B에 오른쪽 위로 푸른 빛) · 흰 BEM · 그 아래 TRIP(#6AB2FF → #5FE0F0) ·
+  `maskable-512`(가운데 82%) · `favicon-32`, `manifest.webmanifest`): 어두운 **단색** 바탕(#0F131B — 바탕에 그라데이션 · 빛 번짐을 넣지 않는다, 한 번 넣었다가 뺐다) · 흰 BEM · 그 아래 TRIP(#6AB2FF → #5FE0F0) ·
   맨 아래 작은 그림. **글자와 그림의 자리 · 크기는 BEMESTATE에서 잰 값 그대로다**(512 기준 BEM 88–439 × 108–235, 둘째 줄 높이 263–336 · 왼쪽 88,
   그림 78–440 × 359–422) — BEMESTATE의 그래프 자리에 BEMTRIP은 **점선 비행 경로와 비행기**(출발 고리 → 점선 → 비행기)를 둔다. Inter 800.
   모서리는 폰이 깎으므로 그림은 네모 그대로 둔다. 링크는 `build.js`가 머리에 넣는다. `icons/`와 매니페스트는 생성물이 아니다 — 빌드가 건드리지 않는다.
