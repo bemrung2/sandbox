@@ -1776,9 +1776,9 @@ function wearCount(id){
   (trip().outfits || []).forEach(function(o){ (o.slots || []).forEach(function(sl){ if (sl.cloth === id) n++; }); });
   return n;
 }
-/* 옷의 그림 — 소분류가 있으면 소분류의 것(모자 🧢, 수영복 상의 👙), 없으면 종류의 것. 벨트처럼 이모티콘이 없으면 그린 아이콘. */
+/* 옷의 그림 — 소분류가 있으면 소분류의 것(모자, 수영복 상의 = 래시가드), 없으면 종류의 것. 모두 같은 체로 그린 선 아이콘(ICONS의 w-*). */
 function lookOf(kind, part){ return clothPart(kind, part) || CLOTH_OF[kind] || CLOTH_OF.etc; }
-function lookHtml(lk){ return lk.ico ? icon(lk.ico, "cface-ico") : lk.emo; }
+function lookHtml(lk){ return lk.ico ? icon(lk.ico, "cface-ico").replace("<svg ", '<svg data-ico="' + lk.ico + '" ') : esc(lk.emo || ""); }
 /* 종류 이름 — 소분류가 있으면 '수영복 · 상의' */
 function kindText(kind, part){
   var p = clothPart(kind, part);
@@ -1924,7 +1924,7 @@ function openClothEditor(c, opt){
   body.appendChild(el('<div class="fld"><label for="cl-name">이름</label><input id="cl-name" type="text" placeholder="예: 스톤아일랜드 오버셔츠" value="' + esc(c ? c.name : "") + '"></div>'));
   var kf = el('<div class="fld"><label>종류</label><div class="pickrow fit scroll" id="cl-kind"></div></div>');
   body.appendChild(kf);
-  pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.emo + " " + k.label }; }),
+  pickGroup(kf.querySelector("#cl-kind"), CLOTH_KINDS.map(function(k){ return { key: k.key, label: k.label, html: '<span class="cl-part-emo" aria-hidden="true">' + lookHtml(k) + '</span>' + esc(k.label) }; }),
     function(){ return kind; }, function(k){ if (k !== kind) part = ""; kind = k; paintPart(); });
   /* 소분류 — 종류 바로 밑. 소분류가 있는 종류(액세서리 · 잠옷 · 수영복)에서만 선다. 고르지 않아도 되고, 다시 누르면 풀린다. */
   var partF = el('<div class="fld cl-partf"><label>소분류 <span class="opt">선택</span></label><div class="pickrow fit scroll" id="cl-part"></div></div>');
