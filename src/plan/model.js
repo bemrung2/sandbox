@@ -16,7 +16,8 @@ export var ROOT = "travel/trips";
 /* wx: 지나간 날의 날씨 기록(travel/trips/<id>/wx/wx-<id>-2026-11-24). */
 /* tips: 메모 탭(주소 이름 tip)의 링크 · 사진 · 파일 ({type:"link", title, url} · {type:"photo", pid, memo} ·
    {type:"file", title, pid, parts, size, mime}) */
-export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "notes", "wx", "tips"];
+/* packGroups: 준비물의 묶음(폴더) {name}. 준비물은 grp에 묶음 id를 든다(없으면 묶지 않은 것) */
+export var LISTS = ["items", "shops", "flights", "stays", "books", "links", "packList", "packGroups", "notes", "wx", "tips"];
 var DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
 /* Emoji are deliberately rare: only where one carries meaning on its own
@@ -43,6 +44,7 @@ export function newTrip(o){
     books: o.books || [],
     links: o.links || [],
     packList: o.packList || [],
+    packGroups: o.packGroups || [],
     notes: o.notes || [],
     wx: o.wx || [],
     tips: o.tips || [],

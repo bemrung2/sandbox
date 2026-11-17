@@ -248,7 +248,8 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
   var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
     '<h3>' + esc(opts.title) + '</h3><div class="fld">' + field +
     (opts.hint ? '<p class="fld-hint">' + esc(opts.hint) + '</p>' : '') + '</div>' +
-    (opts.choices ? '<div class="fld dlg-choice"><div class="pickrow fit" role="group" aria-label="' + esc(opts.choices.label || "") + '"></div></div>' : '') +
+    (opts.choices ? '<div class="fld dlg-choice">' + (opts.choices.title ? '<label>' + esc(opts.choices.title) + '</label>' : '') +
+      '<div class="pickrow fit' + (opts.choices.scroll ? ' scroll' : '') + '" role="group" aria-label="' + esc(opts.choices.label || "") + '"></div></div>' : '') +
     '<div class="dialog-actions">' +
       (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
       '<span class="spacer"></span>' +

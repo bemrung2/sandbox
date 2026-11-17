@@ -14,7 +14,7 @@
  * the database never sees it.
  */
 
-const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "notes", "wx", "tips"];
+const LIST_KINDS = ["flights", "stays", "books", "links", "packList", "packGroups", "notes", "wx", "tips"];
 
 /* ---------------- paths <-> rows ---------------- */
 
@@ -135,7 +135,9 @@ function toRow(path, body) {
     }
     else if (group === "books") { row.label = body.name || ""; row.sub = body.when || null; row.detail = body.detail || null; }
     else if (group === "links") { row.label = body.title || ""; row.url = body.url || null; }
-    else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; }
+    /* 준비물: sub=묶음 id. 묶음(packGroups): label=이름 — 새 칸 없이 */
+    else if (group === "packList") { row.label = body.text || ""; row.done = !!body.on; row.sub = body.grp || null; }
+    else if (group === "packGroups") { row.label = body.name || ""; }
     /* 메모 탭의 링크 · 사진 · 파일: tag=종류(link|photo|file), label=제목(파일 이름), url=주소, sub=사진 · 파일 id,
        detail=사진의 메모(파일이면 조각 수 · 크기 · 종류) — 새 칸 없이 */
     else if (group === "tips") {
@@ -202,7 +204,8 @@ function toDocs(tables) {
     }
     else if (row.kind === "books") body = { name: row.label, when: row.sub, detail: row.detail };
     else if (row.kind === "links") body = { title: row.label, url: row.url };
-    else if (row.kind === "packList") body = { text: row.label, on: !!row.done };
+    else if (row.kind === "packList") body = { text: row.label, on: !!row.done, grp: row.sub || undefined };
+    else if (row.kind === "packGroups") body = { name: row.label };
     else if (row.kind === "tips") {
       if (row.tag === "file") body = Object.assign({ type: "file", title: row.label, pid: row.sub }, fileMeta(row.detail));
       else body = { type: row.tag === "photo" ? "photo" : "link", title: row.label, url: row.url, pid: row.sub, memo: row.detail };

@@ -1756,45 +1756,203 @@ function openMemoEditor(n){
   if (!n) setTimeout(ed.focus, 80);
 }
 
+/* ---------- 준비물: 묶음(폴더) ----------
+   준비물은 묶음으로 나눠 둘 수 있다(예: 기내 — 마스크 · 목베개). 묶음은 목록 `packGroups`({name}), 준비물은 `grp`에 묶음 id를 든다.
+   · 카드 머리: '묶음'(새 묶음) · '추가'(준비물 — 묶음이 있으면 어느 묶음에 넣을지 고른다).
+   · 묶음 머리를 누르면 접히고 펴진다(이 기기가 기억한다). 머리의 ＋는 그 묶음에 바로 더하고, 연필은 이름 · 담을 준비물 · 삭제를 한 창에서.
+   · 이미 있는 준비물은 묶음 창의 '담을 준비물'에서 골라 한 번에 넣는다. 준비물 하나의 수정 창에서도 묶음을 바꿀 수 있다.
+   · 묶지 않은 준비물은 묶음들 아래에 '묶지 않은 준비물'로 모인다(묶음이 하나도 없으면 머리 없이 예전 그대로).
+   · 묶음을 지우면 안의 준비물은 지우지 않고 묶음 밖으로 옮긴다(되돌리면 함께 돌아온다). */
+var PACK_FOLD = "bemtrip.packfold.v1";
+function packFolds(){
+  var all = {};
+  try{ all = JSON.parse(localStorage.getItem(PACK_FOLD) || "{}") || {}; }catch(e){ all = {}; }
+  return { all: all, mine: all[trip().id] || (all[trip().id] = {}) };
+}
+function packGroupsOf(){ return ordered(trip().packGroups || []); }
+function groupChoices(value, title){
+  var gs = packGroupsOf();
+  if (!gs.length) return null;
+  return { title: title || "묶음", label: "묶음", scroll: true, value: value || "",
+    options: [{ key: "", label: "묶지 않음" }].concat(gs.map(function(g){ return { key: g.id, label: g.name }; })) };
+}
+/* 되돌리는 함수 여럿을 하나로 — 거꾸로 차례대로 */
+function undoAll(fns){
+  fns = fns.filter(Boolean);
+  return fns.length ? function(){ fns.slice().reverse().forEach(function(f){ f(); }); } : null;
+}
+function packRow(card, p, section){
+  var row = checkRow(p.text, p.on,
+    function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); },
+    function(){
+      openTextDialog({ title:"준비물 수정", value:p.text, choices: groupChoices(p.grp, "묶음") },
+        function(v, grp){
+          var patch = { text: v };
+          if (grp !== undefined) patch.grp = grp || null;
+          var undo = undoEdit(Plan.listEdit("packList", p.id, patch)); repaint(); return undo;
+        },
+        function(){
+          var undo = undoOf(Plan.listRemove("packList", p.id));
+          repaint();
+          return undo;
+        });
+    });
+  /* 길게 눌러 옮긴다 — 같은 묶음 안에서. 줄 전체가 손잡이다(연필만 빼고). */
+  row.dataset.key = "packList"; row.dataset.id = p.id;
+  holdReorder(row, function(){ return [].slice.call(section.querySelectorAll(".checkrow")); },
+    function(rows){ reordered(rows, false); }, { can: mayEdit, axis: "y", skip: ".rowedit" });
+  return row;
+}
+function addPacks(grp){
+  var gname = grp ? (packGroupsOf().filter(function(g){ return g.id === grp; })[0] || {}).name : "";
+  openTextDialog({ title: gname ? "'" + gname + "'에 추가" : "준비물 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 멀티탭",
+    multiline:true, okLabel:"추가", choices: grp ? null : groupChoices("", "넣을 묶음") }, function(v, chosen){
+    var into = grp || chosen || null;
+    var texts = linesOf(v);
+    texts.forEach(function(t){ Plan.listAdd("packList", { text: t, on: false, grp: into }); });
+    /* 접어 둔 묶음에 넣었으면 펴서 보여준다 */
+    if (into){ var f = packFolds(); if (f.mine[into]){ delete f.mine[into]; try{ localStorage.setItem(PACK_FOLD, JSON.stringify(f.all)); }catch(e){} } }
+    repaint();
+    toastDone(addedMsg(texts.length));
+  });
+}
 function packCard(){
   var list = ordered(trip().packList);
+  var groups = packGroupsOf();
+  var gids = groups.map(function(g){ return g.id; });
   var done = list.filter(function(p){ return p.on; }).length;
   var card = el('<div class="card t-pack"></div>');
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon("bag") + '</span>' +
     '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
+  var acts = el('<span class="card-acts"></span>');
+  var mk = el('<button class="quietbtn" type="button">' + icon("folder") + '묶음</button>');
+  ripple(mk, editing(function(){ openPackGroup(null); }));
   var add = el('<button class="quietbtn" type="button">' + icon("plus") + '추가</button>');
-  ripple(add, function(){
-    openTextDialog({ title:"준비물 추가", placeholder:"한 줄에 하나씩 적어 주세요.\n예: 멀티탭", multiline:true, okLabel:"추가" }, function(v){
-      var texts = linesOf(v);
-      texts.forEach(function(t){ Plan.listAdd("packList", { text: t, on: false }); });
-      repaint();
-      toastDone(addedMsg(texts.length));
-    });
-  });
-  head.appendChild(add);
+  ripple(add, function(){ addPacks(null); });
+  acts.appendChild(mk); acts.appendChild(add);
+  head.appendChild(acts);
   card.appendChild(head);
 
-  list.forEach(function(p){
-    var row = checkRow(p.text, p.on,
-      function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); },
-      function(){
-        openTextDialog({ title:"준비물 수정", value:p.text },
-          function(v){ var undo = undoEdit(Plan.listEdit("packList", p.id, { text: v })); repaint(); return undo; },
-          function(){
-            var undo = undoOf(Plan.listRemove("packList", p.id));
-            repaint();
-            return undo;
-          });
-      });
-    /* 길게 눌러 옮긴다 — 줄 전체가 손잡이다(연필만 빼고). 놓으면 그 순서가 저장된다. */
-    row.dataset.key = "packList"; row.dataset.id = p.id;
-    holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".checkrow")); },
-      function(rows){ reordered(rows, false); }, { can: mayEdit, axis: "y", skip: ".rowedit" });
-    card.appendChild(row);
+  if (!list.length && !groups.length){
+    card.appendChild(el('<p class="card-empty">아직 준비물이 없습니다.</p>'));
+    return card;
+  }
+  var folds = packFolds();
+  groups.forEach(function(g){
+    var inside = list.filter(function(p){ return p.grp === g.id; });
+    var got = inside.filter(function(p){ return p.on; }).length;
+    var shut = !!folds.mine[g.id];
+    var sec = el('<div class="pgroup' + (shut ? ' shut' : '') + '" data-key="packGroups" data-id="' + esc(g.id) + '"></div>');
+    var ph = el('<div class="pg-head"></div>');
+    var tog = el('<button type="button" class="pg-toggle" aria-expanded="' + !shut + '">' +
+      '<span class="pg-ic">' + icon("folder") + '</span>' +
+      '<span class="pg-name">' + esc(g.name) + '</span>' +
+      '<span class="pg-n mono' + (inside.length && got === inside.length ? ' all' : '') + '">' + got + '/' + inside.length + '</span>' +
+      '<span class="pg-chev">' + icon("down") + '</span></button>');
+    ripple(tog, function(){
+      var f = packFolds(), now = !sec.classList.contains("shut");
+      sec.classList.toggle("shut", now);
+      tog.setAttribute("aria-expanded", String(!now));
+      if (now) f.mine[g.id] = 1; else delete f.mine[g.id];
+      try{ localStorage.setItem(PACK_FOLD, JSON.stringify(f.all)); }catch(e){}
+    });
+    ph.appendChild(tog);
+    var plus = el('<button class="quietbtn ico" type="button" aria-label="' + esc(g.name) + '에 추가">' + icon("plus") + '</button>');
+    ripple(plus, function(){ addPacks(g.id); });
+    ph.appendChild(plus);
+    ph.appendChild(penBtn(editing(function(){ openPackGroup(g); })));
+    sec.appendChild(ph);
+    var body = el('<div class="pg-body"><div class="pg-in"></div></div>');
+    var inner = body.firstChild;
+    if (!inside.length) inner.appendChild(el('<p class="pg-empty">아직 준비물이 없습니다.</p>'));
+    inside.forEach(function(p){ inner.appendChild(packRow(card, p, inner)); });
+    sec.appendChild(body);
+    /* 묶음도 길게 눌러 옮긴다 — 머리를 잡고. 안의 준비물 줄은 그 줄의 차례다. */
+    holdReorder(sec, function(){ return [].slice.call(card.querySelectorAll(".pgroup[data-id]")); },
+      function(nodes){ reordered(nodes, false); }, { can: mayEdit, axis: "y", skip: ".checkrow, .pg-empty, .quietbtn" });
+    card.appendChild(sec);
   });
+  var loose = list.filter(function(p){ return !p.grp || gids.indexOf(p.grp) < 0; });
+  if (loose.length){
+    var ls = el('<div class="pgroup loose"></div>');
+    if (groups.length) ls.appendChild(el('<p class="pg-loose">묶지 않은 준비물</p>'));
+    var li = el('<div class="pg-in"></div>');
+    loose.forEach(function(p){ li.appendChild(packRow(card, p, li)); });
+    ls.appendChild(li);
+    card.appendChild(ls);
+  }
   return card;
 }
+/* 묶음 하나: 이름 · 담을 준비물 · 삭제를 한 창에서. 새로 만들 때도 같은 창 — 이미 있는 준비물을 골라 바로 담는다. */
+function openPackGroup(g){
+  if (!mayEdit()) return;
+  var t = trip(), list = ordered(t.packList), groups = packGroupsOf();
+  var nameOf = {}; groups.forEach(function(x){ nameOf[x.id] = x.name; });
+  var sheet = sheetShell(g ? "묶음 수정" : "묶음 추가");
+  var body = sheet.querySelector(".sheet-body");
+  body.appendChild(el('<div class="fld"><label for="pg-name">이름</label>' +
+    '<input id="pg-name" type="text" placeholder="예: 기내 · 세면도구 · 전자기기" value="' + esc(g ? g.name : "") + '"></div>'));
+  var picked = {};
+  list.forEach(function(p){ if (g && p.grp === g.id) picked[p.id] = true; });
+  if (list.length){
+    var fld = el('<div class="fld"><label>담을 준비물 <span class="opt">선택</span></label><div class="pg-pick" role="group" aria-label="담을 준비물"></div></div>');
+    var box = fld.querySelector(".pg-pick");
+    /* 묶지 않은 것이 먼저 — 정리할 때 가장 먼저 찾는 것들 */
+    list.slice().sort(function(a, b){ return (a.grp && nameOf[a.grp] ? 1 : 0) - (b.grp && nameOf[b.grp] ? 1 : 0); }).forEach(function(p){
+      var where = p.grp && nameOf[p.grp] && (!g || p.grp !== g.id) ? nameOf[p.grp] : "";
+      var b = el('<button type="button" class="pg-opt" role="checkbox" aria-checked="' + !!picked[p.id] + '">' +
+        '<span class="check" aria-pressed="' + !!picked[p.id] + '">' + icon("check") + '</span>' +
+        '<span class="pg-opt-t">' + esc(p.text) + '</span>' + (where ? '<span class="pg-opt-w">' + icon("folder") + esc(where) + '</span>' : '') + '</button>');
+      ripple(b, function(){
+        picked[p.id] = !picked[p.id];
+        b.setAttribute("aria-checked", String(picked[p.id]));
+        b.querySelector(".check").setAttribute("aria-pressed", String(picked[p.id]));
+        b.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      box.appendChild(b);
+    });
+    body.appendChild(fld);
+  }
+  var foot = sheet.querySelector(".sheet-foot");
+  if (g){
+    var del = el('<button class="btn btn-danger" type="button">삭제</button>');
+    ripple(del, function(){
+      openAskDialog({ title: "삭제하시겠습니까?", body: "'" + g.name + "' 묶음을 삭제합니다. 안의 준비물은 지우지 않고 묶음 밖으로 옮깁니다." }, function(){
+        closeOverlay();
+        var undos = list.filter(function(p){ return p.grp === g.id; }).map(function(p){ return Plan.listEdit("packList", p.id, { grp: null }); });
+        undos.unshift(Plan.listRemove("packGroups", g.id));
+        var undo = undoOf(undoAll(undos));
+        repaint();
+        if (undo) toastUndo("삭제했습니다.", undo);
+      });
+    });
+    foot.appendChild(del);
+  }
+  var save = el('<button class="btn btn-primary" type="button">' + (g ? "저장" : "만들기") + '</button>');
+  ripple(save, function(){
+    var nameEl = sheet.querySelector("#pg-name"), name = nameEl.value.trim();
+    if (!name) return flag(nameEl, "이름을 적어 주세요.");
+    closeOverlay();
+    var id = g ? g.id : Plan.listAdd("packGroups", { name: name }).id;
+    var undos = g ? [Plan.listEdit("packGroups", g.id, { name: name })] : [];
+    list.forEach(function(p){
+      var inNow = p.grp === id;
+      if (picked[p.id] && !inNow) undos.push(Plan.listEdit("packList", p.id, { grp: id }));
+      else if (!picked[p.id] && inNow) undos.push(Plan.listEdit("packList", p.id, { grp: null }));
+    });
+    repaint();
+    if (!g){
+      var n = Object.keys(picked).filter(function(k){ return picked[k]; }).length;
+      return toastDone(n ? "묶음을 만들고 " + n + "개를 담았습니다." : "묶음을 만들었습니다.");
+    }
+    savedToast(true, undoEdit(undoAll(undos)));
+  });
+  foot.appendChild(save);
+  showOverlay(sheet);
+  if (!g) setTimeout(function(){ var i = sheet.querySelector("#pg-name"); if (i && i.isConnected) i.focus(); }, 80);
+}
+
 /* 손으로 옮긴 순서를 적는다. 화면은 이미 그 순서라 다시 그리지 않는다 — 되돌릴 때만 그린다. */
 function reordered(nodes, desc){
   var undo = undoEdit(Plan.setOrder(nodes.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), desc));

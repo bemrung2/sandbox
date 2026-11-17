@@ -46,6 +46,7 @@ export var ICONS = {
   minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
   note: '<line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="13" y2="17"/>',
   image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-5.5 5.5L8 14l-5 5"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
   bag: '<path d="M7 8h10l1 12H6L7 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   /* 중요도 알약 둘(필수 · 고민)은 같은 24칸 안에 같은 키로 그린다 — 크기가 어긋나 보이지 않게 */
   'pri-must': '<polygon fill="currentColor" stroke-linejoin="round" points="12 3.2 14.7 8.9 20.9 9.7 16.4 14 17.5 20.2 12 17.2 6.5 20.2 7.6 14 3.1 9.7 9.3 8.9"/>',
