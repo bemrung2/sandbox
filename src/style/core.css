@@ -976,7 +976,7 @@
   .wear-done[aria-pressed="true"]{ border-color: transparent; background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
   .outfit.done .card-ic{ background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
   .outfit.done .wear-pick{ cursor: default; }
-  .outfit.done .wear-slot:last-child .wear-pick{ padding-bottom: 2px; }
+  .wear-out.gone{ visibility: hidden; pointer-events: none; }
   .wear-slot{ display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
   .wear-pick{
     flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 9px 0;

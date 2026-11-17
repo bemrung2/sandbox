@@ -1834,9 +1834,10 @@ function outfitCard(o){
   if (slots.length){
     var lock = el('<button type="button" class="wear-done" aria-pressed="' + done + '">' + icon("check") + '<span>확정</span></button>');
     ripple(lock, editing(function(){
-      var undo = undoEdit(Plan.listEdit("outfits", o.id, { done: done ? null : true }));
+      /* 확정은 다시 누르면 풀리는 단추라 되돌리기를 내밀지 않는다 — 됐다는 말만 */
+      Plan.listEdit("outfits", o.id, { done: done ? null : true });
       repaint();
-      if (undo) toastUndo(done ? "확정을 풀었습니다." : "확정했습니다.", undo, "edit");
+      toastDone(done ? "확정을 풀었습니다." : "확정했습니다.");
     }));
     head.appendChild(lock);
   }
@@ -1847,9 +1848,9 @@ function outfitCard(o){
     var sl = x.sl, c = x.c, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
     var kt = c && c.kind === sl.kind ? kindText(c.kind, c.part) : k.label;
     var row = el('<div class="wear-slot ' + kindCls(c && c.kind === sl.kind ? c.kind : sl.kind) + '"></div>');
-    /* 확정된 착장의 칸은 누르는 곳이 아니다 — 보기만 */
-    var pick = el(done ? '<div class="wear-pick"></div>'
-      : '<button type="button" class="wear-pick" aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
+    /* 확정된 착장의 칸은 누르는 곳이 아니다 — 보기만. 그래도 같은 단추로 그린다(div로 바꾸면 글자 간격이 달라져 글씨가 살짝 움직였다). */
+    var pick = el('<button type="button" class="wear-pick"' + (done ? ' tabindex="-1" aria-disabled="true"' : '') +
+      ' aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
     pick.appendChild(clothFace(c, sl.kind, "sm"));
     pick.appendChild(el('<span class="wear-txt"><small>' + esc(kt) + '</small>' +
       (c ? '<b>' + esc(c.name) + (c.qty > 1 ? ' <i class="wear-q">×' + c.qty + '</i>' : '') + '</b>' : '<b class="wear-none">' + (sl.cloth ? "지운 옷" : "옷 고르기") + '</b>') + '</span>'));
@@ -1869,6 +1870,9 @@ function outfitCard(o){
         if (undo) toastUndo("뺐습니다.", undo, "edit");
       }));
       row.appendChild(out);
+    } else {
+      /* ×만 사라진다 — 자리는 그대로 두어 이름이 넓어지거나(말줄임이 바뀌거나) 줄 높이가 달라지지 않게 */
+      row.appendChild(el('<span class="quietbtn ico wear-out gone" aria-hidden="true">' + icon("x") + '</span>'));
     }
     list.appendChild(row);
   });
