@@ -942,8 +942,10 @@
   /* 이모티콘이 없는 소분류(벨트)는 그린 아이콘 — 이모티콘과 같은 크기, 카드 색 */
   .cface-ico{ width: 1.15em; height: 1.15em; display: block; color: var(--accent); stroke-width: 1.7; }
   .wr-kind .cface-ico{ width: 14px; height: 14px; display: inline-block; vertical-align: -2px; color: var(--accent); }
-  .cl-part-emo{ display: inline-flex; align-items: center; margin-right: 5px; font-size: 15px; line-height: 1; }
-  .cl-part-emo .cface-ico{ width: 15px; height: 15px; }
+  /* 소분류 단추는 모두 같은 폭 · 같은 그림 칸 — 글자 길이나 그림(이모티콘 · 아이콘)에 따라 들쭉날쭉하지 않게 */
+  #cl-part .pick{ flex: 0 0 86px; width: 86px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 4px; }
+  .cl-part-emo{ flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; }
+  .cl-part-emo .cface-ico{ width: 16px; height: 16px; }
   .cface img{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .cface.has-photo .cface-emo{ visibility: hidden; }
   .cface.sm{ width: 44px; border-radius: 11px; }
