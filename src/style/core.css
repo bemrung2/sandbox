@@ -962,6 +962,9 @@
   .k-bottom{ --k: var(--c-free); }  .k-shoes{ --k: var(--danger); }  .k-bag{ --k: var(--c-shop); }
   .k-acc{ --k: var(--c-sight); }    .k-sleep{ --k: var(--c-move); }  .k-swim{ --k: var(--brand-2); }
   .k-etc{ --k: var(--c-etc); }      .k-dress{ --k: var(--c-shop); }
+  /* 착장 카드 안은 알록달록하게 두지 않는다 — 아이콘 · 종류 글자 · ＋알약을 한 색(차분한 파랑)으로. 종류별 색은 가져갈 옷 · 고르는 창에서만. */
+  .outfit .k-outer, .outfit .k-top, .outfit .k-inner, .outfit .k-bottom, .outfit .k-shoes, .outfit .k-bag,
+  .outfit .k-acc, .outfit .k-sleep, .outfit .k-swim, .outfit .k-etc, .outfit .k-dress{ --k: var(--c-air); }
   .wear-slots{ margin-top: 6px; }
   /* 확정: 머리의 알약 하나가 초록으로 켜지고, 더하는 줄 · 빼기는 걷힌다 */
   .wear-done{
