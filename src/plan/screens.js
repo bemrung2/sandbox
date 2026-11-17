@@ -1810,17 +1810,34 @@ function renderWear(root, days){
   stat.appendChild(quickAdd(function(){ openOutfitDialog(null, day.date); }));
   root.appendChild(stat);
   if (!outs.length) root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 착장이 없습니다.</p></div>'));
-  outs.forEach(function(o){ root.appendChild(outfitCard(o)); });
+  /* 착장은 길게 눌러 그날 안에서 순서를 바꾼다(카드 전체가 손잡이 — 칸 줄 · 단추는 짧게 누르는 곳 그대로) */
+  outs.forEach(function(o){
+    var card = outfitCard(o);
+    card.dataset.key = "outfits"; card.dataset.id = o.id;
+    holdReorder(card, function(){ return [].slice.call(root.querySelectorAll(".card.outfit[data-id]")); },
+      function(nodes){ reordered(nodes, false); }, { can: mayEdit, axis: "y", skip: ".wear-add, .wear-out, .wear-done, .card-head .quietbtn" });
+    root.appendChild(card);
+  });
   var add = el('<button class="addcard" type="button">' + icon("plus") + '착장 추가</button>');
   ripple(add, function(){ openOutfitDialog(null, day.date); });
   root.appendChild(add);
   root.appendChild(wardrobeCard());
 }
+/* 착장 카드. 확정하면(done) 칸을 더하는 줄 · 빼기 · 바꾸기가 걷히고 고른 옷만 단정하게 남는다 — 확정 단추를 다시 누르면 풀린다. */
 function outfitCard(o){
-  var card = el('<div class="card t-wear outfit" data-focus="' + esc(o.id) + '"></div>');
-  var slots = o.slots || [];
+  var slots = o.slots || [], done = !!o.done && slots.length > 0;
+  var card = el('<div class="card t-wear outfit' + (done ? " done" : "") + '" data-focus="' + esc(o.id) + '"></div>');
   var head = el('<div class="card-head"><span class="card-ic">' + icon("shirt") + '</span>' +
     '<h3 class="outfit-name">' + esc(o.label || "착장") + (slots.length ? '<span class="card-n">' + slots.length + '</span>' : '') + '</h3></div>');
+  if (slots.length){
+    var lock = el('<button type="button" class="wear-done" aria-pressed="' + done + '">' + icon("check") + '<span>확정</span></button>');
+    ripple(lock, editing(function(){
+      var undo = undoEdit(Plan.listEdit("outfits", o.id, { done: done ? null : true }));
+      repaint();
+      if (undo) toastUndo(done ? "확정을 풀었습니다." : "확정했습니다.", undo, "edit");
+    }));
+    head.appendChild(lock);
+  }
   head.appendChild(penBtn(editing(function(){ openOutfitDialog(o); })));
   card.appendChild(head);
   var list = el('<div class="wear-slots"></div>');
@@ -1828,43 +1845,50 @@ function outfitCard(o){
     var sl = x.sl, c = x.c, k = CLOTH_OF[sl.kind] || CLOTH_OF.etc;
     var kt = c && c.kind === sl.kind ? kindText(c.kind, c.part) : k.label;
     var row = el('<div class="wear-slot"></div>');
-    var pick = el('<button type="button" class="wear-pick" aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
+    /* 확정된 착장의 칸은 누르는 곳이 아니다 — 보기만 */
+    var pick = el(done ? '<div class="wear-pick"></div>'
+      : '<button type="button" class="wear-pick" aria-label="' + esc(kt) + (c ? " · " + esc(c.name) : " 고르기") + '"></button>');
     pick.appendChild(clothFace(c, sl.kind, "sm"));
     pick.appendChild(el('<span class="wear-txt"><small>' + esc(kt) + '</small>' +
-      (c ? '<b>' + esc(c.name) + '</b>' : '<b class="wear-none">' + (sl.cloth ? "지운 옷" : "옷 고르기") + '</b>') + '</span>'));
-    ripple(pick, editing(function(){
-      openClothPicker(sl.kind, c ? c.id : null, function(id){
-        var next = slots.slice(); next[x.i] = { kind: next[x.i].kind, cloth: id };
-        var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: next })); repaint();
-        if (undo && c) toastUndo("바꿨습니다.", undo, "edit");
-      });
-    }));
+      (c ? '<b>' + esc(c.name) + (c.qty > 1 ? ' <i class="wear-q">×' + c.qty + '</i>' : '') + '</b>' : '<b class="wear-none">' + (sl.cloth ? "지운 옷" : "옷 고르기") + '</b>') + '</span>'));
     row.appendChild(pick);
-    var out = el('<button type="button" class="quietbtn ico wear-out" aria-label="' + esc(k.label) + ' 빼기">' + icon("x") + '</button>');
-    ripple(out, editing(function(){
-      var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: slots.filter(function(_, i){ return i !== x.i; }) }));
-      repaint();
-      if (undo) toastUndo("뺐습니다.", undo, "edit");
-    }));
-    row.appendChild(out);
+    if (!done){
+      ripple(pick, editing(function(){
+        openClothPicker(sl.kind, c ? c.id : null, function(id){
+          var next = slots.slice(); next[x.i] = { kind: next[x.i].kind, cloth: id };
+          var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: next })); repaint();
+          if (undo && c) toastUndo("바꿨습니다.", undo, "edit");
+        });
+      }));
+      var out = el('<button type="button" class="quietbtn ico wear-out" aria-label="' + esc(k.label) + ' 빼기">' + icon("x") + '</button>');
+      ripple(out, editing(function(){
+        var undo = undoEdit(Plan.listEdit("outfits", o.id, { slots: slots.filter(function(_, i){ return i !== x.i; }) }));
+        repaint();
+        if (undo) toastUndo("뺐습니다.", undo, "edit");
+      }));
+      row.appendChild(out);
+    }
     list.appendChild(row);
   });
   if (slots.length) card.appendChild(list);
-  /* 입을 것 더하기 — 종류를 누르면 바로 그 종류의 옷을 고른다. 고르면 칸이 생긴다(고르지 않고 닫으면 아무것도 생기지 않는다). */
-  var more = el('<div class="wear-add"><div class="wear-add-row" role="group" aria-label="입을 것 더하기"></div></div>');
-  var rowEl = more.firstChild;
-  CLOTH_KINDS.forEach(function(k){
-    var b = el('<button type="button" class="wear-chip"><span aria-hidden="true">＋</span>' + esc(k.label) + '</button>');
-    ripple(b, editing(function(){
-      openClothPicker(k.key, null, function(id){
-        Plan.listEdit("outfits", o.id, { slots: (o.slots || []).concat([{ kind: k.key, cloth: id }]) });
-        repaint();
-      });
-    }));
-    rowEl.appendChild(b);
-  });
-  rollEdges(rowEl);
-  card.appendChild(more);
+  /* 입을 것 더하기 — 종류를 누르면 바로 그 종류의 옷을 고른다. 고르면 칸이 생긴다(고르지 않고 닫으면 아무것도 생기지 않는다).
+     확정된 착장에는 없다. */
+  if (!done){
+    var more = el('<div class="wear-add"><div class="wear-add-row" role="group" aria-label="입을 것 더하기"></div></div>');
+    var rowEl = more.firstChild;
+    CLOTH_KINDS.forEach(function(k){
+      var b = el('<button type="button" class="wear-chip">' + icon("plus") + esc(k.label) + '</button>');
+      ripple(b, editing(function(){
+        openClothPicker(k.key, null, function(id){
+          Plan.listEdit("outfits", o.id, { slots: (o.slots || []).concat([{ kind: k.key, cloth: id }]) });
+          repaint();
+        });
+      }));
+      rowEl.appendChild(b);
+    });
+    rollEdges(rowEl);
+    card.appendChild(more);
+  }
   return card;
 }
 /* 착장 만들기 · 이름 바꾸기 · 지우기. 이름은 상황이다 — 관광 · 수영 · 저녁 … 을 눌러 채우거나 직접 적는다. */
