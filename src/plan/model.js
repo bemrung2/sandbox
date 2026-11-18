@@ -504,7 +504,8 @@ function shopToItem(sh, t){
 export var CLOTH_KINDS = [
   { key:"outer", label:"아우터", ico:"w-outer" }, { key:"top", label:"상의", ico:"w-top" }, { key:"inner", label:"이너", ico:"w-inner" },
   { key:"bottom", label:"하의", ico:"w-bottom" }, { key:"shoes", label:"신발", ico:"w-shoes" }, { key:"bag", label:"가방", ico:"w-bag" },
-  { key:"acc", label:"액세서리", ico:"w-glasses" }, { key:"sleep", label:"잠옷", ico:"w-sleep" }, { key:"swim", label:"수영복", ico:"w-swim" },
+  { key:"acc", label:"액세서리", ico:"w-glasses" }, { key:"sleep", label:"잠옷", ico:"w-sleep" },
+  { key:"sport", label:"운동복", ico:"w-sport" }, { key:"swim", label:"수영복", ico:"w-swim" },
   { key:"etc", label:"기타", ico:"w-socks" }
 ];
 export var CLOTH_OF = {};
