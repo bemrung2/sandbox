@@ -268,6 +268,12 @@
     display: flex; align-items: flex-end; justify-content: center; z-index: 50;
   }
   .scrim.mid{ align-items: center; padding: 20px; }
+  /* 자판이 떠 있는 동안 창의 바탕은 보이는 영역(자판 위)만 덮는다 — 창이 자판 위에 서고, 넘치면 창 안이 구른다(sheet.js watchKeyboard) */
+  html.kb-open .scrim{ top: var(--vvt, 0px); bottom: auto; height: var(--vvh, 100%); }
+  html.kb-open .sheet{ max-height: calc(var(--vvh, 100vh) - 16px); }
+  html.kb-open .scrim.mid{ padding-top: 12px; padding-bottom: 12px; overflow-y: auto; }
+  /* 창 안에 있는 '메모 추가' · '링크 추가' 단추는 자판이 떠 있는 동안 창 아래에 붙는다 — 길게 적어도 굴리지 않고 바로 누른다 */
+  html.kb-open .sheet-body .body-go{ position: sticky; bottom: 8px; z-index: 3; box-shadow: 0 -10px 18px 2px var(--paper); }
   .sheet{
     width: 100%; max-width: 440px; min-width: 0;
     background: var(--paper);

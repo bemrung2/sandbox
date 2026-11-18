@@ -535,3 +535,91 @@ export function pickGroup(row, options, get, set){
     if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
   });
 }
+
+/* ---------- 자판이 올라올 때 ----------
+   폰의 자판은 화면 아래를 덮을 뿐 창을 밀어 올리지 않는다(아이폰 · 요즘 크롬). 그래서 아래에서 올라오는 창의
+   아래쪽 칸(메모 · 개수 …)이나 적는 줄이 자판 밑으로 들어가 커서가 안 보였다.
+   · 보이는 영역(visualViewport)의 높이 · 위치를 --vvh · --vvt로 적어 두고, 자판이 떠 있는 동안(html.kb-open)
+     창의 바탕(.scrim)을 그 영역에 맞춘다 — 창이 자판 위에 서고 저장 단추도 보인다.
+   · 칸을 누르거나 글을 칠 때마다, 그 칸(여러 줄 칸 · 모양 있는 글은 커서가 있는 줄)이 창 안에서 보이게 굴린다.
+   자판이 없으면(--kb 0) 아무것도 바꾸지 않는다 — 손가락으로 확대한 화면은 자판으로 치지 않는다. */
+function editable(n){
+  return !!n && n.nodeType === 1 && (n.isContentEditable || n.tagName === "TEXTAREA" ||
+    (n.tagName === "INPUT" && !/^(checkbox|radio|button|submit|file|range|color|hidden)$/i.test(n.type || "")));
+}
+/* 보이게 할 자리: 모양 있는 글은 커서, 여러 줄 칸은 끝에서 적고 있으면 마지막 줄, 그 밖에는 칸 전체 */
+function caretBox(n){
+  var r = n.getBoundingClientRect();
+  if (n.isContentEditable){
+    var s = window.getSelection();
+    if (s && s.rangeCount){
+      var rg = s.getRangeAt(0).cloneRange(); rg.collapse(false);
+      var rs = rg.getClientRects();
+      if (rs.length) return rs[rs.length - 1];
+      var at = rg.startContainer; if (at && at.nodeType === 3) at = at.parentNode;
+      if (at && at.getBoundingClientRect && n.contains(at)) return at.getBoundingClientRect();
+    }
+    return r;
+  }
+  if (n.tagName === "TEXTAREA" && n.selectionEnd === n.value.length){
+    var lh = parseFloat(getComputedStyle(n).lineHeight) || 24;
+    return { top: Math.max(r.top, r.bottom - lh * 1.6), bottom: r.bottom };
+  }
+  return r;
+}
+function scrollBox(n){
+  for (var p = n.parentElement; p && p !== document.body; p = p.parentElement){
+    var oy = getComputedStyle(p).overflowY;
+    if ((oy === "auto" || oy === "scroll") && p.scrollHeight > p.clientHeight + 1) return p;
+  }
+  return null;
+}
+export function keepInView(n){
+  n = n || document.activeElement;
+  if (!editable(n) || !n.closest("#overlay")) return;
+  var vv = window.visualViewport;
+  var top = vv ? vv.offsetTop : 0, bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+  var box = scrollBox(n);
+  if (box){
+    var br = box.getBoundingClientRect();
+    top = Math.max(top, br.top); bottom = Math.min(bottom, br.bottom);
+  }
+  /* 자판이 떠 있는 동안 창 아래에 붙어 있는 단추(.body-go)는 그만큼 가린다 */
+  var go = box && document.documentElement.classList.contains("kb-open") ? box.querySelector(".body-go") : null;
+  if (go && !go.contains(n)){ var gr = go.getBoundingClientRect(); if (gr.height && gr.top < bottom) bottom = Math.min(bottom, gr.top); }
+  var c = caretBox(n), pad = 14, d = 0;
+  if (c.bottom > bottom - pad) d = c.bottom - (bottom - pad);
+  else if (c.top < top + pad) d = c.top - (top + pad);
+  if (d && box) box.scrollTop += d;
+}
+(function watchKeyboard(){
+  if (typeof window === "undefined") return;
+  var root = document.documentElement, vv = window.visualViewport, open = false;
+  function measure(){
+    if (!vv) return;
+    var focused = editable(document.activeElement);
+    var kb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    var on = focused && kb > 80 && Math.abs((vv.scale || 1) - 1) < 0.05;
+    if (on){
+      root.style.setProperty("--vvh", Math.round(vv.height) + "px");
+      root.style.setProperty("--vvt", Math.round(vv.offsetTop) + "px");
+    }
+    if (on !== open){
+      open = on;
+      root.classList.toggle("kb-open", on);
+      if (!on){ root.style.removeProperty("--vvh"); root.style.removeProperty("--vvt"); }
+    }
+    if (on) requestAnimationFrame(function(){ keepInView(); });
+  }
+  if (vv){ vv.addEventListener("resize", measure); vv.addEventListener("scroll", measure); }
+  /* 칸을 누른 직후에는 자판이 아직 올라오는 중이다 — 조금 뒤에 한 번 더 */
+  document.addEventListener("focusin", function(e){
+    if (!editable(e.target)) return;
+    measure();
+    setTimeout(function(){ measure(); keepInView(e.target); }, 320);
+  });
+  document.addEventListener("focusout", function(){ setTimeout(measure, 60); });
+  /* 적는 동안 커서가 내려가면(줄이 늘어나면) 따라 굴린다 */
+  document.addEventListener("input", function(e){ if (editable(e.target)) requestAnimationFrame(function(){ keepInView(e.target); }); }, true);
+  document.addEventListener("keyup", function(e){ if (e.key === "Enter" && editable(e.target)) keepInView(e.target); }, true);
+})();

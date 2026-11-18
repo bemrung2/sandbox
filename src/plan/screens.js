@@ -1269,7 +1269,7 @@ function openTipAdd(){
     if (kind === "memo"){
       /* 메모는 모양이 있는 글 — 준비 탭에 있던 메모와 같은 편집기다 */
       var ed = richEditor({ label: "메모" });
-      var m = el('<div><div class="fld"></div><button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
+      var m = el('<div><div class="fld"></div><button class="btn btn-primary body-go" type="button" style="width:100%">메모 추가</button></div>');
       m.firstChild.appendChild(ed.node);
       ripple(m.querySelector("button.btn"), editing(function(){
         var html = ed.html();
@@ -1282,7 +1282,7 @@ function openTipAdd(){
     } else if (kind === "link"){
       var g = el('<div><div class="fld"><label for="tp-u">링크</label><input id="tp-u" type="text" inputmode="url" autocomplete="off" placeholder="https://"></div>' +
         '<div class="fld"><label for="tp-t">제목 <span class="opt">선택</span></label><input id="tp-t" type="text" placeholder="예: 공항버스 타는 법"></div>' +
-        '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
+        '<button class="btn btn-primary body-go" type="button" style="width:100%">링크 추가</button></div>');
       ripple(g.querySelector("button"), editing(function(){
         var u = safeUrl(g.querySelector("#tp-u").value);
         if (!u) return flag(g.querySelector("#tp-u"), "링크를 확인해 주세요.");
@@ -2731,7 +2731,7 @@ function openAttachSheet(item){
     if (kind === "note"){
       /* 메모는 모양이 있는 글 — 메모 탭의 메모와 같은 편집기다 */
       var ed = richEditor({ label: "메모" });
-      var f = el('<div><div class="fld"></div><button class="btn btn-primary" type="button" style="width:100%">메모 추가</button></div>');
+      var f = el('<div><div class="fld"></div><button class="btn btn-primary body-go" type="button" style="width:100%">메모 추가</button></div>');
       f.firstChild.appendChild(ed.node);
       ripple(f.querySelector("button.btn"), editing(function(){
         var html = ed.html();
@@ -2743,7 +2743,7 @@ function openAttachSheet(item){
     } else if (kind === "link"){
       var g = el('<div><div class="fld"><label for="a-lu">링크</label><input id="a-lu" type="text" inputmode="url" placeholder="https://"></div>' +
         '<div class="fld"><label for="a-lt">제목 <span class="opt">선택</span></label><input id="a-lt" type="text"></div>' +
-        '<button class="btn btn-primary" type="button" style="width:100%">링크 추가</button></div>');
+        '<button class="btn btn-primary body-go" type="button" style="width:100%">링크 추가</button></div>');
       ripple(g.querySelector("button"), editing(function(){
         var t = g.querySelector("#a-lt").value.trim();
         var u = safeUrl(g.querySelector("#a-lu").value);
