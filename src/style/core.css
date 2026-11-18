@@ -1264,8 +1264,28 @@
   .scrim.leaving > .dialog{ animation: pop-out 170ms ease-in forwards; }
   /* 탭을 옮기면 내용이 제자리에서 서서히 떠오른다. 움직이지는 않는다. */
   .tab-in{ animation: fade-in 260ms ease-out; }
+  /* 옆으로 밀어 날짜 넘기기(swipe.js): 넘겨 온 새 날은 밀던 반대편에서 살짝 들어온다. 가장자리의 알약은 넘어갈 날 */
+  .swipe-pane{ will-change: auto; }
+  .swipe-in-r{ animation: swipe-in-r 230ms var(--ease); }
+  .swipe-in-l{ animation: swipe-in-l 230ms var(--ease); }
+  @keyframes swipe-in-r{ from{ transform: translate3d(28px,0,0); opacity: 0; } to{ transform: none; opacity: 1; } }
+  @keyframes swipe-in-l{ from{ transform: translate3d(-28px,0,0); opacity: 0; } to{ transform: none; opacity: 1; } }
+  .swipe-pill{
+    position: fixed; top: 50%; z-index: 40; pointer-events: none;
+    display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 999px;
+    background: var(--toast-bg); color: var(--ink-soft); box-shadow: 0 6px 22px -6px var(--shadow), 0 1px 3px var(--shadow-soft);
+    font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease, opacity 180ms ease;
+    transform: translate3d(calc((1 - var(--p, 0)) * var(--from)), -50%, 0) scale(calc(.92 + var(--p, 0) * .08));
+  }
+  .swipe-pill.l{ left: 10px; --from: -18px; }
+  .swipe-pill.r{ right: 10px; --from: 18px; }
+  .swipe-pill i{ font-style: normal; font-size: 16px; line-height: 1; opacity: .7; }
+  .swipe-pill.armed{ background: var(--signal); color: var(--on-signal); }
+  .swipe-pill.armed i{ opacity: 1; }
+  .swipe-pill.gone{ opacity: 0 !important; }
   @media (prefers-reduced-motion: reduce){
-    .scrim, .photoview, .scrim > .sheet, .scrim > .dialog, .tab-in{ animation: none; }
+    .scrim, .photoview, .scrim > .sheet, .scrim > .dialog, .tab-in, .swipe-in-r, .swipe-in-l{ animation: none; }
     .scrim.leaving, .photoview.leaving{ animation: fade-out 1ms forwards; }
     .scrim.leaving > .sheet, .scrim.leaving > .dialog{ animation: none; }
   }

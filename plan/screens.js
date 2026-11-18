@@ -9,6 +9,7 @@ import {
 import { storePhoto, dropPhoto, thumb, fillPhoto } from "../ui/photos.js";
 import { storeFile, dropFile, openFile, fileMeta, FILE_MAX } from "../ui/files.js";
 import { reorder, holdReorder } from "../ui/reorder.js";
+import { swipePager, swipeIn } from "../ui/swipe.js";
 import { richEditor, cleanRich, safeRich, richFromText, richText } from "../ui/rich.js";
 import { accountFooter, brandMark } from "../ui/shell.js";
 import {
@@ -290,7 +291,7 @@ export function renderTrip(root, keepScroll){
   root.innerHTML = "";
   root.appendChild(frag);
 
-  if (state.tab === "sched") renderSchedule(body, days);
+  if (state.tab === "sched"){ renderSchedule(body, days); dayPager(body, days); }
   else if (state.tab === "food") renderFood(body, days);
   else if (state.tab === "shop") renderShop(body, days);
   else if (state.tab === "tip") renderTips(body);
@@ -314,6 +315,23 @@ export function renderTrip(root, keepScroll){
     window.scrollTo(0, sameTrip ? Math.min(wasAt, pin) : 0);
   }
   if (focusId) landOn(root);
+}
+/* 일정 탭: 그날의 내용(날짜 줄 아래)을 옆으로 밀어 전날 · 다음 날로 넘긴다. 날짜 줄은 붙은 채 그대로다.
+   너무 쉽게 넘어가지 않게 — 가로가 확실히 크고(1.7배), 화면 폭의 1/4쯤 밀거나 빠르게 튕겨야 넘어간다(swipe.js). */
+var swipedDir = 0;
+function dayPager(body, days){
+  var row = body.querySelector(".dayrow");
+  var pane = el('<div class="day-pane"></div>');
+  var kids = [].slice.call(body.children).filter(function(n){ return n !== row; });
+  kids.forEach(function(n){ pane.appendChild(n); });
+  body.appendChild(pane);
+  var lab = function(i){ return i >= 0 && i < days.length ? { label: fmtMD(days[i].date) + " " + days[i].dow } : null; };
+  swipePager(pane, {
+    prev: lab(state.day - 1), next: lab(state.day + 1),
+    go: function(dir){ swipedDir = dir; go({ day: state.day + dir }); }
+  });
+  swipeIn(pane, swipedDir);
+  swipedDir = 0;
 }
 /* 목록으로 나가면 다음에 여는 여행은 처음부터 본다 */
 export function leftTrip(){ lastTrip = ""; }
