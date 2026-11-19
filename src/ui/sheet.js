@@ -27,7 +27,18 @@ function open(){
   return Array.prototype.filter.call(host().children, function(n){ return !n._leaving; });
 }
 /* 창이 떠 있는 동안 뒤의 화면은 구르지 않는다. 알림도 창의 단추를 가리지 않게 올라선다. */
-function lock(){ document.documentElement.classList.toggle("modal-open", open().length > 0); }
+/* 창이 떠 있는 동안 폰이 칸을 보이려고 뒤의 화면까지 굴려 버리는 일이 있다(아이폰). 창을 열 때의 자리를 적어 두었다가
+   마지막 창이 닫힐 때 되돌린다 — 그 사이 다른 화면으로 옮겨 갔으면(주소가 바뀌었으면) 두지 않는다. */
+var pageAt = null;
+function lock(){
+  var on = open().length > 0, root = document.documentElement;
+  if (on && !pageAt) pageAt = { y: window.scrollY, hash: location.hash };
+  else if (!on && pageAt){
+    var was = pageAt; pageAt = null;
+    if (was.hash === location.hash && Math.abs(window.scrollY - was.y) > 1) window.scrollTo(0, was.y);
+  }
+  root.classList.toggle("modal-open", on);
+}
 function leave(node){
   if (!node || node._leaving) return;
   node._leaving = true;
@@ -67,9 +78,13 @@ export function flag(input, said){
 
 /* 여러 줄 칸은 적은 만큼 자란다. 두 줄 높이에서 잘려 보이면 무엇을 적었는지 모른다. */
 export function grow(area){
+  /* 높이를 잠깐 auto로 풀면 창 안의 글이 짧아져, 아래쪽에서 적던 창의 스크롤이 위로 잘려 올라간다
+     (칠 때마다 화면이 위로 튀던 자리). 굴러 있던 자리를 적어 두었다가 되돌린다. */
   function fit(){
+    var box = scrollBox(area), at = box ? box.scrollTop : 0;
     area.style.height = "auto";
     area.style.height = Math.min(+area.dataset.max || 220, area.scrollHeight + 2) + "px";
+    if (box && box.scrollTop !== at) box.scrollTop = at;
   }
   area.addEventListener("input", fit);
   requestAnimationFrame(fit);
@@ -574,11 +589,26 @@ function scrollBox(n){
   }
   return null;
 }
+/* 화면에 보이는 영역을 getBoundingClientRect와 같은 좌표로. 폰마다 그 좌표가 보이는 영역 기준이기도 하고
+   화면 전체(layout) 기준이기도 하다 — 맨 위에 붙인 고정 점 하나의 자리로 가른다(앞의 것이면 그 점이 -offsetTop에 있다).
+   이걸 섞으면 자판에 밀린 화면에서 보이는 칸을 '위로 넘어갔다'고 읽어 창을 위로 굴려 버린다. */
+var probe = null;
+function seenArea(){
+  var vv = window.visualViewport;
+  if (!vv) return { top: 0, bottom: window.innerHeight };
+  if (!probe || !probe.isConnected){
+    probe = document.createElement("div");
+    probe.setAttribute("aria-hidden", "true");
+    probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe);
+  }
+  var t = vv.offsetTop + probe.getBoundingClientRect().top;
+  return { top: t, bottom: t + vv.height };
+}
 export function keepInView(n){
   n = n || document.activeElement;
   if (!editable(n) || !n.closest("#overlay")) return;
-  var vv = window.visualViewport;
-  var top = vv ? vv.offsetTop : 0, bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+  var seen = seenArea(), top = seen.top, bottom = seen.bottom;
   var box = scrollBox(n);
   if (box){
     var br = box.getBoundingClientRect();
@@ -598,7 +628,11 @@ export function keepInView(n){
   function measure(){
     if (!vv) return;
     var focused = editable(document.activeElement);
-    var kb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    /* 자판의 높이는 화면 높이 − 보이는 높이다. 보이는 영역이 밀려 내려간 만큼(offsetTop)을 빼면, 아래쪽 칸을 눌러
+       크게 밀린 아이폰에서 자판이 없는 것으로 읽혀 창이 자판 밑에 깔린 채 남았다. */
+    /* 아이폰의 innerHeight는 자판에 맞춰 함께 줄기도 한다 — 자판이 줄이지 않는 화면 높이(clientHeight)도 같이 본다.
+       안드로이드(resizes-content)는 둘 다 줄어 0이 된다 — 거기서는 화면이 이미 자판 위에 있다. */
+    var kb = Math.round(Math.max(window.innerHeight, root.clientHeight) - vv.height);
     var on = focused && kb > 80 && Math.abs((vv.scale || 1) - 1) < 0.05;
     if (on){
       root.style.setProperty("--vvh", Math.round(vv.height) + "px");
@@ -609,7 +643,8 @@ export function keepInView(n){
       root.classList.toggle("kb-open", on);
       if (!on){ root.style.removeProperty("--vvh"); root.style.removeProperty("--vvt"); }
     }
-    if (on) requestAnimationFrame(function(){ keepInView(); });
+    /* 창의 높이가 바뀐 그 자리에서 곧바로 칸을 다시 세운다 — 한 장면이라도 칸이 사라졌다 돌아오면 튀어 보인다 */
+    if (on){ keepInView(); requestAnimationFrame(function(){ keepInView(); }); }
   }
   if (vv){ vv.addEventListener("resize", measure); vv.addEventListener("scroll", measure); }
   /* 칸을 누른 직후에는 자판이 아직 올라오는 중이다 — 조금 뒤에 한 번 더 */
