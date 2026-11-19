@@ -7,7 +7,7 @@ import { trip, stayOn, stayDates, itemsOn, overnight, weatherOf, todayISO } from
 var GEO = "https://geocoding-api.open-meteo.com/v1/search";
 var FC = "https://api.open-meteo.com/v1/forecast";
 var ARCHIVE = "https://archive-api.open-meteo.com/v1/archive";   /* 92일보다 오래된 날 */
-var KEY = "bemtrip.wx.v1";
+var KEY = "bemtrip.wx.v2";   /* v2: 아이콘을 낮 시간 대표 날씨로 — 예전(그날 가장 나쁜 날씨) 기억은 버린다 */
 var FRESH = 3 * 3600 * 1000;      // 예보는 3시간마다 새로
 var mem = {};                     // 이 탭 안의 기억 { 장소키: { at, geo, daily } }
 var inflight = {};                // 같은 장소를 두 번 부르지 않는다
@@ -291,31 +291,76 @@ function geocode(p){
   });
 }
 
+/* ---------- 하루를 한 그림으로 ----------
+   Open-Meteo의 하루 날씨 코드(daily weather_code)는 '그날 가장 나쁜 날씨'다 — 새벽에 한 시간 이슬비가 와도 하루 종일 비가 된다.
+   그래서 아이콘은 **낮(9–18시)의 시간별 날씨**로 정한다:
+   · 뇌우: 낮에 뇌우가 한 시간이라도 있고 낮 강수가 1mm 이상
+   · 눈: 낮에 눈 오는 시간이 2시간 이상(또는 1시간이라도 낮 강수 1mm 이상)
+   · 비: 낮에 젖는 시간(이슬비 · 비 · 소나기)이 4시간 이상이거나 낮 강수 3mm 이상 → 비(가장 흔한 비 코드)
+         2–3시간이거나 1mm 이상 → 소나기(80) — 오다 말다
+   · 그 밖에는 하늘: 맑음 0 · 대체로 맑음 1 · 구름 조금 2 · 흐림 3(낮 시간 구름 정도의 평균), 안개가 4시간 넘으면 안개
+   시간별 값이 없으면 하루 코드 그대로. */
+var WET = function(c){ return (c >= 51 && c <= 67) || (c >= 80 && c <= 82); };
+var SNOW = function(c){ return (c >= 71 && c <= 77) || c === 85 || c === 86; };
+export function dayCode(codes, precs, fallback){
+  if (!codes || !codes.length) return fallback;
+  var n = codes.length, wet = 0, snow = 0, storm = 0, fog = 0, cloud = 0, mm = 0, wetCodes = {}, snowCodes = {};
+  codes.forEach(function(c, i){
+    mm += +(precs && precs[i]) || 0;
+    if (c >= 95) storm++;
+    else if (SNOW(c)){ snow++; snowCodes[c] = (snowCodes[c] || 0) + 1; }
+    else if (WET(c)){ wet++; wetCodes[c] = (wetCodes[c] || 0) + 1; }
+    else if (c === 45 || c === 48) fog++;
+    cloud += c <= 1 ? (c === 0 ? 0 : 0.6) : c === 2 ? 1.3 : 2;   /* 젖은 시간 · 안개는 흐린 하늘로 센다 */
+  });
+  var most = function(m){ return +Object.keys(m).sort(function(a, b){ return m[b] - m[a]; })[0]; };
+  if (storm && mm >= 1) return 95;
+  if (snow >= 2 || (snow && mm >= 1)) return most(snowCodes);
+  if (wet >= 4 || mm >= 3) return most(wetCodes) || 61;
+  if (wet >= 2 || (wet && mm >= 1)) return 80;
+  if (fog >= 4) return 45;
+  var avg = cloud / n;
+  return avg < 0.3 ? 0 : avg < 0.8 ? 1 : avg < 1.5 ? 2 : 3;
+}
+/* 시간별 표에서 그날 낮(9–18시) 몫만 */
+function daytime(h, day){
+  var codes = [], precs = [];
+  if (!h || !h.time) return null;
+  for (var i = 0; i < h.time.length; i++){
+    var t = h.time[i];
+    if (t.slice(0, 10) !== day) continue;
+    var hr = +t.slice(11, 13);
+    if (hr < 9 || hr > 18 || h.weather_code[i] == null) continue;
+    codes.push(h.weather_code[i]); precs.push(h.precipitation ? h.precipitation[i] : 0);
+  }
+  return codes.length >= 6 ? { codes: codes, precs: precs } : null;
+}
+function readDays(d){
+  var dd = d && d.daily;
+  if (!dd || !dd.time) return null;
+  var out = {};
+  dd.time.forEach(function(day, i){
+    var hi = dd.temperature_2m_max[i], lo = dd.temperature_2m_min[i], code = dd.weather_code[i];
+    if (hi == null || lo == null || code == null) return;
+    var dt = daytime(d.hourly, day);
+    out[day] = { hi: Math.round(hi), lo: Math.round(lo), code: dt ? dayCode(dt.codes, dt.precs, code) : code };
+  });
+  return out;
+}
 function forecast(geo){
   var url = FC + "?latitude=" + geo.lat + "&longitude=" + geo.lon +
-    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&past_days=92&forecast_days=16";
-  return getJSON(url).then(function(d){
-    var dd = d && d.daily;
-    if (!dd || !dd.time) return null;
-    var out = {};
-    dd.time.forEach(function(day, i){
-      var hi = dd.temperature_2m_max[i], lo = dd.temperature_2m_min[i], code = dd.weather_code[i];
-      if (hi == null || lo == null || code == null) return;
-      out[day] = { hi: Math.round(hi), lo: Math.round(lo), code: code };
-    });
-    return out;
-  });
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min&hourly=weather_code,precipitation" +
+    "&timezone=auto&past_days=92&forecast_days=16";
+  return getJSON(url).then(readDays);
 }
 
 /* 오래된 하루 — 예보의 지난 92일 밖이면 기록 보관소(archive)에서 그날 하나를 가져온다 */
 function archiveDay(geo, date){
   var url = ARCHIVE + "?latitude=" + geo.lat + "&longitude=" + geo.lon + "&start_date=" + date + "&end_date=" + date +
-    "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto";
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min&hourly=weather_code,precipitation&timezone=auto";
   return getJSON(url).then(function(d){
-    var dd = d && d.daily, i = dd && dd.time ? dd.time.indexOf(date) : -1;
-    if (i < 0) return null;
-    var hi = dd.temperature_2m_max[i], lo = dd.temperature_2m_min[i], code = dd.weather_code[i];
-    return hi == null || lo == null || code == null ? null : { hi: Math.round(hi), lo: Math.round(lo), code: code };
+    var days = readDays(d);
+    return days && days[date] || null;
   }, function(){ return null; });
 }
 /* 예보가 닿는 마지막 날 — 오늘에서 15일 뒤 */
@@ -335,7 +380,8 @@ function recorded(date){
 function reading(rec, date, p){
   var w = rec && rec.daily && rec.daily[date];
   if (!w) return { ok: false, place: p, far: date > fcEnd() };
-  return { ok: true, place: p, city: p.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code) };
+  /* 7일 넘게 남은 예보는 어느 원천이든 크게 바뀐다 — 화면에서 옅게(far) */
+  return { ok: true, place: p, city: p.city, hi: w.hi, lo: w.lo, code: w.code, desc: describeCode(w.code), far: daysAgo(date) < -7 };
 }
 
 /* 지금 기억에 있는 것만, 기다리지 않고. 없으면 null. */

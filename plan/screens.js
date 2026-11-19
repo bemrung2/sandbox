@@ -515,10 +515,10 @@ function dayRow(days){
 function paintWeather(node, w){
   node.className = "wx";
   if (w && w.ok){
-    node.className = "wx t-" + w.desc.tone;
+    node.className = "wx t-" + w.desc.tone + (w.far ? " far" : "");
     node.setAttribute("role", "img");
     node.setAttribute("aria-label", w.city + " " + w.desc.label + " 최고 " + w.hi + "도 최저 " + w.lo + "도");
-    node.title = w.city + " · " + w.desc.label + (w.recorded ? " · 그날의 기록" : " · Open-Meteo");
+    node.title = w.city + " · " + w.desc.label + (w.recorded ? " · 그날의 기록" : w.far ? " · 7일 넘게 남은 예보라 바뀔 수 있습니다." : " · Open-Meteo");
     node.innerHTML = icon(w.desc.icon) + '<span class="wx-txt"><span class="wx-temp"><b class="wx-hi">' + w.hi +
       '°</b><span class="wx-lo">' + w.lo + '°</span></span><span class="wx-city">' + esc(w.city) + '</span></span>';
   } else if (w){

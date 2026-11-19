@@ -398,6 +398,8 @@
   .wx.t-rain .icon, .wx.t-snow .icon{ color: var(--signal); }
   .wx.t-cloud .icon{ color: var(--ink-faint); }
   .wx.wait{ opacity: .55; }
+  /* 7일 넘게 남은 예보 — 그림과 기온만 옅게(도시 이름은 그대로). 기다리는 중(.wait)과 갈리게 칩 전체를 흐리지 않는다 */
+  .wx.far .icon, .wx.far .wx-temp{ opacity: .5; }
   .theme-main{ padding-right: 4px; }
 
   .day-stat{
