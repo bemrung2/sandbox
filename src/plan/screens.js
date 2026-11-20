@@ -2133,7 +2133,7 @@ function undoAll(fns){
   fns = fns.filter(Boolean);
   return fns.length ? function(){ fns.slice().reverse().forEach(function(f){ f(); }); } : null;
 }
-function packRow(card, p, section){
+function packRow(card, p){
   var row = checkRow(p.text, p.on,
     function(){ Plan.listEdit("packList", p.id, { on: !p.on }); repaint(); },
     function(){
@@ -2149,11 +2149,27 @@ function packRow(card, p, section){
           return undo;
         });
     });
-  /* 길게 눌러 옮긴다 — 같은 묶음 안에서. 줄 전체가 손잡이다(연필만 빼고). */
+  /* 길게 눌러 옮긴다. 줄 전체가 손잡이다(연필만 빼고). 같은 묶음 안의 순서도, 다른 묶음으로 넣는 것도(묶지 않은 것을
+     묶음에 · 묶음에서 다른 묶음으로 · 묶음 밖으로) 같은 손짓이다 — 놓인 곳의 묶음이 그 준비물의 묶음이 된다. */
   row.dataset.key = "packList"; row.dataset.id = p.id;
-  holdReorder(row, function(){ return [].slice.call(section.querySelectorAll(".checkrow")); },
-    function(rows){ reordered(rows, false); }, { can: mayEdit, axis: "y", skip: ".rowedit" });
+  holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".pgroup:not(.shut) .checkrow")); },
+    function(rows){ packMoved(row, p, rows); },
+    { can: mayEdit, axis: "y", skip: ".rowedit", zone: card._packZone, lift: card._packLift, moved: card._packMark, end: card._packEnd });
   return row;
+}
+/* 줄을 놓은 뒤: 묶음이 바뀌었으면 묶음과 순서를 한꺼번에 적고(되돌리기도 한 번에), 아니면 순서만 */
+function packMoved(row, p, rows){
+  var sec = row.closest(".pgroup"), to = (sec && sec.dataset.id) || null;
+  var groups = packGroupsOf(), names = {};
+  groups.forEach(function(g){ names[g.id] = g.name; });
+  var from = p.grp && names[p.grp] !== undefined ? p.grp : null;
+  var undos = [];
+  if (to !== from) undos.push(Plan.listEdit("packList", p.id, { grp: to }));
+  undos.push(Plan.setOrder(rows.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), false));
+  var undo = undoEdit(undoAll(undos));
+  if (to === from){ if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit"); return; }
+  repaint();
+  toastUndo(to ? "'" + names[to] + "'에 넣었습니다." : "묶음에서 뺐습니다.", undo, "edit");
 }
 function addPacks(grp){
   var gname = grp ? (packGroupsOf().filter(function(g){ return g.id === grp; })[0] || {}).name : "";
@@ -2174,6 +2190,7 @@ function packCard(){
   var gids = groups.map(function(g){ return g.id; });
   var done = list.filter(function(p){ return p.on; }).length;
   var card = el('<div class="card t-pack"></div>');
+  packDrag(card);
   var head = el('<div class="card-head">' +
     '<span class="card-ic">' + icon("bag") + '</span>' +
     '<h3>준비물<span class="card-n">' + done + '/' + list.length + '</span></h3></div>');
@@ -2202,13 +2219,15 @@ function packCard(){
       '<span class="pg-name">' + esc(g.name) + '</span>' +
       '<span class="pg-n mono' + (inside.length && got === inside.length ? ' all' : '') + '">' + got + '/' + inside.length + '</span>' +
       '<span class="pg-chev">' + icon("down") + '</span></button>');
-    ripple(tog, function(){
-      var f = packFolds(), now = !sec.classList.contains("shut");
+    function fold(now){
+      var f = packFolds();
       sec.classList.toggle("shut", now);
       tog.setAttribute("aria-expanded", String(!now));
       if (now) f.mine[g.id] = 1; else delete f.mine[g.id];
       try{ localStorage.setItem(PACK_FOLD, JSON.stringify(f.all)); }catch(e){}
-    });
+    }
+    ripple(tog, function(){ fold(!sec.classList.contains("shut")); });
+    sec._open = function(){ fold(false); };
     ph.appendChild(tog);
     var plus = el('<button class="quietbtn ico" type="button" aria-label="' + esc(g.name) + '에 추가">' + icon("plus") + '</button>');
     ripple(plus, function(){ addPacks(g.id); });
@@ -2218,7 +2237,7 @@ function packCard(){
     var body = el('<div class="pg-body"><div class="pg-in"></div></div>');
     var inner = body.firstChild;
     if (!inside.length) inner.appendChild(el('<p class="pg-empty">아직 준비물이 없습니다.</p>'));
-    inside.forEach(function(p){ inner.appendChild(packRow(card, p, inner)); });
+    inside.forEach(function(p){ inner.appendChild(packRow(card, p)); });
     sec.appendChild(body);
     /* 묶음도 길게 눌러 옮긴다 — 머리를 잡고. 안의 준비물 줄은 그 줄의 차례다. */
     holdReorder(sec, function(){ return [].slice.call(card.querySelectorAll(".pgroup[data-id]")); },
@@ -2226,15 +2245,52 @@ function packCard(){
     card.appendChild(sec);
   });
   var loose = list.filter(function(p){ return !p.grp || gids.indexOf(p.grp) < 0; });
+  /* 묶지 않은 준비물이 하나도 없어도, 묶음에서 빼려고 끄는 동안에는 놓을 자리가 있어야 한다 — 끌 때만 보인다 */
+  if (!loose.length && groups.length){
+    card.appendChild(el('<div class="pgroup loose drop-only"><p class="pg-loose">묶지 않은 준비물</p><div class="pg-in"></div></div>'));
+  }
   if (loose.length){
     var ls = el('<div class="pgroup loose"></div>');
     if (groups.length) ls.appendChild(el('<p class="pg-loose">묶지 않은 준비물</p>'));
     var li = el('<div class="pg-in"></div>');
-    loose.forEach(function(p){ li.appendChild(packRow(card, p, li)); });
+    loose.forEach(function(p){ li.appendChild(packRow(card, p)); });
     ls.appendChild(li);
     card.appendChild(ls);
   }
   return card;
+}
+/* 준비물을 끄는 동안의 일 — 어느 묶음 위에 있는지 읽고(접힌 묶음은 잠깐 머물면 펴진다), 들어갈 묶음을 밝힌다. */
+function packDrag(card){
+  var home = null, wait = null, waitSec = null;
+  function stopWait(){ clearTimeout(wait); wait = null; waitSec = null; }
+  card._packZone = function(x, y, row){
+    var secs = [].slice.call(card.querySelectorAll(".pgroup"));
+    for (var i = 0; i < secs.length; i++){
+      var sec = secs[i], r = sec.getBoundingClientRect();
+      if (!r.height || y < r.top || y > r.bottom) continue;
+      if (sec.classList.contains("shut")){
+        if (waitSec !== sec){ stopWait(); waitSec = sec; wait = setTimeout(function(){ if (sec._open) sec._open(); stopWait(); }, 450); }
+        return null;
+      }
+      stopWait();
+      var box = sec.querySelector(".pg-in");
+      if (!box || box === row.parentNode) return null;
+      var head = sec.querySelector(".pg-head, .pg-loose");
+      return { box: box, first: !!head && y < head.getBoundingClientRect().bottom };
+    }
+    stopWait();
+    return null;
+  };
+  card._packLift = function(row){ home = row.closest(".pgroup"); card.classList.add("pk-drag"); };
+  card._packMark = function(row){
+    var at = row.closest(".pgroup");
+    [].forEach.call(card.querySelectorAll(".pgroup"), function(s){ s.classList.toggle("drop-here", s === at && s !== home); });
+  };
+  card._packEnd = function(){
+    stopWait();
+    card.classList.remove("pk-drag");
+    [].forEach.call(card.querySelectorAll(".drop-here"), function(s){ s.classList.remove("drop-here"); });
+  };
 }
 /* 묶음 하나: 이름 · 담을 준비물 · 삭제를 한 창에서. 새로 만들 때도 같은 창 — 이미 있는 준비물을 골라 바로 담는다. */
 function openPackGroup(g){

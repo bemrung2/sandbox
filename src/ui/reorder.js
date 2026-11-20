@@ -80,6 +80,10 @@ export function reorder(grip, row, group, onOrder){
  *     opts.can()  asked at the moment the row lifts — false leaves it where it is
  *     opts.axis   "y" for a list (the row only slides up and down); a grid moves both ways
  *     opts.skip   a selector: a press that starts inside it is not a hold (a small button of its own)
+ *     opts.zone(x, y, row)  over no other row: may return { box, first } — a container elsewhere the row
+ *                 moves into (to its start or end). The rows of group() may live in several containers;
+ *                 a row that only changed container still counts as moved.
+ *     opts.lift(row) · opts.moved(row) · opts.end(row)   told when it lifts, after each move, before it settles
  *
  * The others slide out of the way (measured before and after each swap), the
  * page follows when the finger nears its top or bottom edge, and the tap that
@@ -150,11 +154,23 @@ export function holdReorder(row, group, onOrder, opts){
       var q = rows[k].getBoundingClientRect();
       if (cx > q.left && cx < q.right && cy > q.top && cy < q.bottom){ target = rows[k]; break; }
     }
-    if (!target) return;
+    if (!target){
+      /* over no row: perhaps over another container (an empty one, or its heading) */
+      var z = opts.zone && opts.zone(cx, cy, row);
+      if (!z || !z.box) return;
+      var at = z.first ? z.box.firstChild : null;
+      if (row.parentNode === z.box && (z.first ? z.box.firstElementChild === row : z.box.lastElementChild === row)) return;
+      slide(rows, function(){ z.box.insertBefore(row, at); });
+      st.rest = Date.now() + SLIDE_MS + 30;
+      place();
+      if (opts.moved) opts.moved(row);
+      return;
+    }
     var j = rows.indexOf(target);
     slide(rows, function(){
       target.parentNode.insertBefore(row, j > i ? target.nextSibling : target);
     });
+    if (opts.moved) opts.moved(row);
     /* the neighbour is still sliding out from under the finger — wait for it, or the two swap straight back */
     st.rest = Date.now() + SLIDE_MS + 30;
     place();
@@ -170,6 +186,8 @@ export function holdReorder(row, group, onOrder, opts){
       window.scrollBy(0, Math.max(-16, Math.min(16, v)));
       if (window.scrollY !== y){ place(); trade(); }
     }
+    /* a finger held still can still land somewhere new — a folded container that has just opened under it */
+    else if (opts.zone && Date.now() > st.rest){ place(); trade(); }
     st.raf = requestAnimationFrame(edge);
   }
   function lift(){
@@ -178,11 +196,13 @@ export function holdReorder(row, group, onOrder, opts){
     var box = row.getBoundingClientRect();
     st.live = true;
     st.started = group().slice();
+    st.home = row.parentNode;
     st.gx = st.x - box.left; st.gy = st.y - box.top;
     st.sx = 0; st.sy = 0; st.px = st.x; st.py = st.y; st.rest = 0;
     row.classList.add("dragging");
     document.body.classList.add("dragging-row");
     try{ if (navigator.vibrate) navigator.vibrate(12); }catch(e){ /* no buzz, no matter */ }
+    if (opts.lift) opts.lift(row);
     place();
     st.raf = requestAnimationFrame(edge);
   }
@@ -209,6 +229,7 @@ export function holdReorder(row, group, onOrder, opts){
     if (!was.live) return;
     cancelAnimationFrame(was.raf);
     document.body.classList.remove("dragging-row");
+    if (opts.end) opts.end(row);
     /* letting go is not a tap */
     function eat(e){ e.stopPropagation(); e.preventDefault(); }
     window.addEventListener("click", eat, true);
@@ -220,7 +241,7 @@ export function holdReorder(row, group, onOrder, opts){
       row.style.transition = "";
       row.classList.remove("dragging");
       var now = group();
-      var moved = now.length !== was.started.length ||
+      var moved = row.parentNode !== was.home || now.length !== was.started.length ||
         now.some(function(x, i){ return x !== was.started[i]; });
       if (moved) onOrder(now);
     }, SLIDE_MS + 20);

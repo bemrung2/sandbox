@@ -1082,7 +1082,20 @@
   /* 묶음의 테두리가 첫 줄의 선을 대신한다 — 두 겹으로 긋지 않는다 */
   .pgroup .pg-in > .checkrow:first-child{ border-top: none; }
   .pgroup.dragging{ background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 8px var(--surface), 0 12px 28px 6px var(--shadow); }
-  @media (prefers-reduced-motion: reduce){ .pg-body, .pg-chev{ transition: none; } }
+  /* 끌어서 다른 묶음에 넣는 동안: 들어갈 묶음이 옅게 밝아지고, 빈 묶음의 '아직 없습니다'는 줄이 들어오면 비켜난다 */
+  .pgroup{ transition: background-color 160ms ease, box-shadow 160ms ease; border-radius: 0; }
+  .pgroup.drop-here{ border-radius: 12px; border-top-color: transparent;
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 9%, transparent); }
+  .pgroup.drop-here .pg-name, .pgroup.drop-here .pg-loose{ color: var(--accent); }
+  .pg-in:has(> .checkrow) > .pg-empty{ display: none; }
+  /* 접기 위해 감춰 둔 넘침이 들고 다니는 줄을 자르지 않게 — 그 줄이 든 묶음만 */
+  .pgroup:not(.shut) .pg-body > .pg-in:has(> .dragging){ overflow: visible; }
+  .pgroup.drop-only{ display: none; }
+  .card.pk-drag .pgroup.drop-only, .pgroup.drop-only:has(.checkrow){ display: block; }
+  .pgroup.drop-only .pg-in{ min-height: 48px; margin: 6px 0 8px; border: 1.5px dashed var(--line-strong, var(--line)); border-radius: 12px; }
+  .pgroup.drop-only.drop-here .pg-in{ border-color: transparent; }
+  @media (prefers-reduced-motion: reduce){ .pg-body, .pg-chev, .pgroup{ transition: none; } }
   /* 묶음 창의 '담을 준비물' — 줄마다 체크, 다른 묶음에 있던 것은 그 이름을 작게 */
   .pg-pick{ display: flex; flex-direction: column; border-top: 1px solid var(--line); }
   .pg-opt{
