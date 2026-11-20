@@ -1158,9 +1158,9 @@ function buyList(card, list, save){
     holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".checkrow")); }, function(rows){
       var at = {};
       list.forEach(function(x){ at[x.id] = x; });
-      var undo = undoEdit(save(rows.map(function(r){ return at[r.dataset.bid]; }).filter(Boolean)));
+      var done = save(rows.map(function(r){ return at[r.dataset.bid]; }).filter(Boolean));
       repaint();
-      if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit");
+      if (done) toastDone("순서를 바꿨습니다.");
     }, { can: mayEdit, axis: "y", skip: ".rowedit" });
     card.appendChild(row);
   });
@@ -2154,8 +2154,18 @@ function packRow(card, p){
   row.dataset.key = "packList"; row.dataset.id = p.id;
   holdReorder(row, function(){ return [].slice.call(card.querySelectorAll(".pgroup:not(.shut) .checkrow")); },
     function(rows){ packMoved(row, p, rows); },
-    { can: mayEdit, axis: "y", skip: ".rowedit", zone: card._packZone, lift: card._packLift, moved: card._packMark, end: card._packEnd });
+    { can: mayEdit, axis: "y", skip: ".rowedit", zone: card._packZone, lift: card._packLift, moved: card._packMark, end: card._packEnd,
+      drop: function(r, sec){ packInto(p, sec.dataset.id); } });
   return row;
+}
+/* 접힌 묶음의 머리에 놓았을 때: 그 묶음의 맨 끝으로 넣는다(펴지기를 기다리지 않는다) */
+function packInto(p, gid){
+  var g = packGroupsOf().filter(function(x){ return x.id === gid; })[0];
+  if (!g || p.grp === gid) return;
+  var end = ordered(trip().packList).reduce(function(m, x){ return Math.max(m, x.ord || 0); }, 0) + 1;
+  var undo = undoEdit(Plan.listEdit("packList", p.id, { grp: gid, ord: end }));
+  repaint();
+  toastUndo("'" + g.name + "'에 넣었습니다.", undo, "edit");
 }
 /* 줄을 놓은 뒤: 묶음이 바뀌었으면 묶음과 순서를 한꺼번에 적고(되돌리기도 한 번에), 아니면 순서만 */
 function packMoved(row, p, rows){
@@ -2163,11 +2173,11 @@ function packMoved(row, p, rows){
   var groups = packGroupsOf(), names = {};
   groups.forEach(function(g){ names[g.id] = g.name; });
   var from = p.grp && names[p.grp] !== undefined ? p.grp : null;
+  if (to === from){ reordered(rows, false); return; }
   var undos = [];
-  if (to !== from) undos.push(Plan.listEdit("packList", p.id, { grp: to }));
+  undos.push(Plan.listEdit("packList", p.id, { grp: to }));
   undos.push(Plan.setOrder(rows.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), false));
   var undo = undoEdit(undoAll(undos));
-  if (to === from){ if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit"); return; }
   repaint();
   toastUndo(to ? "'" + names[to] + "'에 넣었습니다." : "묶음에서 뺐습니다.", undo, "edit");
 }
@@ -2269,8 +2279,9 @@ function packDrag(card){
       var sec = secs[i], r = sec.getBoundingClientRect();
       if (!r.height || y < r.top || y > r.bottom) continue;
       if (sec.classList.contains("shut")){
+        /* 접힌 묶음: 여기서 놓으면 바로 그 안으로. 잠깐 머물면 펴져서 자리를 골라 넣을 수도 있다 */
         if (waitSec !== sec){ stopWait(); waitSec = sec; wait = setTimeout(function(){ if (sec._open) sec._open(); stopWait(); }, 450); }
-        return null;
+        return sec === home ? null : { into: sec };
       }
       stopWait();
       var box = sec.querySelector(".pg-in");
@@ -2282,8 +2293,8 @@ function packDrag(card){
     return null;
   };
   card._packLift = function(row){ home = row.closest(".pgroup"); card.classList.add("pk-drag"); };
-  card._packMark = function(row){
-    var at = row.closest(".pgroup");
+  card._packMark = function(row, into){
+    var at = into || row.closest(".pgroup");
     [].forEach.call(card.querySelectorAll(".pgroup"), function(s){ s.classList.toggle("drop-here", s === at && s !== home); });
   };
   card._packEnd = function(){
@@ -2362,9 +2373,9 @@ function openPackGroup(g){
 }
 
 /* 손으로 옮긴 순서를 적는다. 화면은 이미 그 순서라 다시 그리지 않는다 — 되돌릴 때만 그린다. */
+/* 순서만 바꾼 것은 되돌리기를 내밀지 않는다 — 다시 끌어 놓으면 된다. 됐다는 말만. */
 function reordered(nodes, desc){
-  var undo = undoEdit(Plan.setOrder(nodes.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), desc));
-  if (undo) toastUndo("순서를 바꿨습니다.", undo, "edit");
+  if (Plan.setOrder(nodes.map(function(n){ return { key: n.dataset.key, id: n.dataset.id }; }), desc)) toastDone("순서를 바꿨습니다.");
 }
 
 /* 체크하는 줄. 줄 어디를 눌러도 체크가 바뀐다 — 가장 자주 하는 일이 가장 큰 자리를

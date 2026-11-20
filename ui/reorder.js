@@ -83,6 +83,8 @@ export function reorder(grip, row, group, onOrder){
  *     opts.zone(x, y, row)  over no other row: may return { box, first } — a container elsewhere the row
  *                 moves into (to its start or end). The rows of group() may live in several containers;
  *                 a row that only changed container still counts as moved.
+ *                 Or { into: node } — a target that cannot show the row (a folded container): the row stays
+ *                 where it is, and letting go there calls opts.drop(row, node) instead of onOrder.
  *     opts.lift(row) · opts.moved(row) · opts.end(row)   told when it lifts, after each move, before it settles
  *
  * The others slide out of the way (measured before and after each swap), the
@@ -157,6 +159,11 @@ export function holdReorder(row, group, onOrder, opts){
     if (!target){
       /* over no row: perhaps over another container (an empty one, or its heading) */
       var z = opts.zone && opts.zone(cx, cy, row);
+      if (z && z.into){
+        if (st.into !== z.into){ st.into = z.into; if (opts.moved) opts.moved(row, z.into); }
+        return;
+      }
+      if (st.into){ st.into = null; if (opts.moved) opts.moved(row, null); }
       if (!z || !z.box) return;
       var at = z.first ? z.box.firstChild : null;
       if (row.parentNode === z.box && (z.first ? z.box.firstElementChild === row : z.box.lastElementChild === row)) return;
@@ -166,6 +173,7 @@ export function holdReorder(row, group, onOrder, opts){
       if (opts.moved) opts.moved(row);
       return;
     }
+    st.into = null;
     var j = rows.indexOf(target);
     slide(rows, function(){
       target.parentNode.insertBefore(row, j > i ? target.nextSibling : target);
@@ -240,6 +248,7 @@ export function holdReorder(row, group, onOrder, opts){
     setTimeout(function(){
       row.style.transition = "";
       row.classList.remove("dragging");
+      if (was.into && opts.drop){ opts.drop(row, was.into); return; }
       var now = group();
       var moved = row.parentNode !== was.home || now.length !== was.started.length ||
         now.some(function(x, i){ return x !== was.started[i]; });
