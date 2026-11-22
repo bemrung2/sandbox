@@ -1032,25 +1032,33 @@
     background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px var(--shadow-soft); font-variant-numeric: tabular-nums; }
   .ctile-n.zero{ color: var(--ink-faint); }
   .ctile.rip > .ctile-n{ position: absolute; }
-  /* 챙김 체크: 옷 얼굴의 왼쪽 위. 눌리는 자리는 넉넉히(34px — 칸 가운데에는 닿지 않게), 보이는 상자는 작게(22px) — 앱의 다른 체크와 같은 모양 · 같은 색 */
+  /* 챙김: 칸 전체가 단추다. 챙긴 칸은 얼굴이 한 걸음 물러나고(옅게 · 흑백 쪽으로) 가운데에 초록 도장이 찍히며,
+     얼굴 둘레에 옅은 초록 테가 서고 이름이 초록이 된다 — 체크 상자를 따로 두지 않는다. */
   .ctile-cell{ position: relative; min-width: 0; display: flex; flex-direction: column; }
-  .ctile-chk{ position: absolute; top: 0; left: 0; z-index: 3; width: 34px; height: 34px; padding: 5px; margin: 0;
-    display: flex; align-items: flex-start; justify-content: flex-start; border: none; background: transparent; cursor: pointer;
-    -webkit-tap-highlight-color: transparent; }
-  .ctile-chk .check{ width: 22px; height: 22px; margin: 0; border-radius: 7px; border-width: 1.5px;
-    background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 1px 3px var(--shadow-soft);
-    transition: background-color 160ms ease, border-color 160ms ease; }
-  .ctile-chk .check .icon{ width: 14px; height: 14px; stroke-width: 3; }
-  .ctile-chk .check[aria-pressed="true"]{ background: var(--signal); border-color: var(--signal); }
-  .ctile-chk .check.pop{ animation: chk-pop 260ms var(--ease); }
-  @keyframes chk-pop{ 0%{ transform: scale(.7); } 60%{ transform: scale(1.12); } 100%{ transform: scale(1); } }
-  .ctile-chk:focus-visible{ outline: none; }
-  .ctile-chk:focus-visible .check{ outline: 2px solid var(--signal); outline-offset: 2px; }
-  /* 챙긴 옷은 한 걸음 물러난다 — 아직 안 챙긴 것이 눈에 먼저 들어온다 */
-  .ctile-cell .cface > :not(.ctile-q){ transition: opacity 200ms ease; }
-  .ctile-cell.packed .cface > :not(.ctile-q){ opacity: .42; }
-  .ctile-cell .ctile-name, .ctile-cell .ctile-part{ transition: color 200ms ease; }
-  .ctile-cell.packed .ctile-name{ color: var(--ink-faint); }
+  .ctile-pack{ -webkit-tap-highlight-color: transparent; }
+  .ctile-pack .cface{ transition: box-shadow 200ms ease, transform 160ms ease; }
+  .ctile-pack:active .cface{ transform: scale(.96); }
+  .ctile-cell .cface > :not(.ctile-q):not(.ctile-n):not(.ctile-stamp){ transition: opacity 220ms ease, filter 220ms ease; }
+  .ctile-cell.packed .cface > :not(.ctile-q):not(.ctile-n):not(.ctile-stamp){ opacity: .32; filter: grayscale(.6); }
+  .ctile-cell.packed .cface{ box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 55%, transparent); }
+  .ctile-stamp{ position: absolute; left: 50%; top: 50%; z-index: 2; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    background: var(--ok); color: var(--on-signal); box-shadow: 0 4px 12px color-mix(in srgb, var(--ok) 40%, transparent);
+    opacity: 0; transform: scale(.4) rotate(-20deg); transition: opacity 180ms ease, transform 260ms var(--ease); pointer-events: none; }
+  .ctile-stamp .icon{ width: 18px; height: 18px; stroke-width: 3; }
+  .ctile-cell.packed .ctile-stamp{ opacity: 1; transform: none; }
+  .ctile-cell.packed.just .ctile-stamp{ animation: stamp-in 340ms var(--ease); }
+  @keyframes stamp-in{ 0%{ transform: scale(.4) rotate(-20deg); } 60%{ transform: scale(1.14) rotate(4deg); } 100%{ transform: none; } }
+  .ctile-cell .ctile-name{ transition: color 200ms ease; }
+  .ctile-cell.packed .ctile-name{ color: var(--ok); }
+  /* 고치는 연필은 얼굴 오른쪽 위, 몇 번 입는지는 오른쪽 아래(×7은 왼쪽 아래) */
+  .ctile-cell .quietbtn.ctile-pen{ position: absolute; top: 5px; right: 5px; z-index: 3; width: 24px; min-width: 24px; height: 24px; min-height: 24px; padding: 0; gap: 0;
+    color: var(--ink-soft); background: color-mix(in srgb, var(--surface) 70%, transparent); border-radius: 50%;
+    box-shadow: 0 1px 2px var(--shadow-soft); }
+  .ctile-cell .quietbtn.ctile-pen::after{ content: ""; position: absolute; inset: -6px; }   /* 보이는 것은 작게, 눌리는 자리는 36px */
+  .ctile-cell .quietbtn.ctile-pen .icon{ width: 12px; height: 12px; }
+  .ctile-cell .cface > .ctile-n{ top: auto; bottom: 4px; right: 4px; }
+  @media (prefers-reduced-motion: reduce){ .ctile-cell.packed.just .ctile-stamp{ animation: none; } .ctile-stamp{ transition: none; } }
   .wr-kind .wr-n.all, .card-head .card-n.wr-total.all{ color: var(--ok); }
   @media (prefers-reduced-motion: reduce){ .ctile-chk .check.pop{ animation: none; } }
   .ctile-new .cface{ background: transparent; border: 1.5px dashed var(--line-strong); }

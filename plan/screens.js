@@ -2112,31 +2112,31 @@ function wardrobeCard(){
     grid._count = kh.querySelector(".wr-n");
     mine.forEach(function(c){
       var n = wearCount(c.id);
-      /* 칸 = 옷(누르면 고친다) + 왼쪽 위의 체크(누르면 챙김을 켜고 끈다). 체크는 옷 단추 안에 넣지 않고 위에 얹는다 */
+      /* 칸 전체가 챙김 단추다 — 누르면 챙기고, 다시 누르면 푼다. 고치는 것은 오른쪽 위의 연필(칸 단추 안에 넣지 않고 위에 얹는다).
+         챙긴 칸은 얼굴이 물러나고 가운데에 초록 도장이 찍힌다. */
       var cell = el('<div class="ctile-cell' + (c.on ? ' packed' : '') + '"></div>');
-      var t = el('<button type="button" class="ctile" aria-label="' + esc(c.name) + (n ? " · 착장 " + n : " · 아직 안 입음") + '"></button>');
+      var t = el('<button type="button" class="ctile ctile-pack" aria-pressed="' + !!c.on + '" aria-label="' + esc(c.name) + ' 챙김' + (n ? " · 착장 " + n : " · 아직 안 입음") + '"></button>');
       t.appendChild(clothFace(c));
       tileName(t, c);
-      t.appendChild(el('<span class="ctile-n' + (n ? '' : ' zero') + '">' + (n ? n + "회" : "0회") + '</span>'));
-      ripple(t, function(){ openClothEditor(c); });
-      var chk = el('<button type="button" class="ctile-chk" role="checkbox" aria-checked="' + !!c.on + '" aria-label="' + esc(c.name) + ' 챙김">' +
-        '<span class="check" aria-pressed="' + !!c.on + '">' + icon("check") + '</span></button>');
-      chk.addEventListener("click", editing(function(){
+      var face = t.querySelector(".cface");
+      face.appendChild(el('<span class="ctile-stamp" aria-hidden="true">' + icon("check") + '</span>'));
+      face.appendChild(el('<span class="ctile-n' + (n ? '' : ' zero') + '">' + (n ? n + "회" : "0회") + '</span>'));
+      ripple(t, editing(function(){
         var now = !cell.classList.contains("packed");
         Plan.listEdit("clothes", c.id, { on: now });
         cell.classList.toggle("packed", now);
-        chk.setAttribute("aria-checked", String(now));
-        var box = chk.firstChild;
-        box.setAttribute("aria-pressed", String(now));
-        box.classList.remove("pop"); void box.offsetWidth; if (now) box.classList.add("pop");
+        cell.classList.remove("just"); void cell.offsetWidth; if (now) cell.classList.add("just");
+        t.setAttribute("aria-pressed", String(now));
         try{ if (now && navigator.vibrate) navigator.vibrate(8); }catch(e){}
         recount();
       }));
+      var chk = el('<button class="quietbtn ico ctile-pen" type="button" aria-label="' + esc(c.name) + ' 수정">' + icon("edit") + '</button>');
+      ripple(chk, function(){ openClothEditor(c); });
       cell.appendChild(t);
       cell.appendChild(chk);
-      /* 길게 눌러 옮긴다 — 같은 종류 안에서(종류끼리는 섞지 않는다). 이 순서가 고르는 창의 순서다. 체크는 손잡이가 아니다. */
+      /* 길게 눌러 옮긴다 — 같은 종류 안에서(종류끼리는 섞지 않는다). 이 순서가 고르는 창의 순서다. 연필은 손잡이가 아니다. */
       cell.dataset.key = "clothes"; cell.dataset.id = c.id;
-      holdReorder(cell, function(){ return [].slice.call(grid.children); }, function(tiles){ reordered(tiles, false); }, { can: mayEdit, skip: ".ctile-chk" });
+      holdReorder(cell, function(){ return [].slice.call(grid.children); }, function(tiles){ reordered(tiles, false); }, { can: mayEdit, skip: ".ctile-pen" });
       grid.appendChild(cell);
     });
     card.appendChild(grid);
