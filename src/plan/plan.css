@@ -511,7 +511,7 @@
      time in it, and a filled dot with a ring. */
   .tl-item.current .tl-body{
     background: var(--signal-tint);
-    margin-left: -10px; padding-left: 10px; padding-right: 10px;
+    margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px;   /* 바탕만 양옆으로 넓히고 글 · 단추의 세로줄은 다른 줄과 같게 */
     border-radius: 12px; border-bottom-color: transparent;
   }
   .tl-item.current .tl-time{ color: var(--signal); }

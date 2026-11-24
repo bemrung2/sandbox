@@ -516,6 +516,11 @@
   .dialog .fld{ margin-bottom: 4px; }
   .btn-text[disabled]{ opacity: 0.4; cursor: default; }
   .dialog-actions{ display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 16px; }
+  /* 창에서 갈 수 있는 다른 일 하나(예: 다른 날과 일정 바꾸기) — 글 칸 아래의 조용한 줄 */
+  .dlg-extra{ display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 6px 2px; border: none; background: transparent;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
+  .dlg-extra .icon{ width: 15px; height: 15px; }
+  .dlg-extra:active{ opacity: .6; }
   .dialog-actions .spacer{ flex: 1; }
   .btn-text{
     min-height: 44px; padding: 0 18px;

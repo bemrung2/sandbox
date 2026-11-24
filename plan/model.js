@@ -864,6 +864,26 @@ export var Plan = {
     };
   },
 
+  /* 두 날의 일정을 통째로 맞바꾼다: 그날의 일정(items) · 옛 가게(shops) · 착장(outfits)의 날짜와, 한 줄 요약 · 동선.
+     숙소(기간) · 날씨 기록은 날짜 자체의 것이라 그대로 둔다. 첨부는 일정의 id를 따라가므로 저절로 함께 간다.
+     바뀐 것이 없으면 null, 아니면 한꺼번에 되돌리는 함수. */
+  swapDays(a, b){
+    if (!a || !b || a === b) return null;
+    var self = this, t = this.cur(), undos = [];
+    ["items", "shops", "outfits"].forEach(function(key){
+      (t[key] || []).filter(function(x){ return x.dayDate === a || x.dayDate === b; }).forEach(function(x){
+        undos.push(self.listEdit(key, x.id, { dayDate: x.dayDate === a ? b : a }));
+      });
+    });
+    var da = { theme: t.dayThemes[a] || "", route: (t.dayRoutes[a] || []).slice() };
+    var db = { theme: t.dayThemes[b] || "", route: (t.dayRoutes[b] || []).slice() };
+    undos.push(this.setDay(a, db));
+    undos.push(this.setDay(b, da));
+    undos = undos.filter(Boolean);
+    if (!undos.length) return null;
+    return function(){ undos.slice().reverse().forEach(function(f){ f(); }); };
+  },
+
   attachOf(id){
     var t = this.cur();
     return (t && t.attach[id]) || [];

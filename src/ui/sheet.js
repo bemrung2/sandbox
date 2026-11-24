@@ -265,6 +265,8 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
     (opts.hint ? '<p class="fld-hint">' + esc(opts.hint) + '</p>' : '') + '</div>' +
     (opts.choices ? '<div class="fld dlg-choice">' + (opts.choices.title ? '<label>' + esc(opts.choices.title) + '</label>' : '') +
       '<div class="pickrow fit' + (opts.choices.scroll ? ' scroll' : '') + '" role="group" aria-label="' + esc(opts.choices.label || "") + '"></div></div>' : '') +
+    /* opts.extra: {label, icon, run} — 이 창에서 갈 수 있는 다른 일 하나(예: 요약 창의 '다른 날과 일정 바꾸기'). 이 창을 닫고 연다. */
+    (opts.extra ? '<button type="button" class="dlg-extra" data-a="extra">' + (opts.extra.icon || '') + '<span>' + esc(opts.extra.label) + '</span></button>' : '') +
     '<div class="dialog-actions">' +
       (onDelete ? '<button class="btn-text danger" data-a="del">삭제</button>' : '') +
       '<span class="spacer"></span>' +
@@ -285,6 +287,7 @@ export function openTextDialog(opts, onSave, onDelete, onCancel){
       if (opts.choices.fill){ input.value = k; input.classList.remove("bad"); input.dispatchEvent(new Event("input", { bubbles: true })); }
     });
   scrim.querySelector('[data-a="no"]').addEventListener("click", give);
+  if (opts.extra) scrim.querySelector('[data-a="extra"]').addEventListener("click", function(){ closeTop(scrim); opts.extra.run(); });
   if (onDelete) scrim.querySelector('[data-a="del"]').addEventListener("click", function(){
     askThenDelete(opts.what || opts.value, onDelete);
   });

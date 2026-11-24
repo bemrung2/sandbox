@@ -583,7 +583,8 @@ function renderSchedule(root, days){
   var wxNode = weatherChip(day.date);
   themeRow.appendChild(wxNode);
   ripple(themeRow.firstChild, function(){
-    openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 로마 시내" },
+    openTextDialog({ title:"이 날의 요약", value: day.theme, placeholder:"예: 로마 시내",
+      extra: tripDays().length > 1 ? { label: "다른 날과 일정 바꾸기", icon: icon("swap"), run: function(){ openSwapDays(day); } } : null },
       function(v){ var undo = undoEdit(Plan.setDay(day.date, { theme: v })); repaint(); return undo; },
       day.theme ? function(){
         var undo = undoOf(Plan.setDay(day.date, { theme: "" }));
@@ -610,6 +611,39 @@ function renderSchedule(root, days){
     root.appendChild(el('<div class="card dashed"><p class="card-kind">아직 일정이 없습니다.</p></div>'));
   }
   /* 일정 탭에는 맨 아래의 '일정 추가'가 없다 — 더하는 자리는 머리의 작은 '추가'(quickAdd) 하나다. */
+}
+
+/* 두 날의 일정을 통째로 맞바꾼다(요약 창의 '다른 날과 일정 바꾸기'). 바꿀 날을 고르고 '바꾸기' — 바꾼 뒤에는 되돌릴 수 있다.
+   일정 · 요약 · 동선 · 착장이 함께 가고, 숙소와 날씨 기록은 날짜의 것이라 그대로다. 보던 날에 그대로 머문다(바뀐 일정이 바로 보인다). */
+function openSwapDays(day){
+  if (!mayEdit()) return;
+  var days = tripDays(), at = days.findIndex(function(d){ return d.date === day.date; });
+  var others = days.filter(function(d){ return d.date !== day.date; });
+  var pick = (days[at + 1] || days[at - 1] || others[0]).date;
+  var label = function(d){ return fmtMD(d.date) + " " + d.dow; };
+  var scrim = el('<div class="scrim mid"><div class="dialog" role="dialog" aria-modal="true">' +
+    '<h3>일정 바꾸기</h3>' +
+    '<p class="dialog-body">' + esc(fmtMD(day.date) + " (" + day.dow + ")") + '의 일정 · 요약 · 착장을 고른 날과 통째로 바꿉니다.</p>' +
+    '<div class="fld dlg-choice"><label>바꿀 날</label><div class="pickrow fit scroll" role="group" aria-label="바꿀 날"></div></div>' +
+    '<div class="dialog-actions"><span class="spacer"></span>' +
+      '<button class="btn-text" data-a="no">취소</button>' +
+      '<button class="btn-text go" data-a="ok">바꾸기</button>' +
+    '</div></div></div>');
+  function shut(){ closeTop(scrim); }
+  scrim._shut = shut;
+  scrim.addEventListener("click", function(e){ if (e.target === scrim) shut(); });
+  pickGroup(scrim.querySelector(".pickrow"), others.map(function(d){ return { key: d.date, label: label(d) }; }),
+    function(){ return pick; }, function(k){ pick = k; });
+  scrim.querySelector('[data-a="no"]').addEventListener("click", shut);
+  scrim.querySelector('[data-a="ok"]').addEventListener("click", function(){
+    var other = days.filter(function(d){ return d.date === pick; })[0];
+    closeOverlay();
+    var undo = undoEdit(Plan.swapDays(day.date, pick));
+    repaint();
+    if (undo) toastUndo(fmtMD(day.date) + " · " + fmtMD(other.date) + " 일정을 바꿨습니다.", undo, "edit");
+    else toast("두 날 모두 아직 일정이 없습니다.");
+  });
+  showOverlay(scrim);
 }
 
 /* 쇼핑 탭의 가게가 시간표에 설 때. 고치는 일은 쇼핑 탭에서 한다. */
